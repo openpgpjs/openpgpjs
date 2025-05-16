@@ -10,6 +10,7 @@ import {
 import util from '../util';
 import enums from '../enums';
 import defaultConfig from '../config';
+import { GrammarError } from './grammar';
 
 /**
  * Instantiate a new packet given its tag
@@ -50,9 +51,9 @@ class PacketList extends Array {
    * @throws on parsing errors
    * @async
    */
-  static async fromBinary(bytes, allowedPackets, config = defaultConfig) {
+  static async fromBinary(bytes, allowedPackets, config = defaultConfig, grammarValidator = null) {
     const packets = new PacketList();
-    await packets.read(bytes, allowedPackets, config);
+    await packets.read(bytes, allowedPackets, config, grammarValidator);
     return packets;
   }
 
@@ -61,15 +62,17 @@ class PacketList extends Array {
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - binary data to parse
    * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
    * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {function(enums.packet[], boolean, Object): void} [grammarValidator]
    * @throws on parsing errors
    * @async
    */
-  async read(bytes, allowedPackets, config = defaultConfig) {
+  async read(bytes, allowedPackets, config = defaultConfig, grammarValidator = null) {
     if (config.additionalAllowedPackets.length) {
       allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
     }
     this.stream = streamTransformPair(bytes, async (readable, writable) => {
       const writer = streamGetWriter(writable);
+      const writtenTags = [];
       try {
         while (true) {
           await writer.ready;
@@ -87,6 +90,12 @@ class PacketList extends Array {
               packet.fromStream = util.isStream(parsed.packet);
               await packet.read(parsed.packet, config);
               await writer.write(packet);
+              writtenTags.push(parsed.tag);
+              // The `writtenTags` are only sensitive if we are parsing an _unauthenticated_ decrypted stream,
+              // since they can enable an decryption oracle.
+              // It's responsibility of the caller to pass a `grammarValidator` that takes care of
+              // postponing error reporting until the data has been authenticated.
+              grammarValidator?.(writtenTags, true, config);
             } catch (e) {
               // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
               // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
@@ -101,7 +110,8 @@ class PacketList extends Array {
 
               const throwUnsupportedError = !config.ignoreUnsupportedPackets && e instanceof UnsupportedError;
               const throwMalformedError = !config.ignoreMalformedPackets && !(e instanceof UnsupportedError);
-              if (throwUnsupportedError || throwMalformedError || supportsStreaming(parsed.tag)) {
+              const throwGrammarError = e instanceof GrammarError;
+              if (throwUnsupportedError || throwMalformedError || throwGrammarError || supportsStreaming(parsed.tag)) {
                 // The packets that support streaming are the ones that contain message data.
                 // Those are also the ones we want to be more strict about and throw on parse errors
                 // (since we likely cannot process the message without these packets anyway).
@@ -109,11 +119,16 @@ class PacketList extends Array {
               } else {
                 const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
                 await writer.write(unparsedPacket);
+                writtenTags.push(parsed.tag);
+                grammarValidator?.(writtenTags, true, config);
               }
               util.printDebugError(e);
             }
           });
           if (done) {
+            // Here we are past the MDC check for SEIPDv1 data, hence
+            // the data is always authenticated at this point.
+            grammarValidator?.(writtenTags, false, config);
             await writer.ready;
             await writer.close();
             return;

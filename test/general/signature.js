@@ -1836,7 +1836,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 -----END PGP MESSAGE-----`;
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      const message = await openpgp.readMessage({ armoredMessage });
+      const message = await openpgp.readMessage({ armoredMessage, config: { enforceGrammar: false } });
       const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
 
       const keyIDs = message.getSigningKeyIDs();
@@ -1849,8 +1849,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     it('Streaming verify signed message with missing signature packet', async function() {
-      const armoredMessage =
-        `-----BEGIN PGP MESSAGE-----
+      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      await loadStreamsPolyfill();
+      const getStreamedMessage = config => {
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
 Version: OpenPGP.js v3.1.3
 Comment: https://openpgpjs.org
 
@@ -1859,24 +1861,32 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
 =D6TZ
 -----END PGP MESSAGE-----`.split('');
-
-      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      await loadStreamsPolyfill();
-      const message = await openpgp.readMessage({
-        armoredMessage: new ReadableStream({
-          async pull(controller) {
-            await new Promise(setTimeout);
-            controller.enqueue(armoredMessage.shift());
-            if (!armoredMessage.length) controller.close();
-          }
-        })
-      });
+        return openpgp.readMessage({
+          armoredMessage: new ReadableStream({
+            async pull(controller) {
+              await new Promise(setTimeout);
+              controller.enqueue(armoredMessage.shift());
+              if (!armoredMessage.length) controller.close();
+            }
+          }),
+          config
+        });
+      };
       const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+
+      const message = await getStreamedMessage();
+      const messageWithoutGrammar = await getStreamedMessage({ enforceGrammar: false });
 
       const keyIDs = message.getSigningKeyIDs();
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
-      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
+      await openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
+        await expect(stream.readToEnd(data)).to.be.rejectedWith('Data does not respect OpenPGP grammar');
+        expect(signatures).to.have.length(1);
+        await expect(signatures[0].verified).to.be.rejectedWith('Data does not respect OpenPGP grammar');
+        await expect(signatures[0].signature).to.be.rejectedWith('Data does not respect OpenPGP grammar');
+      });
+      await openpgp.verify({ verificationKeys: [pubKey], message: messageWithoutGrammar, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
         expect(await stream.readToEnd(data)).to.equal(plaintext);
         expect(signatures).to.have.length(1);
         await expect(signatures[0].verified).to.be.rejectedWith('Corresponding signature packet missing');

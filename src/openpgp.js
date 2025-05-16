@@ -357,7 +357,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
     result.signatures = signature ? await decrypted.verifyDetached(signature, verificationKeys, date, config) : await decrypted.verify(verificationKeys, date, config);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
-    linkStreams(result, message);
+    linkStreams(result, message, ...new Set([decrypted, decrypted.unwrapCompressed()]));
     if (expectSigned) {
       if (verificationKeys.length === 0) {
         throw new Error('Verification keys are required to verify message signatures');
@@ -492,7 +492,9 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
       result.signatures = await message.verify(verificationKeys, date, config);
     }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
-    if (message.fromStream && !signature) linkStreams(result, message);
+    if (message.fromStream && !signature) {
+      linkStreams(result, ...new Set([message, message.unwrapCompressed()]));
+    }
     if (expectSigned) {
       if (result.signatures.length === 0) {
         throw new Error('Message is not signed');
@@ -689,22 +691,25 @@ async function convertStream(data) {
 }
 
 /**
- * Link result.data to the message stream for cancellation.
- * Also, forward errors in the message to result.data.
+ * Link result.data to the input message stream for cancellation.
+ * Also, forward errors in the input message and intermediate messages to result.data.
  * @param {Object} result - the data to convert
- * @param {Message} message - message object
+ * @param {Message} message - message object provided by the user
+ * @param {Message} intermediateMessages - intermediate message object with packet streams to link
  * @returns {Object}
  * @private
  */
-function linkStreams(result, message) {
-  result.data = streamTransformPair(message.packets.stream, async (readable, writable) => {
+function linkStreams(result, inputMessage, ...intermediateMessages) {
+  result.data = streamTransformPair(inputMessage.packets.stream, async (readable, writable) => {
     await streamPipe(result.data, writable, {
       preventClose: true
     });
     const writer = streamGetWriter(writable);
     try {
-      // Forward errors in the message stream to result.data.
+      // Forward errors in the message streams to result.data.
       await streamReadToEnd(readable, _ => _);
+      await Promise.all(intermediateMessages.map(intermediate => streamReadToEnd(intermediate.packets.stream, _ => _)));
+      // if result.data throws, the writable will be in errored state, and `close()` fails, but its ok.
       await writer.close();
     } catch (e) {
       await writer.abort(e);

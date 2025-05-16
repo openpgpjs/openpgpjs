@@ -93,6 +93,10 @@ class SymmetricallyEncryptedDataPacket {
       encrypted.subarray(2, blockSize + 2)
     );
 
+    // Decrypting a Symmetrically Encrypted Data packet MUST yield a valid OpenPGP Message.
+    // But due to the lack of authentication over the decrypted data,
+    // we do not run any grammarValidator, to avoid enabling a decryption oracle
+    // (plus, there is probably a higher chance that these messages have an expected structure).
     this.packets = await PacketList.fromBinary(decrypted, allowedPackets, config);
   }
 

@@ -87,6 +87,8 @@ export default {
    * by v6 keys and v6 signatures, respectively.
    * However, generation of v5 entities was supported behind config flag in OpenPGP.js v5, and some other libraries,
    * hence parsing them might be necessary in some cases.
+   * @memberof module:config
+   * @property {Boolean} enableParsingV5Entities
    */
   enableParsingV5Entities: false,
   /**
@@ -217,9 +219,16 @@ export default {
    */
   ignoreMalformedPackets: false,
   /**
+   * @memberof module:config
+   * @property {Boolean} enforceGrammar whether parsed OpenPGP messages must comform to the OpenPGP grammar
+   *    defined in https://www.rfc-editor.org/rfc/rfc9580.html#name-openpgp-messages .
+   */
+  enforceGrammar: true,
+  /**
    * Parsing of packets is normally restricted to a predefined set of packets. For example a Sym. Encrypted Integrity Protected Data Packet can only
    * contain a certain set of packets including LiteralDataPacket. With this setting we can allow additional packets, which is probably not advisable
    * as a global config setting, but can be used for specific function calls (e.g. decrypt method of Message).
+   * NB: `config.enforceGrammar` may need to be disabled as well.
    * @memberof module:config
    * @property {Array} additionalAllowedPackets Allow additional packets on parsing. Defined as array of packet classes, e.g. [PublicKeyPacket]
    */

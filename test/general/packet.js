@@ -13,6 +13,7 @@ import * as random from '../../src/crypto/random';
 
 import * as input from './testInputs.js';
 import { mockCryptoRandomGenerator, restoreCryptoRandomGenerator } from '../mockRandom.ts';
+import { getMessageGrammarValidator } from '../../src/packet/grammar.js';
 
 function stringify(array) {
   if (stream.isStream(array)) {
@@ -1371,6 +1372,51 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       const otherPackets = await stream.readToEnd(parsed.stream, _ => _);
       expect(otherPackets.length).to.equal(1);
       expect(otherPackets[0].constructor.tag).to.equal(openpgp.enums.packet.userID);
+    });
+
+    describe('Grammar validation', async function () {
+      it('reject duplicate literal packet', async () => {
+        const packets = new openpgp.PacketList();
+        packets.push(new openpgp.LiteralDataPacket());
+        packets.push(new openpgp.LiteralDataPacket());
+        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }))).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
+      });
+
+      it('accepts padding and marker packets', async () => {
+        const packets = new openpgp.PacketList();
+        const padding = new openpgp.PaddingPacket();
+        await padding.createPadding(14);
+        packets.push(padding);
+        packets.push(new openpgp.MarkerPacket());
+        packets.push(new openpgp.LiteralDataPacket());
+        const parsed = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }));
+        expect(parsed.length).to.equal(1); // marker and padding packets are always dropped on parsing
+
+        const messageGrammarValidatorWithLatentReporting = getMessageGrammarValidator({ delayReporting: true });
+        const parsed2 = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, messageGrammarValidatorWithLatentReporting);
+        expect(parsed2.length).to.equal(1);
+        const sampleGrammarValidatorReturnValue = isPartial => messageGrammarValidatorWithLatentReporting([] /* valid */, isPartial, openpgp.config);
+        expect(sampleGrammarValidatorReturnValue(true)).to.be.null;
+        expect(sampleGrammarValidatorReturnValue(false)).to.be.true;
+      });
+
+      it('accepts unknown packets', async () => {
+        const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
+        const parsed = await openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }));
+        expect(parsed.length).to.equal(0);
+      });
+
+      it('delay reporting', () => {
+        const messageGrammarValidatorWithLatentReporting = getMessageGrammarValidator({ delayReporting: true });
+
+        const sampleGrammarValidatorReturnValueValid = isPartial => messageGrammarValidatorWithLatentReporting([] /* valid */, isPartial, openpgp.config);
+        expect(sampleGrammarValidatorReturnValueValid(true)).to.be.null;
+        expect(sampleGrammarValidatorReturnValueValid(false)).to.be.true;
+
+        const sampleGrammarValidatorReturnValueInvalid = isPartial => messageGrammarValidatorWithLatentReporting([openpgp.enums.packet.literalData, openpgp.enums.packet.literalData] /* invalid */, isPartial, openpgp.config);
+        expect(sampleGrammarValidatorReturnValueInvalid(true)).to.be.null;
+        expect(() => sampleGrammarValidatorReturnValueInvalid(false)).to.throw(/Data does not respect OpenPGP grammar/);
+      });
     });
   });
 

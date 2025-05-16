@@ -21,6 +21,21 @@ export default () => describe('Custom configuration', function() {
     await expect(
       openpgp.readMessage({ armoredMessage: parsedMessage.armor(), config })
     ).to.be.rejectedWith(/Version 1 of the SKESK packet is unsupported/);
+
+    const skeskPlusLiteralData = `-----BEGIN PGP MESSAGE-----
+
+wy4ECQMIjvrInhvTxJwAbkqXp+KWFdBcjoPn03jCdyspVi9qXBDbyGaP1lrM
+habAyxd1AGKaNp1wbGFpbnRleHQgbWVzc2FnZQ==
+=XoUx
+-----END PGP MESSAGE-----
+`;
+
+    const parsedInvalidMessage = await openpgp.readMessage({ armoredMessage: skeskPlusLiteralData, config: { enforceGrammar: false } });
+    expect(parsedInvalidMessage.packets[0]).to.be.instanceOf(openpgp.SymEncryptedSessionKeyPacket);
+
+    await expect(
+      openpgp.readMessage({ armoredMessage: skeskPlusLiteralData, config: { enforceGrammar: true } })
+    ).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
   });
 
   it('openpgp.readSignature', async function() {
