@@ -114,7 +114,7 @@ class CompressedDataPacket {
     }
 
     // Decompressing a Compressed Data packet MUST also yield a valid OpenPGP Message
-    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config, getMessageGrammarValidator({ enforceDelay: false }));
+    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config, getMessageGrammarValidator());
   }
 
   /**

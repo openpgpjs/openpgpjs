@@ -879,7 +879,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config, ...re
     }
     input = data;
   }
-  const packetlist = await PacketList.fromBinary(input, allowedMessagePackets, config, getMessageGrammarValidator({ delayReporting: false }));
+  const packetlist = await PacketList.fromBinary(input, allowedMessagePackets, config, getMessageGrammarValidator());
   const message = new Message(packetlist);
   message.fromStream = streamType;
   return message;

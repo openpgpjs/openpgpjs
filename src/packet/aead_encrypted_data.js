@@ -106,7 +106,7 @@ class AEADEncryptedDataPacket {
       await runAEAD(this, 'decrypt', key, streamClone(this.encrypted)),
       allowedPackets,
       config,
-      getMessageGrammarValidator({ enforceDelay: false })
+      getMessageGrammarValidator()
     );
   }
 

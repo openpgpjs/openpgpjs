@@ -184,22 +184,15 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (isArrayStream(encrypted)) encrypted = await streamReadToEnd(encrypted);
 
     let packetbytes;
-    let grammarValidator;
     if (this.version === 2) {
       if (this.cipherAlgorithm !== sessionKeyAlgorithm) {
         // sanity check
         throw new Error('Unexpected session key algorithm');
       }
       packetbytes = await runAEAD(this, 'decrypt', key, encrypted);
-      grammarValidator = getMessageGrammarValidator({ delayReporting: false });
     } else {
       const { blockSize } = getCipherParams(sessionKeyAlgorithm);
       const decrypted = await cipherMode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(blockSize));
-
-      // Grammar validation cannot be run before message integrity has been enstablished,
-      // to avoid leaking info about the unauthenticated message structure.
-      const releaseUnauthenticatedStream = util.isStream(encrypted) && config.allowUnauthenticatedStream;
-      grammarValidator = getMessageGrammarValidator({ delayReporting: releaseUnauthenticatedStream });
 
       // there must be a modification detection code packet as the
       // last packet and everything gets hashed except the hash itself
@@ -219,7 +212,9 @@ class SymEncryptedIntegrityProtectedDataPacket {
       const bytes = streamSlice(tohash, blockSize + 2); // Remove random prefix
       packetbytes = streamSlice(bytes, 0, -2); // Remove MDC packet
       packetbytes = streamConcat([packetbytes, streamFromAsync(() => verifyHash)]);
-      if (!releaseUnauthenticatedStream) {
+      if (util.isStream(encrypted) && config.allowUnauthenticatedStream) {
+        packetbytes.unauthenticated = true;
+      } else {
         packetbytes = await streamReadToEnd(packetbytes);
       }
     }
@@ -228,7 +223,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     // MUST yield a valid OpenPGP Message.
     // - Decrypting a version 2 Symmetrically Encrypted and Integrity Protected Data packet
     // MUST yield a valid Optionally Padded Message.
-    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config, grammarValidator);
+    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config, getMessageGrammarValidator());
     return true;
   }
 }

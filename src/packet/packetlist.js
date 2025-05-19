@@ -167,11 +167,9 @@ class PacketList extends Array {
         break;
       }
       if (supportsStreaming(value.constructor.tag)) {
-        // The `tagsRead` are only sensitive if we are parsing an _unauthenticated_ decrypted stream,
-        // since they can enable an decryption oracle.
-        // It's responsibility of the caller to pass a `grammarValidator` that takes care of
-        // postponing error reporting until the data has been authenticated.
-        grammarValidator?.(tagsRead, true, config);
+        if (!bytes.unauthenticated) {
+          grammarValidator?.(tagsRead, true, config);
+        }
         break;
       }
     }

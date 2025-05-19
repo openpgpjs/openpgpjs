@@ -66,24 +66,13 @@ const isValidOpenPGPMessage = (
     isValidSignedMessage(packetList, acceptPartial);
 };
 
-/**
- * If `delayReporting === false`, the grammar validator throws as soon as an invalid packet sequence is detected during parsing.
- * This setting MUST NOT be used when parsing unauthenticated decrypted data, to avoid instantiating decryption oracles.
- *  Passing `delayReporting === true` allows checking the grammar validity in an async manner, by
- * only reporting the validity status after parsing is done (i.e. and authentication is expected to
- * have been enstablished)
- */
-export const getMessageGrammarValidator = ({ delayReporting }: { delayReporting: boolean }) => {
+export const getMessageGrammarValidator = () => {
   let logged = false;
 
   /**
-  * @returns `true` on successful grammar validation; if `delayReporting` is set, `null` is returned
-  *   if validation is still pending (partial parsing, waiting for authentication to be confirmed).
   * @throws on grammar error, provided `config.enforceGrammar` is enabled.
   */
-  return (list: number[], isPartial: boolean, config: Config): true | null => {
-    if (delayReporting && isPartial) return null; // delay until the full message has been parsed (i.e. authenticated)
-
+  return (list: number[], isPartial: boolean, config: Config): undefined => {
     if (!isValidOpenPGPMessage(list, isPartial)) {
       const error = new GrammarError(`Data does not respect OpenPGP grammar [${list}]`);
       if (!logged) {
@@ -92,11 +81,7 @@ export const getMessageGrammarValidator = ({ delayReporting }: { delayReporting:
       }
       if (config.enforceGrammar) {
         throw error;
-      } else {
-        return true;
       }
     }
-
-    return true;
   };
 };
