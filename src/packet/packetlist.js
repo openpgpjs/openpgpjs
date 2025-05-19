@@ -1,6 +1,6 @@
-import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
+import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone } from '@openpgp/web-stream-tools';
 import {
-  readPackets, supportsStreaming,
+  readPacket, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
   UnparseablePacket,
@@ -71,12 +71,15 @@ class PacketList extends Array {
     }
     const tagsRead = [];
     this.stream = streamTransformPair(bytes, async (readable, writable) => {
+      const reader = streamGetReader(readable);
       const writer = streamGetWriter(writable);
       try {
+        let useStreamType = util.isStream(readable);
         while (true) {
           await writer.ready;
           let error;
-          const done = await readPackets(readable, async parsed => {
+          let wasStream;
+          await readPacket(reader, useStreamType, async parsed => {
             try {
               if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust || parsed.tag === enums.packet.padding) {
                 // According to the spec, these packet types should be ignored and not cause parsing errors, even if not explicitly allowed:
@@ -91,6 +94,7 @@ class PacketList extends Array {
               tagsRead.push(parsed.tag);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
+              wasStream = packet.fromStream;
               try {
                 await packet.read(parsed.packet, config);
               } catch (e) {
@@ -147,14 +151,35 @@ class PacketList extends Array {
               util.printDebugError(e);
             }
           });
+          if (wasStream) {
+            // Don't allow more than one streaming packet, as read errors
+            // may get lost in the second packet's data stream.
+            useStreamType = null;
+          }
 
           // If there was a parse error, read the entire input first
           // in case there's an MDC error, which should take precedence.
           if (error) {
-            await streamReadToEnd(readable);
+            await reader.readToEnd();
             // eslint-disable-next-line @typescript-eslint/no-throw-literal
             throw error;
           }
+
+          // We peek to check whether this was the last packet.
+          //
+          // If this was not a packet that supports streaming, we peek 2
+          // bytes instead of 1 because `readPacket` also peeks 2 bytes,
+          // and we want to cut a `subarray` of the correct length into
+          // `web-stream-tools`' `externalBuffer` as a tiny optimization
+          // here.
+          //
+          // If it *was* a streaming packet (i.e. the data packets), we
+          // peek at the entire remainder of the stream, in order to
+          // forward errors in the remainder of the stream to the packet
+          // stream. This throws MDC errors, for example, so that they
+          // take precedence over parse errors.
+          const nextPacket = await reader.peekBytes(wasStream ? Infinity : 2);
+          const done = !nextPacket || !nextPacket.length;
           if (done) {
             // Here we are past the MDC check for SEIPDv1 data, hence
             // the data is always authenticated at this point.
