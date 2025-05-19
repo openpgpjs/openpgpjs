@@ -43,7 +43,7 @@
   ],
   "scripts": {
     "build": "rollup --config",
-    "build-test": "npm run build --build-only=test",
+    "build-test": "npm run build -- --config-build-only=test",
     "prepare": "npm run build",
     "test": "mocha --timeout 120000 test/unittests.js",
     "test-type-definitions": "tsx test/typescript/definitions.ts",
