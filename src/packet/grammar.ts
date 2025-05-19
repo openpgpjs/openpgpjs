@@ -15,20 +15,20 @@ export class GrammarError extends Error {
 }
 
 
-const isValidLiteralMessage = (tagList: enums.packet[], _acceptPartial: boolean) => tagList.length === 1 && tagList[0] === enums.packet.literalData;
-const isValidCompressedMessage = (tagList: enums.packet[], _acceptPartial: boolean) => tagList.length === 1 && tagList[0] === enums.packet.compressedData;
-const isValidEncryptedMessage = (tagList: enums.packet[], acceptPartial: boolean) => {
+const isValidLiteralMessage = (tagList: enums.packet[]) => tagList.length === 1 && tagList[0] === enums.packet.literalData;
+const isValidCompressedMessage = (tagList: enums.packet[]) => tagList.length === 1 && tagList[0] === enums.packet.compressedData;
+const isValidEncryptedMessage = (tagList: enums.packet[]) => {
   // Encrypted Message: Encrypted Data | ESK Sequence, Encrypted Data.
-  const isValidESKSequence = (tagList: enums.packet[], _acceptPartial: boolean) => (
+  const isValidESKSequence = (tagList: enums.packet[]) => (
     tagList.every(packetTag => new Set([enums.packet.publicKeyEncryptedSessionKey, enums.packet.symEncryptedSessionKey]).has(packetTag))
   );
   const encryptedDataPacketIndex = tagList.findIndex(tag => new Set([enums.packet.aeadEncryptedData, enums.packet.symmetricallyEncryptedData, enums.packet.symEncryptedIntegrityProtectedData]).has(tag));
   if (encryptedDataPacketIndex < 0) {
-    return isValidESKSequence(tagList, acceptPartial);
+    return isValidESKSequence(tagList);
   }
 
   return (encryptedDataPacketIndex === tagList.length - 1) &&
-    isValidESKSequence(tagList.slice(0, encryptedDataPacketIndex), acceptPartial);
+    isValidESKSequence(tagList.slice(0, encryptedDataPacketIndex));
 };
 
 const isValidSignedMessage = (tagList: enums.packet[], acceptPartial: boolean) => {
@@ -50,39 +50,20 @@ const isValidSignedMessage = (tagList: enums.packet[], acceptPartial: boolean) =
   return false;
 };
 
-const isUnknownPacketTag = (tag: number): tag is enums.packet => {
-  try {
-    enums.read(enums.packet, tag);
-    return false;
-  } catch (e) {
-    return true;
-  }
-};
-
 /**
  * Implements grammar checks based on https://www.rfc-editor.org/rfc/rfc9580.html#section-10.3 .
- * @param notNormalizedList - list of packet tags to validate
+ * @param packetList - list of packet tags to validate
  * @param acceptPartial - whether the list of tags corresponds to a partially-parsed message
  * @returns whether the list of tags is valid
  */
 const isValidOpenPGPMessage = (
-  notNormalizedList: number[] /** might have unknown tags */,
+  packetList: number[],
   acceptPartial: boolean
 ): boolean => {
-  // Take care of packet tags that can appear anywhere in the sequence:
-  // 1. A Marker packet (Section 5.8) can appear anywhere in the sequence.
-  // 2. An implementation MUST be able to process Padding packets anywhere else in an OpenPGP stream so that future revisions of this document may specify further locations for padding.
-  // 3. An unknown non-critical packet MUST be ignored (criticality is enforced on parsing).
-  const normalizedList: enums.packet[] = notNormalizedList.filter(tag => (
-    tag !== enums.packet.marker &&
-    tag !== enums.packet.padding &&
-      !isUnknownPacketTag(tag)
-  ));
-
-  return isValidLiteralMessage(normalizedList, acceptPartial) ||
-    isValidCompressedMessage(normalizedList, acceptPartial) ||
-    isValidEncryptedMessage(normalizedList, acceptPartial) ||
-    isValidSignedMessage(normalizedList, acceptPartial);
+  return isValidLiteralMessage(packetList) ||
+    isValidCompressedMessage(packetList) ||
+    isValidEncryptedMessage(packetList) ||
+    isValidSignedMessage(packetList, acceptPartial);
 };
 
 /**
@@ -94,7 +75,6 @@ const isValidOpenPGPMessage = (
  */
 export const getMessageGrammarValidator = ({ delayReporting }: { delayReporting: boolean }) => {
   let logged = false;
-
 
   /**
   * @returns `true` on successful grammar validation; if `delayReporting` is set, `null` is returned

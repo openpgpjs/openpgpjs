@@ -69,9 +69,9 @@ class PacketList extends Array {
     if (config.additionalAllowedPackets.length) {
       allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
     }
+    const tagsRead = [];
     this.stream = streamTransformPair(bytes, async (readable, writable) => {
       const writer = streamGetWriter(writable);
-      const writtenTags = [];
       try {
         while (true) {
           await writer.ready;
@@ -85,6 +85,9 @@ class PacketList extends Array {
                 return;
               }
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
+              // Unknown packets throw in the call above, we ignore them
+              // in the grammar checker.
+              tagsRead.push(parsed.tag);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
               try {
@@ -96,12 +99,6 @@ class PacketList extends Array {
                 throw e;
               }
               await writer.write(packet);
-              writtenTags.push(parsed.tag);
-              // The `writtenTags` are only sensitive if we are parsing an _unauthenticated_ decrypted stream,
-              // since they can enable an decryption oracle.
-              // It's responsibility of the caller to pass a `grammarValidator` that takes care of
-              // postponing error reporting until the data has been authenticated.
-              grammarValidator?.(writtenTags, true, config);
             } catch (e) {
               // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
               // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
@@ -141,8 +138,6 @@ class PacketList extends Array {
               } else {
                 const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
                 await writer.write(unparsedPacket);
-                writtenTags.push(parsed.tag);
-                grammarValidator?.(writtenTags, true, config);
               }
               util.printDebugError(e);
             }
@@ -150,7 +145,7 @@ class PacketList extends Array {
           if (done) {
             // Here we are past the MDC check for SEIPDv1 data, hence
             // the data is always authenticated at this point.
-            grammarValidator?.(writtenTags, false, config);
+            grammarValidator?.(tagsRead, false, config);
             await writer.ready;
             await writer.close();
             return;
@@ -169,8 +164,14 @@ class PacketList extends Array {
         this.push(value);
       } else {
         this.stream = null;
+        break;
       }
-      if (done || supportsStreaming(value.constructor.tag)) {
+      if (supportsStreaming(value.constructor.tag)) {
+        // The `tagsRead` are only sensitive if we are parsing an _unauthenticated_ decrypted stream,
+        // since they can enable an decryption oracle.
+        // It's responsibility of the caller to pass a `grammarValidator` that takes care of
+        // postponing error reporting until the data has been authenticated.
+        grammarValidator?.(tagsRead, true, config);
         break;
       }
     }
