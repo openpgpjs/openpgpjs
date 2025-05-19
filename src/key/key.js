@@ -264,7 +264,12 @@ class Key {
     } catch (err) {
       throw util.wrapError('Could not verify primary key', err);
     }
-    const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
+    // Prefer the most recently created valid subkey, or the subkey with
+    // the highest algorithm ID in case of equal creation timestamps.
+    const subkeys = this.subkeys.slice().sort((a, b) => (
+      b.keyPacket.created - a.keyPacket.created ||
+      b.keyPacket.algorithm - a.keyPacket.algorithm
+    ));
     let exception;
     for (const subkey of subkeys) {
       if (!keyID || subkey.getKeyID().equals(keyID)) {
@@ -323,8 +328,12 @@ class Key {
     } catch (err) {
       throw util.wrapError('Could not verify primary key', err);
     }
-    // V4: by convention subkeys are preferred for encryption service
-    const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
+    // Prefer the most recently created valid subkey, or the subkey with
+    // the highest algorithm ID in case of equal creation timestamps.
+    const subkeys = this.subkeys.slice().sort((a, b) => (
+      b.keyPacket.created - a.keyPacket.created ||
+      b.keyPacket.algorithm - a.keyPacket.algorithm
+    ));
     let exception;
     for (const subkey of subkeys) {
       if (!keyID || subkey.getKeyID().equals(keyID)) {

@@ -4659,13 +4659,14 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
       expect(subkey2.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       await subkey2.verify();
+      expect(await newPrivateKey.getSigningKey()).to.be.equal(subkey2);
     });
 
-    it('create and add a new ecdsa subkey to a eddsa key', async function() {
+    it('create and add a new ecdsa subkey to a eddsa key (equal timestamp)', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
-      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] });
+      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys: [{ sign: true }] });
       const total = privateKey.subkeys.length;
-      let newPrivateKey = await privateKey.addSubkey({ curve: 'nistP256', sign: true });
+      let newPrivateKey = await privateKey.addSubkey({ curve: 'nistP256', sign: true, date: privateKey.subkeys[0].getCreationTime() });
       newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       const subkey = newPrivateKey.subkeys[total];
       expect(subkey).to.exist;
@@ -4674,11 +4675,47 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(subkey.getAlgorithmInfo().curve).to.be.equal('nistP256');
       expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdsa');
-
       await subkey.verify();
+      expect(await newPrivateKey.getSigningKey()).to.be.equal(newPrivateKey.subkeys[0]);
     });
 
-    it('create and add a new ecc subkey to a rsa key', async function() {
+    it('create and add a new ecdsa subkey to a eddsa key (later timestamp)', async function() {
+      const userID = { name: 'test', email: 'a@b.com' };
+      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys: [{ sign: true }] });
+      const total = privateKey.subkeys.length;
+      let newPrivateKey = await privateKey.addSubkey({ curve: 'nistP256', sign: true, date: new Date(+privateKey.subkeys[0].getCreationTime() + 1000) });
+      newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
+      const subkey = newPrivateKey.subkeys[total];
+      expect(subkey).to.exist;
+      expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
+      expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519Legacy');
+      expect(subkey.getAlgorithmInfo().curve).to.be.equal('nistP256');
+      expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
+      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdsa');
+      await subkey.verify(new Date(+privateKey.subkeys[0].getCreationTime() + 1000));
+      expect(await newPrivateKey.getSigningKey(undefined, new Date(+privateKey.subkeys[0].getCreationTime() + 1000))).to.be.equal(subkey);
+    });
+
+    it('create and add a new ecc subkey to a rsa key (equal timestamp)', async function() {
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+        passphrase: 'hello world'
+      });
+      const total = privateKey.subkeys.length;
+      const opt2 = { type: 'ecc', curve: 'curve25519', date: privateKey.subkeys[0].getCreationTime() };
+      let newPrivateKey = await privateKey.addSubkey(opt2);
+      const armoredKey = newPrivateKey.armor();
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
+      expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
+      const subkey = newPrivateKey.subkeys[total];
+      expect(subkey).to.exist;
+      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdh');
+      expect(subkey.getAlgorithmInfo().curve).to.be.equal(openpgp.enums.curve.curve25519Legacy);
+      await subkey.verify();
+      expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subkey);
+    });
+
+    it('create and add a new ecc subkey to a rsa key (later timestamp)', async function() {
       const privateKey = await openpgp.decryptKey({
         privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
         passphrase: 'hello world'
@@ -4694,14 +4731,15 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdh');
       expect(subkey.getAlgorithmInfo().curve).to.be.equal(openpgp.enums.curve.curve25519Legacy);
       await subkey.verify();
+      expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subkey);
     });
 
-    it('create and add a new rsa subkey to a ecc key', async function() {
+    it('create and add a new rsa subkey to a ecc key (equal timestamp)', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] };
+      const opt = { curve: 'ed25519Legacy', userIDs: [userID], format: 'object' };
       const { privateKey } = await openpgp.generateKey(opt);
       const total = privateKey.subkeys.length;
-      let newPrivateKey = await privateKey.addSubkey({ type: 'rsa' });
+      let newPrivateKey = await privateKey.addSubkey({ type: 'rsa', date: privateKey.subkeys[0].getCreationTime() });
       const armoredKey = newPrivateKey.armor();
       newPrivateKey = await openpgp.readKey({ armoredKey });
       const subkey = newPrivateKey.subkeys[total];
@@ -4710,6 +4748,24 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(subkey.getAlgorithmInfo().bits).to.be.equal(4096);
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
       await subkey.verify();
+      expect(await newPrivateKey.getEncryptionKey()).to.be.equal(newPrivateKey.subkeys[0]);
+    });
+
+    it('create and add a new rsa subkey to a ecc key (later timestamp)', async function() {
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { curve: 'ed25519Legacy', userIDs: [userID], format: 'object' };
+      const { privateKey } = await openpgp.generateKey(opt);
+      const total = privateKey.subkeys.length;
+      let newPrivateKey = await privateKey.addSubkey({ type: 'rsa', date: new Date(+privateKey.subkeys[0].getCreationTime() + 1000) });
+      const armoredKey = newPrivateKey.armor();
+      newPrivateKey = await openpgp.readKey({ armoredKey });
+      const subkey = newPrivateKey.subkeys[total];
+      expect(subkey).to.exist;
+      expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
+      expect(subkey.getAlgorithmInfo().bits).to.be.equal(4096);
+      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
+      await subkey.verify(new Date(+privateKey.subkeys[0].getCreationTime() + 1000));
+      expect(await newPrivateKey.getEncryptionKey(undefined, new Date(+privateKey.subkeys[0].getCreationTime() + 1000))).to.be.equal(subkey);
     });
 
     it('create and add a new rsa subkey to a dsa key', async function() {
@@ -4723,6 +4779,7 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
       expect(subkey.getAlgorithmInfo().bits).to.be.equal(2048);
       await subkey.verify();
+      expect(await newPrivateKey.getEncryptionKey(undefined, undefined, undefined, { ...openpgp.config, rejectPublicKeyAlgorithms: new Set() })).to.be.equal(subkey);
     });
 
     it('sign/verify data with the new subkey correctly using curve25519 (legacy format)', async function() {
