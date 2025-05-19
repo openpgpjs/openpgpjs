@@ -1,4 +1,4 @@
-import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone } from '@openpgp/web-stream-tools';
+import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
@@ -75,6 +75,7 @@ class PacketList extends Array {
       try {
         while (true) {
           await writer.ready;
+          let error;
           const done = await readPackets(readable, async parsed => {
             try {
               if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust || parsed.tag === enums.packet.padding) {
@@ -134,7 +135,11 @@ class PacketList extends Array {
                 throwDataPacketError ||
                 throwOtherError
               ) {
-                await writer.abort(e);
+                if (bytes.unauthenticated) {
+                  error = e;
+                } else {
+                  await writer.abort(e);
+                }
               } else {
                 const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
                 await writer.write(unparsedPacket);
@@ -142,6 +147,14 @@ class PacketList extends Array {
               util.printDebugError(e);
             }
           });
+
+          // If there was a parse error, read the entire input first
+          // in case there's an MDC error, which should take precedence.
+          if (error) {
+            await streamReadToEnd(readable);
+            // eslint-disable-next-line @typescript-eslint/no-throw-literal
+            throw error;
+          }
           if (done) {
             // Here we are past the MDC check for SEIPDv1 data, hence
             // the data is always authenticated at this point.
