@@ -10,7 +10,6 @@ import {
 import util from '../util';
 import enums from '../enums';
 import defaultConfig from '../config';
-import { GrammarError } from './grammar';
 
 /**
  * Instantiate a new packet given its tag
@@ -88,7 +87,14 @@ class PacketList extends Array {
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
-              await packet.read(parsed.packet, config);
+              try {
+                await packet.read(parsed.packet, config);
+              } catch (e) {
+                if (!(e instanceof UnsupportedError)) {
+                  e.name = 'MalformedPacketError';
+                }
+                throw e;
+              }
               await writer.write(packet);
               writtenTags.push(parsed.tag);
               // The `writtenTags` are only sensitive if we are parsing an _unauthenticated_ decrypted stream,
@@ -100,20 +106,37 @@ class PacketList extends Array {
               // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
               // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
               // Packet Tags from 0 to 39 are critical. Packet Tags from 40 to 63 are non-critical.
-              const throwUnknownPacketError = e instanceof UnknownPacketError && parsed.tag <= 39;
-              const throwUnsupportedError = e instanceof UnsupportedError && !(e instanceof UnknownPacketError) && !config.ignoreUnsupportedPackets;
-              const throwMalformedError = !(e instanceof UnsupportedError) && !config.ignoreMalformedPackets;
-              const throwGrammarError = e instanceof GrammarError;
+              const throwUnknownPacketError =
+                e instanceof UnknownPacketError &&
+                parsed.tag <= 39;
+              // In case of unsupported packet versions/algorithms/etc, we ignore the error by default
+              // (unless the packet is a data packet, see below).
+              const throwUnsupportedError =
+                e instanceof UnsupportedError &&
+                !(e instanceof UnknownPacketError) &&
+                !config.ignoreUnsupportedPackets;
+              // In case of packet parsing errors, e.name was set to 'MalformedPacketError' above.
+              // By default, we throw for these errors.
+              const throwMalformedPacketError =
+                e.name === 'MalformedPacketError' &&
+                !config.ignoreMalformedPackets;
+              // The packets that support streaming are the ones that contain message data.
+              // Those are also the ones we want to be more strict about and throw on all errors
+              // (since we likely cannot process the message without these packets anyway).
+              const throwDataPacketError = supportsStreaming(parsed.tag);
+              // Throw all other errors, including `GrammarError`s and unexpected errors.
+              const throwOtherError = !(
+                e instanceof UnknownPacketError ||
+                e instanceof UnsupportedError ||
+                e.name === 'MalformedPacketError'
+              );
               if (
                 throwUnknownPacketError ||
                 throwUnsupportedError ||
-                throwMalformedError ||
-                throwGrammarError ||
-                supportsStreaming(parsed.tag)
+                throwMalformedPacketError ||
+                throwDataPacketError ||
+                throwOtherError
               ) {
-                // The packets that support streaming are the ones that contain message data.
-                // Those are also the ones we want to be more strict about and throw on parse errors
-                // (since we likely cannot process the message without these packets anyway).
                 await writer.abort(e);
               } else {
                 const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
