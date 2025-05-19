@@ -1335,8 +1335,8 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
     it('Ignores non-critical packet even with tolerant mode disabled', async function() {
       const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
 
-      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.eventually.have.length(0);
-      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.eventually.have.length(0);
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.eventually.have.length(1);
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.eventually.have.length(1);
     });
 
     it('Throws on disallowed packet even with tolerant mode enabled', async function() {
@@ -1403,7 +1403,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       it('accepts unknown packets', async () => {
         const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
         const parsed = await openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }));
-        expect(parsed.length).to.equal(0);
+        expect(parsed.length).to.equal(1);
       });
 
       it('delay reporting', () => {

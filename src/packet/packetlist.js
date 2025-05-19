@@ -100,18 +100,17 @@ class PacketList extends Array {
               // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
               // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
               // Packet Tags from 0 to 39 are critical. Packet Tags from 40 to 63 are non-critical.
-              if (e instanceof UnknownPacketError) {
-                if (parsed.tag <= 39) {
-                  await writer.abort(e);
-                } else {
-                  return;
-                }
-              }
-
-              const throwUnsupportedError = !config.ignoreUnsupportedPackets && e instanceof UnsupportedError;
-              const throwMalformedError = !config.ignoreMalformedPackets && !(e instanceof UnsupportedError);
+              const throwUnknownPacketError = e instanceof UnknownPacketError && parsed.tag <= 39;
+              const throwUnsupportedError = e instanceof UnsupportedError && !(e instanceof UnknownPacketError) && !config.ignoreUnsupportedPackets;
+              const throwMalformedError = !(e instanceof UnsupportedError) && !config.ignoreMalformedPackets;
               const throwGrammarError = e instanceof GrammarError;
-              if (throwUnsupportedError || throwMalformedError || throwGrammarError || supportsStreaming(parsed.tag)) {
+              if (
+                throwUnknownPacketError ||
+                throwUnsupportedError ||
+                throwMalformedError ||
+                throwGrammarError ||
+                supportsStreaming(parsed.tag)
+              ) {
                 // The packets that support streaming are the ones that contain message data.
                 // Those are also the ones we want to be more strict about and throw on parse errors
                 // (since we likely cannot process the message without these packets anyway).
