@@ -51,15 +51,18 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @throws if no key packet was found
  */
 function createKey(packetlist) {
-  for (const packet of packetlist) {
-    switch (packet.constructor.tag) {
-      case enums.packet.secretKey:
-        return new PrivateKey(packetlist);
-      case enums.packet.publicKey:
-        return new PublicKey(packetlist);
+  if (packetlist[0]?.constructor.tag === enums.packet.secretKey) {
+    return new PrivateKey(packetlist);
+  } else if (packetlist[0]?.constructor.tag === enums.packet.publicKey) {
+    if (packetlist.findPacket(enums.packet.secretSubkey)) {
+      return new PrivateKey(packetlist);
+    } else {
+      return new PublicKey(packetlist);
     }
+  } else {
+    throw new Error('No primary key packet found');
   }
-  throw new Error('No key packet found');
+
 }
 
 
@@ -383,10 +386,10 @@ export async function readPrivateKey({ armoredKey, binaryKey, config, ...rest })
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   for (let i = 0; i < keyIndex.length; i++) {
-    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) {
+    const firstPrivateKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey && !firstPrivateKeyList.findPacket(enums.packet.secretSubkey)) {
       continue;
     }
-    const firstPrivateKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
     return new PrivateKey(firstPrivateKeyList);
   }
   throw new Error('No secret key packet found');
@@ -470,10 +473,10 @@ export async function readPrivateKeys({ armoredKeys, binaryKeys, config }) {
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   for (let i = 0; i < keyIndex.length; i++) {
-    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) {
+    const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey && !oneKeyList.findPacket(enums.packet.secretSubkey)) {
       continue;
     }
-    const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
     const newKey = new PrivateKey(oneKeyList);
     keys.push(newKey);
   }

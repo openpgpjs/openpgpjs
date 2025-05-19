@@ -1857,6 +1857,54 @@ S2rSjQ4JF0Ktgdr9585haknpGwr31t486KxXOY4AEsiBmRyvTbaQegwKaQ+C
 -----END PGP PRIVATE KEY BLOCK-----
 `;
 
+// public primary key with:
+// - one signing private subkey
+// - one signing public subkey
+// - one encryption private subkey
+// - one encryption public subkey
+const privateKeyWithPublicKeyPackets = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xjMEZr9cyxYJKwYBBAHaRw8BAQdAlC7g7Q4UZmN5zNhFynWuEXYn1KV8Jfp4
+DMiKf8ZQ5oDNDzx0ZXN0QHRlc3QuY29tPsLAEwQTFgoAhQWCZr9cywMLCQcJ
+kPhnPZ0LDe1wRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5v
+cmeWobLLkXmgpg9Pet9xOLiKvUAGKchlrMxBubhvTpBGygUVCAoMDgQWAAIB
+AhkBApsDAh4BFiEEYmvn2jb9uzAG41Ql+Gc9nQsN7XAAAHGyAP9URiF2uq/O
+8PJkjoehixMx9h9a8L+lPd56ymbdxUb/swEA0tNWA9alk/m3rml0aTPNucuG
+Aj/FLBixvbva+SWEkgrOMwRmv1zLFgkrBgEEAdpHDwEBB0DdyjGHiVCA0Cbr
+5u5pcuZmYZylLDURujjhEWYcLKIg0MLAuwQYFgoBLQWCZr9cywmQ+Gc9nQsN
+7XBFFAAAAAAAHAAgc2FsdEBub3RhdGlvbnMub3BlbnBncGpzLm9yZ5UtjGIA
+N+2fOlsIv9vwi5MaTUxoXXc+Mw6ETjRvW3fUApsCvKAEGRYKAG0Fgma/XMsJ
+kHC3NLlxFk7wRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5v
+cme74M+JTJ/Clb0bApLqL/QGKOZbaXdL3Y/p02QX2o6AgRYhBFFraL50hRm3
+RC4PZHC3NLlxFk7wAABAgwEAhQ+EgvirBcabNlmHV6nEbqyTz85oBj8SKNM2
+d+tDQ3YBAN3jXoPGx22sVoy5rAMerwq1lhnlgCh4xfdTw1jtr2QEFiEEYmvn
+2jb9uzAG41Ql+Gc9nQsN7XAAALGsAQCCDkhWJRgiCoHIvjWwRqVWU1BsVaj5
+dr6fxkK9yaOv6QEA+JjqAgPcRo/LGHpO0dZS9qi1Zpy4u5bT2FunXqvNDQ7O
+MwRmv1zLFgkrBgEEAdpHDwEBB0A4CyxR5ZSvF8FrEhjzFO8W6paAtqm92p7k
++HQC7TRhKcLAuwQYFgoBLQWCZr9cywmQ+Gc9nQsN7XBFFAAAAAAAHAAgc2Fs
+dEBub3RhdGlvbnMub3BlbnBncGpzLm9yZ8eA420LE1oqZm9UQ2mAl0VpYysv
+9w9FhamakpSbum0jApsCvKAEGRYKAG0Fgma/XMsJkMrApZFFMT1MRRQAAAAA
+ABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5vcmcyU0rvMw4GVCasfsGO
+ke8VBnf9DX73KF4Fuw5HRwy65BYhBPmjv8j7/15Fu3bvL8rApZFFMT1MAADv
+OgEAp2P/olg/8frAKhZNhBNNcnZ3mBPgw+jnVB2q3lJR3G4A/Az8kxPmyhmf
+vaorTRswb2d7xes3ubunWLvHBcU+LSAIFiEEYmvn2jb9uzAG41Ql+Gc9nQsN
+7XAAAO9CAP4y3wh7tKf5QkWhz18Lo2Zjqv4S+rCVJZWe9SDRFJq4rwD/eJTb
+wFTiP1x1KHQY+bnZQUll10A9c/G9yMrOC0qR8gHHXQRmv1zLEgorBgEEAZdV
+AQUBAQdAdWmLtTwhcOH7tlr+2FEysYY3Z6gPpP6EalQnbXEHKRsDAQgHAAD/
+ROS5zCtNP0O2t9U7T/Cs2+n1snTVW+RBTbESM+hjWfgTIcK+BBgWCgBwBYJm
+v1zLCZD4Zz2dCw3tcEUUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdw
+anMub3JniqUd+21Sxr5oHb+ctdQKLEpRYCSR1I0Ap/Z5o3XfqRACmwwWIQRi
+a+faNv27MAbjVCX4Zz2dCw3tcAAABPQBAK7S2Izm3D4dEkoJb869wOqtK4be
+zdP4cdQMfO/4hsLRAPwMxCX51Okaj/SvwEzjI/RCPmfv9l441PmzQheQ4Gqr
+BM44BGa/XMsSCisGAQQBl1UBBQEBB0CqHCGPBZg8ioGvjV4nKteCFs4hAzLn
+nFHyv2RF+YdFJgMBCAfCvgQYFgoAcAWCZr9cywmQ+Gc9nQsN7XBFFAAAAAAA
+HAAgc2FsdEBub3RhdGlvbnMub3BlbnBncGpzLm9yZw1hBEkI2dXfJXMVH/ha
+uCz6Opp4tu616/VBZWGParIfApsMFiEEYmvn2jb9uzAG41Ql+Gc9nQsN7XAA
+ABWvAQDZznAKuYpaWKklOVw2z8fgLP6sL9ai+zBjlWogKoswNgEAoXTZ1SOJ
+bWGFbTrrvSBYui/idHvj8Tax0EDVVw6W1Qc=
+=OKHa
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 const eddsaKeyAsEcdsa = `
 -----BEGIN PGP PRIVATE KEY BLOCK-----
 Version: OpenPGP.js VERSION
@@ -3016,6 +3064,18 @@ export default () => describe('Key', function() {
     expect(key.write()).to.deep.equal(expectedSerializedKey.data);
   });
 
+  it('Parsing armored key with public primary key and private subkeys', async function() {
+    const key = await openpgp.readKey({ armoredKey: privateKeyWithPublicKeyPackets });
+
+    expect(key.isDecrypted()).to.be.true;
+    expect(key.isPrivate()).to.be.true;
+    const signingKey = await key.getSigningKey();
+    expect(signingKey.getKeyID().equals(key.subkeys[0].getKeyID())).to.be.true;
+    const decryptedKeys = await key.getDecryptionKeys();
+    expect(decryptedKeys.length).to.equal(1);
+    expect(decryptedKeys[0].getKeyID().equals(key.subkeys[2].getKeyID())).to.be.true;
+  });
+
   it('Parses V5 sample key', async function() {
     // sec   ed25519 2019-03-20 [SC]
     //       19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54
@@ -3657,7 +3717,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
 
   it('validate() - throw if all-gnu-dummy key', async function() {
     const key = await openpgp.readKey({ armoredKey: gnuDummyKey });
-    await expect(key.validate()).to.be.rejectedWith('Cannot validate an all-gnu-dummy key');
+    await expect(key.validate()).to.be.rejectedWith('Cannot validate key without secret key material');
   });
 
   it('validate() - gnu-dummy primary key with signing subkey', async function() {
@@ -3667,6 +3727,11 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
 
   it('validate() - gnu-dummy primary key with encryption subkey', async function() {
     const key = await openpgp.readKey({ armoredKey: dsaGnuDummyKeyWithElGamalSubkey });
+    await expect(key.validate()).to.not.be.rejected;
+  });
+
+  it('validate() - key with public key packets', async function() {
+    const key = await openpgp.readKey({ armoredKey: privateKeyWithPublicKeyPackets });
     await expect(key.validate()).to.not.be.rejected;
   });
 
@@ -4472,6 +4537,14 @@ VYGdb3eNlV8CfoEC
     const decryptedKey = await openpgp.decryptKey({ privateKey: key, passphrase });
     const encryptedKey = await openpgp.encryptKey({ privateKey: decryptedKey, passphrase });
     await expect(openpgp.encryptKey({ privateKey: encryptedKey, passphrase })).to.be.eventually.rejectedWith(/Key packet is already encrypted/);
+  });
+
+  it('Should support encrypting a private key which includes public key packets', async function() {
+    const passphrase = 'hello world';
+    const key = await openpgp.readKey({ armoredKey: privateKeyWithPublicKeyPackets });
+    const encryptedKey = await openpgp.encryptKey({ privateKey: key, passphrase });
+    const decryptedKey = await openpgp.decryptKey({ privateKey: encryptedKey, passphrase });
+    await expect(decryptedKey.write()).to.deep.equal(key.write());
   });
 
   describe('addSubkey functionality testing', function() {
