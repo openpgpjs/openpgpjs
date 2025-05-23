@@ -286,6 +286,18 @@ export class UnknownPacketError extends UnsupportedError {
   }
 }
 
+export class MalformedPacketError extends UnsupportedError {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, UnsupportedError);
+    }
+
+    this.name = 'MalformedPacketError';
+  }
+}
+
 export class UnparseablePacket {
   constructor(tag, rawContent) {
     this.tag = tag;

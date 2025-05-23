@@ -5,7 +5,8 @@ import {
   writePartialLength, writeSimpleLength,
   UnparseablePacket,
   UnsupportedError,
-  UnknownPacketError
+  UnknownPacketError,
+  MalformedPacketError
 } from './packet';
 import util from '../util';
 import enums from '../enums';
@@ -102,7 +103,7 @@ class PacketList extends Array {
                 await packet.read(parsed.packet, config);
               } catch (e) {
                 if (!(e instanceof UnsupportedError)) {
-                  e.name = 'MalformedPacketError';
+                  throw util.wrapError(new MalformedPacketError(`Parsing ${packet.constructor.name} failed`), e);
                 }
                 throw e;
               }
@@ -123,7 +124,7 @@ class PacketList extends Array {
               // In case of packet parsing errors, e.name was set to 'MalformedPacketError' above.
               // By default, we throw for these errors.
               const throwMalformedPacketError =
-                e.name === 'MalformedPacketError' &&
+                e instanceof MalformedPacketError &&
                 !config.ignoreMalformedPackets;
               // The packets that support streaming are the ones that contain message data.
               // Those are also the ones we want to be more strict about and throw on all errors
@@ -133,7 +134,7 @@ class PacketList extends Array {
               const throwOtherError = !(
                 e instanceof UnknownPacketError ||
                 e instanceof UnsupportedError ||
-                e.name === 'MalformedPacketError'
+                e instanceof MalformedPacketError
               );
               if (
                 throwUnknownPacketError ||
