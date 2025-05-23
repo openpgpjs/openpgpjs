@@ -28,7 +28,7 @@ import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
 import PacketList from './packetlist';
 import { UnsupportedError } from './packet';
-import { getMessageGrammarValidator } from './grammar';
+import { MessageGrammarValidator } from './grammar';
 
 // A SEIP packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -224,7 +224,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     // MUST yield a valid OpenPGP Message.
     // - Decrypting a version 2 Symmetrically Encrypted and Integrity Protected Data packet
     // MUST yield a valid Optionally Padded Message.
-    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config, getMessageGrammarValidator(), delayErrors);
+    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config, new MessageGrammarValidator(), delayErrors);
     return true;
   }
 }
