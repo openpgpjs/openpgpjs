@@ -13,7 +13,7 @@ import * as random from '../../src/crypto/random';
 
 import * as input from './testInputs.js';
 import { mockCryptoRandomGenerator, restoreCryptoRandomGenerator } from '../mockRandom.ts';
-import { getMessageGrammarValidator } from '../../src/packet/grammar.js';
+import { MessageGrammarValidator } from '../../src/packet/grammar.js';
 
 function stringify(array) {
   if (stream.isStream(array)) {
@@ -1379,7 +1379,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
         const packets = new openpgp.PacketList();
         packets.push(new openpgp.LiteralDataPacket());
         packets.push(new openpgp.LiteralDataPacket());
-        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, getMessageGrammarValidator())).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
+        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, new MessageGrammarValidator())).to.be.rejectedWith(/Multiple data packets in message/);
       });
 
       it('reject duplicate literal packet inside encrypted data', async () => {
@@ -1397,7 +1397,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
             binaryMessage: packets.write()
           }),
           sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }]
-        })).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
+        })).to.be.rejectedWith(/Multiple data packets in message/);
       });
 
       it('reject duplicate literal packet inside encrypted data (streaming)', async () => {
@@ -1424,7 +1424,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
             allowUnauthenticatedStream: true
           }
         });
-        await expect(stream.readToEnd(decrypted.data)).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
+        await expect(stream.readToEnd(decrypted.data)).to.be.rejectedWith(/Multiple data packets in message/);
       });
 
       it('reject duplicate literal packet inside encrypted data (MDC error gets precedence)', async () => {
@@ -1529,13 +1529,13 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
         packets.push(padding);
         packets.push(new openpgp.MarkerPacket());
         packets.push(new openpgp.LiteralDataPacket());
-        const parsed = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, getMessageGrammarValidator());
+        const parsed = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, new MessageGrammarValidator());
         expect(parsed.length).to.equal(1); // marker and padding packets are always dropped on parsing
       });
 
       it('accepts unknown packets', async () => {
         const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
-        const parsed = await openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, openpgp.config, getMessageGrammarValidator());
+        const parsed = await openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, openpgp.config, new MessageGrammarValidator());
         expect(parsed.length).to.equal(1);
       });
     });

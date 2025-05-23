@@ -73,7 +73,6 @@ class PacketList extends Array {
     if (config.additionalAllowedPackets.length) {
       allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
     }
-    const tagsRead = [];
     this.stream = streamTransformPair(bytes, async (readable, writable) => {
       const reader = streamGetReader(readable);
       const writer = streamGetWriter(writable);
@@ -95,7 +94,15 @@ class PacketList extends Array {
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
               // Unknown packets throw in the call above, we ignore them
               // in the grammar checker.
-              tagsRead.push(parsed.tag);
+              try {
+                grammarValidator?.recordPacket(parsed.tag);
+              } catch (e) {
+                if (config.enforceGrammar) {
+                  throw e;
+                } else {
+                  util.printDebugError(e);
+                }
+              }
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
               wasStream = packet.fromStream;
@@ -179,7 +186,15 @@ class PacketList extends Array {
           if (done) {
             // Here we are past the MDC check for SEIPDv1 data, hence
             // the data is always authenticated at this point.
-            grammarValidator?.(tagsRead, false, config);
+            try {
+              grammarValidator?.recordEnd();
+            } catch (e) {
+              if (config.enforceGrammar) {
+                throw e;
+              } else {
+                util.printDebugError(e);
+              }
+            }
             await writer.ready;
             await writer.close();
             return;
@@ -198,12 +213,8 @@ class PacketList extends Array {
         this.push(value);
       } else {
         this.stream = null;
-        break;
       }
-      if (supportsStreaming(value.constructor.tag)) {
-        if (!delayErrors) {
-          grammarValidator?.(tagsRead, true, config);
-        }
+      if (done || supportsStreaming(value.constructor.tag)) {
         break;
       }
     }

@@ -35,7 +35,7 @@ habAyxd1AGKaNp1wbGFpbnRleHQgbWVzc2FnZQ==
 
     await expect(
       openpgp.readMessage({ armoredMessage: skeskPlusLiteralData, config: { enforceGrammar: true } })
-    ).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
+    ).to.be.rejectedWith(/Non-encrypted data packet following ESK packet/);
   });
 
   it('openpgp.readSignature', async function() {
