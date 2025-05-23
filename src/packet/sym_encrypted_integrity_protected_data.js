@@ -184,6 +184,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (isArrayStream(encrypted)) encrypted = await streamReadToEnd(encrypted);
 
     let packetbytes;
+    let delayErrors = false;
     if (this.version === 2) {
       if (this.cipherAlgorithm !== sessionKeyAlgorithm) {
         // sanity check
@@ -213,7 +214,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
       packetbytes = streamSlice(bytes, 0, -2); // Remove MDC packet
       packetbytes = streamConcat([packetbytes, streamFromAsync(() => verifyHash)]);
       if (util.isStream(encrypted) && config.allowUnauthenticatedStream) {
-        packetbytes.unauthenticated = true;
+        delayErrors = true;
       } else {
         packetbytes = await streamReadToEnd(packetbytes);
       }
@@ -223,7 +224,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     // MUST yield a valid OpenPGP Message.
     // - Decrypting a version 2 Symmetrically Encrypted and Integrity Protected Data packet
     // MUST yield a valid Optionally Padded Message.
-    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config, getMessageGrammarValidator());
+    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config, getMessageGrammarValidator(), delayErrors);
     return true;
   }
 }

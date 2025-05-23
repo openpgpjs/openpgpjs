@@ -52,12 +52,12 @@ const isValidSignedMessage = (tagList: enums.packet[], acceptPartial: boolean) =
 
 /**
  * Implements grammar checks based on https://www.rfc-editor.org/rfc/rfc9580.html#section-10.3 .
- * @param packetList - list of packet tags to validate
+ * @param packetList - list of packet tags to validate; marker/padding/unknown packet tags are expected to have been already filtered out.
  * @param acceptPartial - whether the list of tags corresponds to a partially-parsed message
  * @returns whether the list of tags is valid
  */
 const isValidOpenPGPMessage = (
-  packetList: number[],
+  packetList: enums.packet[],
   acceptPartial: boolean
 ): boolean => {
   return isValidLiteralMessage(packetList) ||

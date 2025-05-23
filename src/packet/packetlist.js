@@ -46,13 +46,15 @@ class PacketList extends Array {
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - binary data to parse
    * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
    * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {function(enums.packet[], boolean, Object): void} [grammarValidator]
+   * @param {Boolean} [delayErrors] - delay errors until the input stream has been read completely
    * @returns {PacketList} parsed list of packets
    * @throws on parsing errors
    * @async
    */
-  static async fromBinary(bytes, allowedPackets, config = defaultConfig, grammarValidator = null) {
+  static async fromBinary(bytes, allowedPackets, config = defaultConfig, grammarValidator = null, delayErrors = false) {
     const packets = new PacketList();
-    await packets.read(bytes, allowedPackets, config, grammarValidator);
+    await packets.read(bytes, allowedPackets, config, grammarValidator, delayErrors);
     return packets;
   }
 
@@ -62,10 +64,11 @@ class PacketList extends Array {
    * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
    * @param {Object} [config] - full configuration, defaults to openpgp.config
    * @param {function(enums.packet[], boolean, Object): void} [grammarValidator]
+   * @param {Boolean} [delayErrors] - delay errors until the input stream has been read completely
    * @throws on parsing errors
    * @async
    */
-  async read(bytes, allowedPackets, config = defaultConfig, grammarValidator = null) {
+  async read(bytes, allowedPackets, config = defaultConfig, grammarValidator = null, delayErrors = false) {
     if (config.additionalAllowedPackets.length) {
       allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
     }
@@ -77,7 +80,7 @@ class PacketList extends Array {
         let useStreamType = util.isStream(readable);
         while (true) {
           await writer.ready;
-          let error;
+          let unauthenticatedError;
           let wasStream;
           await readPacket(reader, useStreamType, async parsed => {
             try {
@@ -126,7 +129,7 @@ class PacketList extends Array {
               // Those are also the ones we want to be more strict about and throw on all errors
               // (since we likely cannot process the message without these packets anyway).
               const throwDataPacketError = supportsStreaming(parsed.tag);
-              // Throw all other errors, including `GrammarError`s and unexpected errors.
+              // Throw all other errors, including `GrammarError`s, disallowed packet errors, and unexpected errors.
               const throwOtherError = !(
                 e instanceof UnknownPacketError ||
                 e instanceof UnsupportedError ||
@@ -139,8 +142,8 @@ class PacketList extends Array {
                 throwDataPacketError ||
                 throwOtherError
               ) {
-                if (bytes.unauthenticated) {
-                  error = e;
+                if (delayErrors) {
+                  unauthenticatedError = e;
                 } else {
                   await writer.abort(e);
                 }
@@ -159,26 +162,18 @@ class PacketList extends Array {
 
           // If there was a parse error, read the entire input first
           // in case there's an MDC error, which should take precedence.
-          if (error) {
+          if (unauthenticatedError) {
             await reader.readToEnd();
             // eslint-disable-next-line @typescript-eslint/no-throw-literal
-            throw error;
+            throw unauthenticatedError;
           }
 
           // We peek to check whether this was the last packet.
-          //
-          // If this was not a packet that supports streaming, we peek 2
-          // bytes instead of 1 because `readPacket` also peeks 2 bytes,
-          // and we want to cut a `subarray` of the correct length into
-          // `web-stream-tools`' `externalBuffer` as a tiny optimization
-          // here.
-          //
-          // If it *was* a streaming packet (i.e. the data packets), we
-          // peek at the entire remainder of the stream, in order to
-          // forward errors in the remainder of the stream to the packet
-          // stream. This throws MDC errors, for example, so that they
-          // take precedence over parse errors.
-          const nextPacket = await reader.peekBytes(wasStream ? Infinity : 2);
+          // We peek 2 bytes instead of 1 because `readPacket` also
+          // peeks 2 bytes, and we want to cut a `subarray` of the
+          // correct length into `web-stream-tools`' `externalBuffer`
+          // as a tiny optimization here.
+          const nextPacket = await reader.peekBytes(2);
           const done = !nextPacket || !nextPacket.length;
           if (done) {
             // Here we are past the MDC check for SEIPDv1 data, hence
@@ -205,7 +200,7 @@ class PacketList extends Array {
         break;
       }
       if (supportsStreaming(value.constructor.tag)) {
-        if (!bytes.unauthenticated) {
+        if (!delayErrors) {
           grammarValidator?.(tagsRead, true, config);
         }
         break;
