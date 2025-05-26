@@ -58,8 +58,6 @@ export class MessageGrammarValidator {
         throw new GrammarError('Non-encrypted data packet following ESK packet');
       }
       this.sawDataPacket = true;
-    } else {
-      throw new GrammarError(`Unexpected packet: ${packet}`);
     }
   }
 

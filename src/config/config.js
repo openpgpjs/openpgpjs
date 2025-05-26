@@ -228,7 +228,6 @@ export default {
    * Parsing of packets is normally restricted to a predefined set of packets. For example a Sym. Encrypted Integrity Protected Data Packet can only
    * contain a certain set of packets including LiteralDataPacket. With this setting we can allow additional packets, which is probably not advisable
    * as a global config setting, but can be used for specific function calls (e.g. decrypt method of Message).
-   * NB: `config.enforceGrammar` may need to be disabled as well.
    * @memberof module:config
    * @property {Array} additionalAllowedPackets Allow additional packets on parsing. Defined as array of packet classes, e.g. [PublicKeyPacket]
    */
