@@ -120,12 +120,28 @@ export class Subkey {
   public revoke(primaryKey: SecretKeyPacket, reasonForRevocation?: ReasonForRevocation, date?: Date, config?: Config): Promise<Subkey>;
 }
 
-export interface User {
-  userID: UserIDPacket | null;
-  userAttribute: UserAttributePacket | null;
-  selfCertifications: SignaturePacket[];
-  otherCertifications: SignaturePacket[];
-  revocationSignatures: SignaturePacket[];
+export class User {
+  constructor(userPacket: UserIDPacket | UserAttributePacket, mainKey: Key);
+  public readonly userID: UserIDPacket | null;
+  public readonly userAttribute: UserAttributePacket | null;
+  public selfCertifications: SignaturePacket[];
+  public otherCertifications: SignaturePacket[];
+  public revocationSignatures: SignaturePacket[];
+  public readonly mainKey: Key;
+  public toPacketList(): PacketList<AnyPacket>;
+  public clone(): User;
+  public certify(signingKeys: PrivateKey[], date?: Date, config?: Config): Promise<User>;
+  public isRevoked(
+    certificate: SignaturePacket,
+    keyPacket?: PublicSubkeyPacket | SecretSubkeyPacket | PublicKeyPacket | SecretKeyPacket,
+    date?: Date,
+    config?: Config,
+  ): Promise<boolean>;
+  public verifyCertificate(certificate: SignaturePacket, verificationKeys: PublicKey[], date?: Date, config?: Config): Promise<true | null>;
+  public verifyAllCertifications(verificationKeys: PublicKey[], date?: Date, config?: Config): Promise<{ keyID: KeyID; valid: boolean | null }[]>;
+  public verify(date?: Date, config?: Config): Promise<true>;
+  public update(sourceUser: User, date?: Date, config?: Config): Promise<void>;
+  public revoke(primaryKey: SecretKeyPacket, reasonForRevocation?: ReasonForRevocation, date?: Date, config?: Config): Promise<User>;
 }
 
 export interface PrimaryUser {
