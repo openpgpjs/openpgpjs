@@ -13,7 +13,7 @@ import * as random from '../../src/crypto/random';
 
 import * as input from './testInputs.js';
 import { mockCryptoRandomGenerator, restoreCryptoRandomGenerator } from '../mockRandom.ts';
-import { getMessageGrammarValidator } from '../../src/packet/grammar.js';
+import { MessageGrammarValidator } from '../../src/packet/grammar.js';
 
 function stringify(array) {
   if (stream.isStream(array)) {
@@ -1335,8 +1335,8 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
     it('Ignores non-critical packet even with tolerant mode disabled', async function() {
       const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
 
-      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.eventually.have.length(0);
-      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.eventually.have.length(0);
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.eventually.have.length(1);
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.eventually.have.length(1);
     });
 
     it('Throws on disallowed packet even with tolerant mode enabled', async function() {
@@ -1379,7 +1379,147 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
         const packets = new openpgp.PacketList();
         packets.push(new openpgp.LiteralDataPacket());
         packets.push(new openpgp.LiteralDataPacket());
-        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }))).to.be.rejectedWith(/Data does not respect OpenPGP grammar/);
+        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, new MessageGrammarValidator())).to.be.rejectedWith(/Multiple data packets in message/);
+      });
+
+      it('reject duplicate literal packet inside encrypted data', async () => {
+        const literalPackets = new openpgp.PacketList();
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        const encrypted = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+        encrypted.version = 1;
+        encrypted.packets = literalPackets;
+        const packets = new openpgp.PacketList();
+        packets.push(encrypted);
+        await encrypted.encrypt(openpgp.enums.symmetric.aes128, new Uint8Array(16));
+        await expect(openpgp.decrypt({
+          message: await openpgp.readMessage({
+            binaryMessage: packets.write()
+          }),
+          sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }]
+        })).to.be.rejectedWith(/Multiple data packets in message/);
+      });
+
+      it('reject duplicate literal packet inside encrypted data (streaming)', async () => {
+        const literalPackets = new openpgp.PacketList();
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        const encrypted = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+        encrypted.version = 1;
+        encrypted.packets = literalPackets;
+        const packets = new openpgp.PacketList();
+        packets.push(encrypted);
+        await encrypted.encrypt(openpgp.enums.symmetric.aes128, new Uint8Array(16));
+        const decrypted = await openpgp.decrypt({
+          message: await openpgp.readMessage({
+            binaryMessage: new ReadableStream({
+              start(controller) {
+                controller.enqueue(packets.write());
+                controller.close();
+              }
+            })
+          }),
+          sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }],
+          config: {
+            allowUnauthenticatedStream: true
+          }
+        });
+        await expect(stream.readToEnd(decrypted.data)).to.be.rejectedWith(/Multiple data packets in message/);
+      });
+
+      it('reject duplicate literal packet inside encrypted data (MDC error gets precedence)', async () => {
+        const literalPackets = new openpgp.PacketList();
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        const literal = new openpgp.LiteralDataPacket();
+        literal.data = new Uint8Array(1000);
+        literalPackets.push(literal);
+        const encrypted = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+        encrypted.version = 1;
+        encrypted.packets = literalPackets;
+        const packets = new openpgp.PacketList();
+        packets.push(encrypted);
+        await encrypted.encrypt(openpgp.enums.symmetric.aes128, new Uint8Array(16));
+        const encryptedData = packets.write();
+        encryptedData[encryptedData.length - 5] ^= 1;
+        const decrypted = await openpgp.decrypt({
+          message: await openpgp.readMessage({
+            binaryMessage: new ReadableStream({
+              start(controller) {
+                controller.enqueue(encryptedData.subarray(0, 500));
+                controller.enqueue(encryptedData.subarray(500));
+                controller.close();
+              }
+            })
+          }),
+          sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }],
+          config: {
+            allowUnauthenticatedStream: true
+          }
+        });
+        await expect(stream.readToEnd(decrypted.data)).to.be.rejectedWith(/Modification detected/);
+      });
+
+      it('reject malformed packet inside encrypted data', async () => {
+        const literalPackets = new openpgp.PacketList();
+        const signature = new openpgp.SignaturePacket();
+        signature.signatureData = signature.signedHashValue = new Uint8Array([4, 4]);
+        signature.params = {};
+        literalPackets.push(signature);
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        const encrypted = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+        encrypted.version = 1;
+        encrypted.packets = literalPackets;
+        const packets = new openpgp.PacketList();
+        packets.push(encrypted);
+        await encrypted.encrypt(openpgp.enums.symmetric.aes128, new Uint8Array(16));
+        const encryptedData = packets.write();
+        await expect(openpgp.decrypt({
+          message: await openpgp.readMessage({
+            binaryMessage: new ReadableStream({
+              start(controller) {
+                controller.enqueue(encryptedData.subarray(0, 500));
+                controller.enqueue(encryptedData.subarray(500));
+                controller.close();
+              }
+            })
+          }),
+          sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }],
+          config: {
+            allowUnauthenticatedStream: true
+          }
+        })).to.be.rejectedWith(/Missing signature creation time subpacket/);
+      });
+
+      it('reject malformed packet inside encrypted data (MDC error gets precedence)', async () => {
+        const literalPackets = new openpgp.PacketList();
+        const signature = new openpgp.SignaturePacket();
+        signature.signatureData = signature.signedHashValue = new Uint8Array([4, 4]);
+        signature.params = {};
+        literalPackets.push(signature);
+        literalPackets.push(new openpgp.LiteralDataPacket());
+        const encrypted = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+        encrypted.version = 1;
+        encrypted.packets = literalPackets;
+        const packets = new openpgp.PacketList();
+        packets.push(encrypted);
+        await encrypted.encrypt(openpgp.enums.symmetric.aes128, new Uint8Array(16));
+        const encryptedData = packets.write();
+        encryptedData[encryptedData.length - 5] ^= 1;
+        await expect(openpgp.decrypt({
+          message: await openpgp.readMessage({
+            binaryMessage: new ReadableStream({
+              start(controller) {
+                controller.enqueue(encryptedData.subarray(0, 500));
+                controller.enqueue(encryptedData.subarray(500));
+                controller.close();
+              }
+            })
+          }),
+          sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }],
+          config: {
+            allowUnauthenticatedStream: true
+          }
+        })).to.be.rejectedWith(/Modification detected/);
       });
 
       it('accepts padding and marker packets', async () => {
@@ -1389,33 +1529,14 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
         packets.push(padding);
         packets.push(new openpgp.MarkerPacket());
         packets.push(new openpgp.LiteralDataPacket());
-        const parsed = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }));
+        const parsed = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, new MessageGrammarValidator());
         expect(parsed.length).to.equal(1); // marker and padding packets are always dropped on parsing
-
-        const messageGrammarValidatorWithLatentReporting = getMessageGrammarValidator({ delayReporting: true });
-        const parsed2 = await openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, messageGrammarValidatorWithLatentReporting);
-        expect(parsed2.length).to.equal(1);
-        const sampleGrammarValidatorReturnValue = isPartial => messageGrammarValidatorWithLatentReporting([] /* valid */, isPartial, openpgp.config);
-        expect(sampleGrammarValidatorReturnValue(true)).to.be.null;
-        expect(sampleGrammarValidatorReturnValue(false)).to.be.true;
       });
 
       it('accepts unknown packets', async () => {
         const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
-        const parsed = await openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, openpgp.config, getMessageGrammarValidator({ delayReporting: false }));
-        expect(parsed.length).to.equal(0);
-      });
-
-      it('delay reporting', () => {
-        const messageGrammarValidatorWithLatentReporting = getMessageGrammarValidator({ delayReporting: true });
-
-        const sampleGrammarValidatorReturnValueValid = isPartial => messageGrammarValidatorWithLatentReporting([] /* valid */, isPartial, openpgp.config);
-        expect(sampleGrammarValidatorReturnValueValid(true)).to.be.null;
-        expect(sampleGrammarValidatorReturnValueValid(false)).to.be.true;
-
-        const sampleGrammarValidatorReturnValueInvalid = isPartial => messageGrammarValidatorWithLatentReporting([openpgp.enums.packet.literalData, openpgp.enums.packet.literalData] /* invalid */, isPartial, openpgp.config);
-        expect(sampleGrammarValidatorReturnValueInvalid(true)).to.be.null;
-        expect(() => sampleGrammarValidatorReturnValueInvalid(false)).to.throw(/Data does not respect OpenPGP grammar/);
+        const parsed = await openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, openpgp.config, new MessageGrammarValidator());
+        expect(parsed.length).to.equal(1);
       });
     });
   });
