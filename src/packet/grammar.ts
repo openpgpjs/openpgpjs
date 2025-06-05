@@ -1,4 +1,5 @@
 import enums from '../enums';
+import type { Config } from '../config';
 
 export class GrammarError extends Error {
   constructor(...params: any[]) {
@@ -12,58 +13,132 @@ export class GrammarError extends Error {
   }
 }
 
-const encryptedDataPackets = new Set([
-  enums.packet.aeadEncryptedData,
-  enums.packet.symmetricallyEncryptedData,
-  enums.packet.symEncryptedIntegrityProtectedData
-]);
-const dataPackets = new Set([
-  enums.packet.literalData,
-  enums.packet.compressedData,
-  ...encryptedDataPackets
-]);
+enum MessageType {
+  EmptyMessage, // incl. empty signed message
+  PlaintextOrEncryptedData,
+  EncryptedSessionKeys,
+  StandaloneAdditionalAllowedData
+}
 
+/**
+ * Implement OpenPGP message grammar based on: https://www.rfc-editor.org/rfc/rfc9580.html#section-10.3 .
+ * It is slightly more lenient as it also allows standalone ESK sequences, as well as empty (signed) messages.
+ * This latter case is needed to allow unknown packets.
+ * A new `MessageGrammarValidator` instance must be created for each packet sequence, as the instance is stateful:
+ * - `recordPacket` must be called for each packet in the sequence; the function will throw as soon as
+ *  an invalid packet is detected.
+ * - `recordEnd` must be called at the end of the packet sequence to confirm its validity.
+ */
 export class MessageGrammarValidator {
-  sawDataPacket: boolean = false;
-  sawESKs: number = 0;
-  sawOPSs: number = 0;
-  sawTrailingSigs: number = 0;
+  // PDA validator inspired by https://blog.jabberhead.tk/2022/10/26/implementing-packet-sequence-validation-using-pushdown-automata/ .
+  private state: MessageType = MessageType.EmptyMessage;
+  private leadingOnePassSignatureCounter: number = 0;
 
-  recordPacket(packet: enums.packet) {
-    if (packet === enums.packet.publicKeyEncryptedSessionKey || packet === enums.packet.symEncryptedSessionKey) {
-      if (this.sawDataPacket) {
-        throw new GrammarError('Encrypted session key packet following data packet');
-      }
-      this.sawESKs++;
-    } else if (packet === enums.packet.onePassSignature) {
-      if (this.sawDataPacket) {
-        throw new GrammarError('One-pass signature packet following data packet');
-      }
-      if (this.sawESKs) {
-        throw new GrammarError('One-pass signature packet following encrypted session key packet');
-      }
-      this.sawOPSs++;
-    } else if (packet === enums.packet.signature) {
-      if (this.sawESKs) {
-        throw new GrammarError('Signature packet following encrypted session key packet');
-      }
-      if (this.sawDataPacket) {
-        this.sawTrailingSigs++;
-      }
-    } else if (dataPackets.has(packet)) {
-      if (this.sawDataPacket) {
-        throw new GrammarError('Multiple data packets in message');
-      }
-      if (this.sawESKs && !encryptedDataPackets.has(packet)) {
-        throw new GrammarError('Non-encrypted data packet following ESK packet');
-      }
-      this.sawDataPacket = true;
+  /**
+   * Determine validity of the next packet in the sequence.
+   * NB: padding, marker and unknown packets are expected to already be filtered out on parsing,
+   * and are not accepted by `recordPacket`.
+   * @param packet - packet to validate
+   * @param config - needed to determine the `additionalAllowedPackets`: these are allowed anywhere in the sequence, except they cannot precede a OPS packet
+   * @throws {GrammarError} on invalid `packet` input
+   */
+  recordPacket(packet: enums.packet, config: Config) {
+    const additionalAllowedPacketsTags = new Set(config.additionalAllowedPackets.map(c => c.tag));
+    switch (this.state) {
+      case MessageType.EmptyMessage:
+      case MessageType.StandaloneAdditionalAllowedData:
+        switch (packet) {
+          case enums.packet.literalData:
+          case enums.packet.compressedData:
+          case enums.packet.aeadEncryptedData:
+          case enums.packet.symEncryptedIntegrityProtectedData:
+          case enums.packet.symmetricallyEncryptedData:
+            this.state = MessageType.PlaintextOrEncryptedData;
+            return;
+          case enums.packet.signature:
+            // Signature | <AdditionalAllowedPacketsOnly> and
+            // OPS | Signature | <AdditionalAllowedPacketsOnly> | Signature and
+            // OPS | <AdditionalAllowedPacketsOnly> | Signature are allowed
+            if (this.state === MessageType.StandaloneAdditionalAllowedData) {
+              if (--this.leadingOnePassSignatureCounter < 0) {
+                throw new GrammarError('Trailing signature packet without OPS');
+              }
+            }
+            // this.state remains EmptyMessage or StandaloneAdditionalAllowedData
+            return;
+          case enums.packet.onePassSignature:
+            if (this.state === MessageType.StandaloneAdditionalAllowedData) {
+              // we do not allow this case, for simplicity
+              throw new GrammarError('OPS following StandaloneAdditionalAllowedData');
+            }
+            this.leadingOnePassSignatureCounter++;
+            // this.state remains EmptyMessage
+            return;
+          case enums.packet.publicKeyEncryptedSessionKey:
+          case enums.packet.symEncryptedSessionKey:
+            this.state = MessageType.EncryptedSessionKeys;
+            return;
+          default:
+            if (!additionalAllowedPacketsTags.has(packet)) {
+              throw new GrammarError(`Unexpected packet ${packet} in state ${this.state}`);
+            }
+            this.state = MessageType.StandaloneAdditionalAllowedData;
+            return;
+        }
+      case MessageType.PlaintextOrEncryptedData:
+        switch (packet) {
+          case enums.packet.signature:
+            if (--this.leadingOnePassSignatureCounter < 0) {
+              throw new GrammarError('Trailing signature packet without OPS');
+            }
+            this.state = MessageType.PlaintextOrEncryptedData;
+            return;
+          default:
+            if (!additionalAllowedPacketsTags.has(packet)) {
+              throw new GrammarError(`Unexpected packet ${packet} in state ${this.state}`);
+            }
+            this.state = MessageType.PlaintextOrEncryptedData;
+            return;
+        }
+      case MessageType.EncryptedSessionKeys:
+        switch (packet) {
+          case enums.packet.publicKeyEncryptedSessionKey:
+          case enums.packet.symEncryptedSessionKey:
+            this.state = MessageType.EncryptedSessionKeys;
+            return;
+          case enums.packet.symEncryptedIntegrityProtectedData:
+          case enums.packet.aeadEncryptedData:
+          case enums.packet.symmetricallyEncryptedData:
+            this.state = MessageType.PlaintextOrEncryptedData;
+            return;
+          case enums.packet.signature:
+            if (--this.leadingOnePassSignatureCounter < 0) {
+              throw new GrammarError('Trailing signature packet without OPS');
+            }
+            this.state = MessageType.PlaintextOrEncryptedData;
+            return;
+          default:
+            if (!additionalAllowedPacketsTags.has(packet)) {
+              throw new GrammarError(`Unexpected packet ${packet} in state ${this.state}`);
+            }
+            this.state = MessageType.EncryptedSessionKeys;
+        }
     }
   }
 
+  /**
+   * Signal end of the packet sequence for final validity check
+   * @throws {GrammarError} on invalid sequence
+   */
   recordEnd() {
-    if (this.sawOPSs !== this.sawTrailingSigs) {
-      throw new GrammarError('Mismatched one-pass signature and signature packets');
+    switch (this.state) {
+      case MessageType.EmptyMessage: // needs to be allowed for PacketLists that only include unknown packets
+      case MessageType.PlaintextOrEncryptedData:
+      case MessageType.EncryptedSessionKeys:
+      case MessageType.StandaloneAdditionalAllowedData:
+        if (this.leadingOnePassSignatureCounter > 0) {
+          throw new GrammarError('Missing trailing signature packets');
+        }
     }
   }
 }

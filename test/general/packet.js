@@ -1375,11 +1375,97 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
     });
 
     describe('Grammar validation', async function () {
+      describe('MessageGrammarValidator - unit tests', () => {
+        it('valid nested signed messages should be valid', () => {
+          // Sig | OPS | Literal | Sig
+          const m1 = new MessageGrammarValidator();
+          m1.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] });
+          m1.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets: [] });
+          m1.recordPacket(openpgp.enums.packet.literalData, { additionalAllowedPackets: [] });
+          m1.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] });
+          expect(() => m1.recordEnd()).to.not.throw();
+
+          // OPS | Sig | Literal | Sig
+          const m2 = new MessageGrammarValidator();
+          m2.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets: [] });
+          m2.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] });
+          m2.recordPacket(openpgp.enums.packet.literalData, { additionalAllowedPackets: [] });
+          m2.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] });
+          expect(() => m2.recordEnd()).to.not.throw();
+
+          // OPS | Sig | Literal -  should throw due to missing trailing signature
+          const m3 = new MessageGrammarValidator();
+          m3.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets: [] });
+          m3.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] });
+          m3.recordPacket(openpgp.enums.packet.literalData, { additionalAllowedPackets: [] });
+          expect(() => m3.recordEnd()).to.throw();
+
+          // Sig -  should throw due to standalone signature packet
+          const m4 = new MessageGrammarValidator();
+          m4.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] });
+          expect(() => m3.recordEnd()).to.throw();
+
+          // ESK | Sig | SEIPD -  should throw
+          const m5 = new MessageGrammarValidator();
+          m5.recordPacket(openpgp.enums.packet.publicKeyEncryptedSessionKey, { additionalAllowedPackets: [] });
+          expect(() => m5.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets: [] })).to.throw();
+        });
+
+        it('standalone additional allowed packets should be valid', () => {
+          const additionalAllowedPackets = [openpgp.PublicKeyPacket];
+          // Sig | OPS | PublicKeyPacket | Sig
+          const m1 = new MessageGrammarValidator();
+          m1.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          m1.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets });
+          m1.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets });
+          m1.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          expect(() => m1.recordEnd()).to.not.throw();
+
+          // OPS | Sig | PublicKeyPacket | Sig
+          const m2 = new MessageGrammarValidator();
+          m2.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets });
+          m2.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          m2.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets });
+          m2.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          expect(() => m2.recordEnd()).to.not.throw();
+
+          // standalone PublicKeyPacket
+          const m3 = new MessageGrammarValidator();
+          m3.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets });
+          expect(() => m3.recordEnd()).to.not.throw();
+
+          // OPS | Sig | PublicKey -  should throw due to missing trailing signature
+          const m4 = new MessageGrammarValidator();
+          m4.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets });
+          m4.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          m4.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets });
+          expect(() => m4.recordEnd()).to.throw();
+
+          // Sig | PublicKey | Sig | PublicKey -  should throw
+          const m5 = new MessageGrammarValidator();
+          m5.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          m5.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets });
+          expect(() => m5.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets })).to.throw();
+
+          // Sig | PublicKey | OPS | PublicKey | Sig -  should throw
+          const m6 = new MessageGrammarValidator();
+          m6.recordPacket(openpgp.enums.packet.signature, { additionalAllowedPackets });
+          m6.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets });
+          expect(() => m6.recordPacket(openpgp.enums.packet.onePassSignature, { additionalAllowedPackets })).to.throw();
+        });
+
+        it('standalone disallowed packets should not be valid', () => {
+          // standalone PublicKeyPacket
+          const m1 = new MessageGrammarValidator();
+          expect(() => m1.recordPacket(openpgp.enums.packet.publicKey, { additionalAllowedPackets: [] })).to.throw();
+        });
+      });
+
       it('reject duplicate literal packet', async () => {
         const packets = new openpgp.PacketList();
         packets.push(new openpgp.LiteralDataPacket());
         packets.push(new openpgp.LiteralDataPacket());
-        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, new MessageGrammarValidator())).to.be.rejectedWith(/Multiple data packets in message/);
+        await expect(openpgp.PacketList.fromBinary(packets.write(), allAllowedPackets, openpgp.config, new MessageGrammarValidator())).to.be.rejectedWith(/Unexpected packet/);
       });
 
       it('reject duplicate literal packet inside encrypted data', async () => {
@@ -1397,7 +1483,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
             binaryMessage: packets.write()
           }),
           sessionKeys: [{ algorithm: 'aes128', data: new Uint8Array(16) }]
-        })).to.be.rejectedWith(/Multiple data packets in message/);
+        })).to.be.rejectedWith(/Unexpected packet/);
       });
 
       it('reject duplicate literal packet inside encrypted data (streaming)', async () => {
@@ -1424,7 +1510,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
             allowUnauthenticatedStream: true
           }
         });
-        await expect(stream.readToEnd(decrypted.data)).to.be.rejectedWith(/Multiple data packets in message/);
+        await expect(stream.readToEnd(decrypted.data)).to.be.rejectedWith(/Unexpected packet/);
       });
 
       it('reject duplicate literal packet inside encrypted data (MDC error gets precedence)', async () => {

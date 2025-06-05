@@ -1881,10 +1881,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
       await openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
-        await expect(stream.readToEnd(data)).to.be.rejectedWith('Mismatched one-pass signature and signature packets');
+        await expect(stream.readToEnd(data)).to.be.rejectedWith('Missing trailing signature packets');
         expect(signatures).to.have.length(1);
-        await expect(signatures[0].verified).to.be.rejectedWith('Mismatched one-pass signature and signature packets');
-        await expect(signatures[0].signature).to.be.rejectedWith('Mismatched one-pass signature and signature packets');
+        await expect(signatures[0].verified).to.be.rejectedWith('Missing trailing signature packets');
+        await expect(signatures[0].signature).to.be.rejectedWith('Missing trailing signature packets');
       });
       await openpgp.verify({ verificationKeys: [pubKey], message: messageWithoutGrammar, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
         expect(await stream.readToEnd(data)).to.equal(plaintext);

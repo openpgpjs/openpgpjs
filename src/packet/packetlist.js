@@ -95,7 +95,7 @@ class PacketList extends Array {
               // Unknown packets throw in the call above, we ignore them
               // in the grammar checker.
               try {
-                grammarValidator?.recordPacket(parsed.tag);
+                grammarValidator?.recordPacket(parsed.tag, config);
               } catch (e) {
                 if (config.enforceGrammar) {
                   throw e;
