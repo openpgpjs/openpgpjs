@@ -18,7 +18,7 @@ export interface Config {
   ignoreUnsupportedPackets: boolean;
   ignoreMalformedPackets: boolean;
   enforceGrammar: boolean;
-  additionalAllowedPackets: Array<{ new(): any }>;
+  additionalAllowedPackets: Array<{ new(): any, tag: enums.packet }>;
   versionString: string;
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;

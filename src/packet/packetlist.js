@@ -1,16 +1,16 @@
 import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone } from '@openpgp/web-stream-tools';
 import {
-  readPackets, supportsStreaming,
+  readPacket, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
   UnparseablePacket,
   UnsupportedError,
-  UnknownPacketError
+  UnknownPacketError,
+  MalformedPacketError
 } from './packet';
 import util from '../util';
 import enums from '../enums';
 import defaultConfig from '../config';
-import { GrammarError } from './grammar';
 
 /**
  * Instantiate a new packet given its tag
@@ -47,13 +47,15 @@ class PacketList extends Array {
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - binary data to parse
    * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
    * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {function(enums.packet[], boolean, Object): void} [grammarValidator]
+   * @param {Boolean} [delayErrors] - delay errors until the input stream has been read completely
    * @returns {PacketList} parsed list of packets
    * @throws on parsing errors
    * @async
    */
-  static async fromBinary(bytes, allowedPackets, config = defaultConfig, grammarValidator = null) {
+  static async fromBinary(bytes, allowedPackets, config = defaultConfig, grammarValidator = null, delayErrors = false) {
     const packets = new PacketList();
-    await packets.read(bytes, allowedPackets, config, grammarValidator);
+    await packets.read(bytes, allowedPackets, config, grammarValidator, delayErrors);
     return packets;
   }
 
@@ -63,72 +65,138 @@ class PacketList extends Array {
    * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
    * @param {Object} [config] - full configuration, defaults to openpgp.config
    * @param {function(enums.packet[], boolean, Object): void} [grammarValidator]
+   * @param {Boolean} [delayErrors] - delay errors until the input stream has been read completely
    * @throws on parsing errors
    * @async
    */
-  async read(bytes, allowedPackets, config = defaultConfig, grammarValidator = null) {
+  async read(bytes, allowedPackets, config = defaultConfig, grammarValidator = null, delayErrors = false) {
+    let additionalAllowedPackets;
     if (config.additionalAllowedPackets.length) {
-      allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
+      additionalAllowedPackets = util.constructAllowedPackets(config.additionalAllowedPackets);
+      allowedPackets = { ...allowedPackets, ...additionalAllowedPackets };
     }
     this.stream = streamTransformPair(bytes, async (readable, writable) => {
+      const reader = streamGetReader(readable);
       const writer = streamGetWriter(writable);
-      const writtenTags = [];
       try {
+        let useStreamType = util.isStream(readable);
         while (true) {
           await writer.ready;
-          const done = await readPackets(readable, async parsed => {
+          let unauthenticatedError;
+          let wasStream;
+          await readPacket(reader, useStreamType, async parsed => {
             try {
               if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust || parsed.tag === enums.packet.padding) {
-                // According to the spec, these packet types should be ignored and not cause parsing errors, even if not esplicitly allowed:
+                // According to the spec, these packet types should be ignored and not cause parsing errors, even if not explicitly allowed:
                 // - Marker packets MUST be ignored when received: https://github.com/openpgpjs/openpgpjs/issues/1145
                 // - Trust packets SHOULD be ignored outside of keyrings (unsupported): https://datatracker.ietf.org/doc/html/rfc4880#section-5.10
                 // - [Padding Packets] MUST be ignored when received: https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#name-padding-packet-tag-21
                 return;
               }
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
+              // Unknown packets throw in the call above, we ignore them
+              // in the grammar checker.
+              try {
+                grammarValidator?.recordPacket(parsed.tag, additionalAllowedPackets);
+              } catch (e) {
+                if (config.enforceGrammar) {
+                  throw e;
+                } else {
+                  util.printDebugError(e);
+                }
+              }
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
-              await packet.read(parsed.packet, config);
+              wasStream = packet.fromStream;
+              try {
+                await packet.read(parsed.packet, config);
+              } catch (e) {
+                if (!(e instanceof UnsupportedError)) {
+                  throw util.wrapError(new MalformedPacketError(`Parsing ${packet.constructor.name} failed`), e);
+                }
+                throw e;
+              }
               await writer.write(packet);
-              writtenTags.push(parsed.tag);
-              // The `writtenTags` are only sensitive if we are parsing an _unauthenticated_ decrypted stream,
-              // since they can enable an decryption oracle.
-              // It's responsibility of the caller to pass a `grammarValidator` that takes care of
-              // postponing error reporting until the data has been authenticated.
-              grammarValidator?.(writtenTags, true, config);
             } catch (e) {
               // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
               // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
               // Packet Tags from 0 to 39 are critical. Packet Tags from 40 to 63 are non-critical.
-              if (e instanceof UnknownPacketError) {
-                if (parsed.tag <= 39) {
-                  await writer.abort(e);
+              const throwUnknownPacketError =
+                e instanceof UnknownPacketError &&
+                parsed.tag <= 39;
+              // In case of unsupported packet versions/algorithms/etc, we ignore the error by default
+              // (unless the packet is a data packet, see below).
+              const throwUnsupportedError =
+                e instanceof UnsupportedError &&
+                !(e instanceof UnknownPacketError) &&
+                !config.ignoreUnsupportedPackets;
+              // In case of packet parsing errors, e.name was set to 'MalformedPacketError' above.
+              // By default, we throw for these errors.
+              const throwMalformedPacketError =
+                e instanceof MalformedPacketError &&
+                !config.ignoreMalformedPackets;
+              // The packets that support streaming are the ones that contain message data.
+              // Those are also the ones we want to be more strict about and throw on all errors
+              // (since we likely cannot process the message without these packets anyway).
+              const throwDataPacketError = supportsStreaming(parsed.tag);
+              // Throw all other errors, including `GrammarError`s, disallowed packet errors, and unexpected errors.
+              const throwOtherError = !(
+                e instanceof UnknownPacketError ||
+                e instanceof UnsupportedError ||
+                e instanceof MalformedPacketError
+              );
+              if (
+                throwUnknownPacketError ||
+                throwUnsupportedError ||
+                throwMalformedPacketError ||
+                throwDataPacketError ||
+                throwOtherError
+              ) {
+                if (delayErrors) {
+                  unauthenticatedError = e;
                 } else {
-                  return;
+                  await writer.abort(e);
                 }
-              }
-
-              const throwUnsupportedError = !config.ignoreUnsupportedPackets && e instanceof UnsupportedError;
-              const throwMalformedError = !config.ignoreMalformedPackets && !(e instanceof UnsupportedError);
-              const throwGrammarError = e instanceof GrammarError;
-              if (throwUnsupportedError || throwMalformedError || throwGrammarError || supportsStreaming(parsed.tag)) {
-                // The packets that support streaming are the ones that contain message data.
-                // Those are also the ones we want to be more strict about and throw on parse errors
-                // (since we likely cannot process the message without these packets anyway).
-                await writer.abort(e);
               } else {
                 const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
                 await writer.write(unparsedPacket);
-                writtenTags.push(parsed.tag);
-                grammarValidator?.(writtenTags, true, config);
               }
               util.printDebugError(e);
             }
           });
+          if (wasStream) {
+            // Don't allow more than one streaming packet, as read errors
+            // may get lost in the second packet's data stream.
+            useStreamType = null;
+          }
+
+          // If there was a parse error, read the entire input first
+          // in case there's an MDC error, which should take precedence.
+          if (unauthenticatedError) {
+            await reader.readToEnd();
+            // eslint-disable-next-line @typescript-eslint/no-throw-literal
+            throw unauthenticatedError;
+          }
+
+          // We peek to check whether this was the last packet.
+          // We peek 2 bytes instead of 1 because `readPacket` also
+          // peeks 2 bytes, and we want to cut a `subarray` of the
+          // correct length into `web-stream-tools`' `externalBuffer`
+          // as a tiny optimization here.
+          const nextPacket = await reader.peekBytes(2);
+          const done = !nextPacket || !nextPacket.length;
           if (done) {
             // Here we are past the MDC check for SEIPDv1 data, hence
             // the data is always authenticated at this point.
-            grammarValidator?.(writtenTags, false, config);
+            try {
+              grammarValidator?.recordEnd();
+            } catch (e) {
+              if (config.enforceGrammar) {
+                throw e;
+              } else {
+                util.printDebugError(e);
+              }
+            }
             await writer.ready;
             await writer.close();
             return;
