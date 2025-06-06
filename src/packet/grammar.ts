@@ -1,5 +1,4 @@
 import enums from '../enums';
-import type { Config } from '../config';
 
 export class GrammarError extends Error {
   constructor(...params: any[]) {
@@ -39,11 +38,10 @@ export class MessageGrammarValidator {
    * NB: padding, marker and unknown packets are expected to already be filtered out on parsing,
    * and are not accepted by `recordPacket`.
    * @param packet - packet to validate
-   * @param config - needed to determine the `additionalAllowedPackets`: these are allowed anywhere in the sequence, except they cannot precede a OPS packet
+   * @param additionalAllowedPackets - object containing packets which are allowed anywhere in the sequence, except they cannot precede a OPS packet
    * @throws {GrammarError} on invalid `packet` input
    */
-  recordPacket(packet: enums.packet, config: Config) {
-    const additionalAllowedPacketsTags = new Set(config.additionalAllowedPackets.map(c => c.tag));
+  recordPacket(packet: enums.packet, additionalAllowedPackets?: { [key in enums.packet]: any }) {
     switch (this.state) {
       case MessageType.EmptyMessage:
       case MessageType.StandaloneAdditionalAllowedData:
@@ -79,7 +77,7 @@ export class MessageGrammarValidator {
             this.state = MessageType.EncryptedSessionKeys;
             return;
           default:
-            if (!additionalAllowedPacketsTags.has(packet)) {
+            if (!additionalAllowedPackets?.[packet]) {
               throw new GrammarError(`Unexpected packet ${packet} in state ${this.state}`);
             }
             this.state = MessageType.StandaloneAdditionalAllowedData;
@@ -94,7 +92,7 @@ export class MessageGrammarValidator {
             this.state = MessageType.PlaintextOrEncryptedData;
             return;
           default:
-            if (!additionalAllowedPacketsTags.has(packet)) {
+            if (!additionalAllowedPackets?.[packet]) {
               throw new GrammarError(`Unexpected packet ${packet} in state ${this.state}`);
             }
             this.state = MessageType.PlaintextOrEncryptedData;
@@ -118,7 +116,7 @@ export class MessageGrammarValidator {
             this.state = MessageType.PlaintextOrEncryptedData;
             return;
           default:
-            if (!additionalAllowedPacketsTags.has(packet)) {
+            if (!additionalAllowedPackets?.[packet]) {
               throw new GrammarError(`Unexpected packet ${packet} in state ${this.state}`);
             }
             this.state = MessageType.EncryptedSessionKeys;

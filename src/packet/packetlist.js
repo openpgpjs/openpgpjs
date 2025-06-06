@@ -70,8 +70,10 @@ class PacketList extends Array {
    * @async
    */
   async read(bytes, allowedPackets, config = defaultConfig, grammarValidator = null, delayErrors = false) {
+    let additionalAllowedPackets;
     if (config.additionalAllowedPackets.length) {
-      allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
+      additionalAllowedPackets = util.constructAllowedPackets(config.additionalAllowedPackets);
+      allowedPackets = { ...allowedPackets, ...additionalAllowedPackets };
     }
     this.stream = streamTransformPair(bytes, async (readable, writable) => {
       const reader = streamGetReader(readable);
@@ -95,7 +97,7 @@ class PacketList extends Array {
               // Unknown packets throw in the call above, we ignore them
               // in the grammar checker.
               try {
-                grammarValidator?.recordPacket(parsed.tag, config);
+                grammarValidator?.recordPacket(parsed.tag, additionalAllowedPackets);
               } catch (e) {
                 if (config.enforceGrammar) {
                   throw e;
