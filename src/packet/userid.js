@@ -88,7 +88,7 @@ class UserIDPacket {
      * since they interfere with `comment` parsing.
      */
 
-    const isValidEmail = str => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(str);
+    const isValidEmail = str => /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,63}$/.test(str);
     const firstBracket = userID.indexOf('<');
     const lastBracket = userID.lastIndexOf('>');
     if (
