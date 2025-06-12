@@ -87,15 +87,36 @@ class UserIDPacket {
      * The `name` and `comment` parts can include any letters, whitespace, and symbols, except for `(` and `)`,
      * since they interfere with `comment` parsing.
      */
-    const re = /^(?<name>[^()]+\s+)?(?<comment>\([^()]+\)\s+)?(?<email><\S+@\S+>)$/;
-    const matches = re.exec(userID);
-    if (matches !== null) {
-      const { name, comment, email } = matches.groups;
-      this.comment = comment?.replace(/^\(|\)|\s$/g, '').trim() || ''; // remove parenthesis and separating whiltespace
-      this.name = name?.trim() || '';
-      this.email = email.substring(1, email.length - 1); // remove brackets
-    } else if (/^[^\s@]+@[^\s@]+$/.test(userID)) { // unbracketed email: enforce single @ and no whitespace
-      this.email = userID;
+
+    const isValidEmail = str => /^[^\s@]+@[^\s@]+$/.test(str); // enforce single @ and no whitespace
+    const firstBracket = userID.indexOf('<');
+    const lastBracket = userID.lastIndexOf('>');
+    if (
+      firstBracket !== -1 &&
+      lastBracket !== -1 &&
+      lastBracket > firstBracket
+    ) {
+      const potentialEmail = userID.substring(firstBracket + 1, lastBracket);
+      if (isValidEmail(potentialEmail)) {
+        this.email = potentialEmail;
+        const beforeEmail = userID.substring(0, firstBracket).trim();
+        const firstParen = beforeEmail.indexOf('(');
+        const lastParen = beforeEmail.lastIndexOf(')');
+        if (firstParen !== -1 && lastParen !== -1 && lastParen > firstParen) {
+          this.comment = beforeEmail
+            .substring(firstParen + 1, lastParen)
+            .trim();
+          this.name = beforeEmail.substring(0, firstParen).trim();
+        } else {
+          this.name = beforeEmail;
+          this.comment = '';
+        }
+      }
+    } else if (isValidEmail(userID.trim())) {
+      // unbracketed email case
+      this.email = userID.trim();
+      this.name = '';
+      this.comment = '';
     }
 
     this.userID = userID;
