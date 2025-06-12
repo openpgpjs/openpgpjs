@@ -593,17 +593,23 @@ const util = {
     }).join('\n');
   },
 
-  wrapError: function(message, error) {
-    if (!error) {
-      return new Error(message);
+  wrapError: function(error, cause) {
+    if (!cause) {
+      if (error instanceof Error) {
+        return error;
+      }
+      return new Error(error);
     }
 
-    // update error message
-    try {
-      error.message = message + ': ' + error.message;
-    } catch (e) {}
-
-    return error;
+    if (error instanceof Error) {
+      // update error message
+      try {
+        error.message += ': ' + cause.message;
+        error.cause = cause;
+      } catch (e) {}
+      return error;
+    }
+    return new Error(error + ': ' + cause.message, { cause });
   },
 
   /**
