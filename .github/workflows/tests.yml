@@ -106,7 +106,6 @@ jobs:
           npx playwright install --with-deps firefox
 
       - name: Install WebKit # caching not possible, external shared libraries required
-        if: ${{ matrix.runner == 'macos-latest' }} # do not install on ubuntu, since the X25519 WebCrypto implementation has issues
         run: npx playwright install --with-deps webkit
 
       - name: Run browser tests
