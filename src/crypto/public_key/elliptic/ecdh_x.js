@@ -33,6 +33,12 @@ export async function generate(algo) {
         const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
         const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
 
+        if (privateKey.x !== publicKey.x) { // Weird issue with Webkit on Linux: https://bugs.webkit.org/show_bug.cgi?id=289693
+          const err = new Error('Unexpected mismatching public point');
+          err.name = 'NotSupportedError';
+          throw err;
+        }
+
         return {
           A: new Uint8Array(b64ToUint8Array(publicKey.x)),
           k: b64ToUint8Array(privateKey.d)
@@ -190,15 +196,21 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
     case enums.publicKey.x25519:
       try {
         const webCrypto = util.getWebCrypto();
-        const jwk = publicKeyToJWK(algo, recipientA);
         const ephemeralKeyPair = await webCrypto.generateKey('X25519', true, ['deriveKey', 'deriveBits']);
+        const ephemeralPublicKeyJwt = await webCrypto.exportKey('jwk', ephemeralKeyPair.publicKey);
+        const ephemeralPrivateKeyJwt = await webCrypto.exportKey('jwk', ephemeralKeyPair.privateKey);
+        if (ephemeralPrivateKeyJwt.x !== ephemeralPublicKeyJwt.x) { // Weird issue with Webkit on Linux: https://bugs.webkit.org/show_bug.cgi?id=289693
+          const err = new Error('Unexpected mismatching public point');
+          err.name = 'NotSupportedError';
+          throw err;
+        }
+        const jwk = publicKeyToJWK(algo, recipientA);
         const recipientPublicKey = await webCrypto.importKey('jwk', jwk, 'X25519', false, []);
         const sharedSecretBuffer = await webCrypto.deriveBits(
           { name: 'X25519', public: recipientPublicKey },
           ephemeralKeyPair.privateKey,
           getPayloadSize(algo) * 8 // in bits
         );
-        const ephemeralPublicKeyJwt = await webCrypto.exportKey('jwk', ephemeralKeyPair.publicKey);
         return {
           sharedSecret: new Uint8Array(sharedSecretBuffer),
           ephemeralPublicKey: new Uint8Array(b64ToUint8Array(ephemeralPublicKeyJwt.x))
