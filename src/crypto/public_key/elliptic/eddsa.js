@@ -38,7 +38,15 @@ export async function generate(algo) {
     case enums.publicKey.ed25519:
       try {
         const webCrypto = util.getWebCrypto();
-        const webCryptoKey = await webCrypto.generateKey('Ed25519', true, ['sign', 'verify']);
+        const webCryptoKey = await webCrypto.generateKey('Ed25519', true, ['sign', 'verify'])
+          .catch(err => {
+            if (err.name === 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
+              const newErr = new Error('Unexpected key generation issue');
+              newErr.name = 'NotSupportedError';
+              throw newErr;
+            }
+            throw err;
+          });
 
         const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
         const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
@@ -48,7 +56,7 @@ export async function generate(algo) {
           seed: b64ToUint8Array(privateKey.d, true)
         };
       } catch (err) {
-        if (err.name !== 'NotSupportedError' && err.name !== 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
+        if (err.name !== 'NotSupportedError') {
           throw err;
         }
         const seed = getRandomBytes(getPayloadSize(algo));
