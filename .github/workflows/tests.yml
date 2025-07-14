@@ -52,7 +52,7 @@ jobs:
           dist
           test/lib
         key: cache-${{ github.sha }}
-        # ignore cache miss, since it was taken care of the `build` step and it should never occur here
+        fail-on-cache-miss: true # sanity check for runner issues or misconfigurations
     - run: npm test
 
   test-browsers-latest:
@@ -79,6 +79,7 @@ jobs:
             test/lib
           key: cache-${{ github.sha }}
           enableCrossOsArchive: true
+          fail-on-cache-miss: true # sanity check for runner issues or misconfigurations
 
       - name: Install dependencies
         # cannot use `--ignore-scripts` since playwright seems to use it to set ENV vars
