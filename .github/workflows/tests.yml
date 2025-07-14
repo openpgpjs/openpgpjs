@@ -63,8 +63,7 @@ jobs:
       matrix:
         # run on all main platforms to test platform-specific code, if present
         # (e.g. webkit's WebCrypto API implementation is different in macOS vs Linux)
-        # TODO: windows-latest fails to fetch resources from the wtr server; investigate if the problem is with path declaration or permissions
-        runner: ['ubuntu-latest', 'macos-latest']
+        runner: ['ubuntu-latest', 'macos-latest', 'windows-latest']
     runs-on: ${{ matrix.runner }}
 
     steps:
@@ -79,6 +78,7 @@ jobs:
             dist
             test/lib
           key: cache-${{ github.sha }}
+          enableCrossOsArchive: true
 
       - name: Install dependencies
         # cannot use `--ignore-scripts` since playwright seems to use it to set ENV vars
@@ -88,13 +88,15 @@ jobs:
 
       - name: Get Playwright version and cache location
         id: playwright-version
+        if: ${{ matrix.runner  != 'windows-latest' }} # setting env vars does not work in windows, it'd require custom handling
         run: |
-          PLAYWRIGHT_VERSION=$(npm ls playwright --depth=0 | grep playwright | sed 's/.*@//')
+          PLAYWRIGHT_VERSION=$(npx playwright --version | sed 's/^Version //')
           echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
           PLAYWRIGHT_CACHE=${{ fromJSON('{"ubuntu-latest": "~/.cache/ms-playwright", "macos-latest": "~/Library/Caches/ms-playwright"}')[matrix.runner] }}
           echo "playwright_cache=$PLAYWRIGHT_CACHE" >> $GITHUB_OUTPUT
       - name: Check for cached browsers
         id: cache-playwright-browsers
+        if: ${{ matrix.runner  != 'windows-latest' }}
         uses: actions/cache@v4
         with:
           path: ${{ steps.playwright-version.outputs.playwright_cache }}
