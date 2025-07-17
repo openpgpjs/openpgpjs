@@ -97,7 +97,7 @@ are stored as numerical indices.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L42">line 42</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L43">line 43</a>
     </li></ul></dd>
     
 
@@ -164,7 +164,7 @@ are stored as numerical indices.</p></div>
     
 
     
-    <h4 class="name" id=".fromBinary"><span class="type-signature">(async, static) </span>fromBinary<span class="signature">(bytes, allowedPackets, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="PacketList.html">PacketList</a>}</span></h4>
+    <h4 class="name" id=".fromBinary"><span class="type-signature">(async, static) </span>fromBinary<span class="signature">(bytes, allowedPackets, config<span class="signature-attributes">opt</span>, grammarValidator<span class="signature-attributes">opt</span>, delayErrors<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="PacketList.html">PacketList</a>}</span></h4>
     
 
     
@@ -200,6 +200,8 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
         <th>Attributes</th>
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -237,6 +239,10 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
             
 
             
+                <td class="default">
+                
+                </td>
+            
 
             <td class="description last"><p>binary data to parse</p></td>
         </tr>
@@ -267,6 +273,10 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
                 </td>
             
 
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>mapping where keys are allowed packet tags, pointing to their Packet class</p></td>
@@ -301,8 +311,90 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
             
 
             
+                <td class="default">
+                
+                </td>
+            
 
             <td class="description last"><p>full configuration, defaults to openpgp.config</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>grammarValidator</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    null
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delayErrors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>delay errors until the input stream has been read completely</p></td>
         </tr>
 
     
@@ -345,7 +437,7 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L53">line 53</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L56">line 56</a>
     </li></ul></dd>
     
 
@@ -530,7 +622,7 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L192">line 192</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L275">line 275</a>
     </li></ul></dd>
     
 
@@ -687,7 +779,7 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L211">line 211</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L294">line 294</a>
     </li></ul></dd>
     
 
@@ -859,7 +951,7 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L220">line 220</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L303">line 303</a>
     </li></ul></dd>
     
 
@@ -917,7 +1009,7 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
     
 
     
-    <h4 class="name" id="read"><span class="type-signature">(async) </span>read<span class="signature">(bytes, allowedPackets, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="read"><span class="type-signature">(async) </span>read<span class="signature">(bytes, allowedPackets, config<span class="signature-attributes">opt</span>, grammarValidator<span class="signature-attributes">opt</span>, delayErrors<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
     
@@ -952,6 +1044,8 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
         <th>Attributes</th>
         
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -989,6 +1083,10 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
             
 
             
+                <td class="default">
+                
+                </td>
+            
 
             <td class="description last"><p>binary data to parse</p></td>
         </tr>
@@ -1019,6 +1117,10 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
                 </td>
             
 
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>mapping where keys are allowed packet tags, pointing to their Packet class</p></td>
@@ -1053,8 +1155,90 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
             
 
             
+                <td class="default">
+                
+                </td>
+            
 
             <td class="description last"><p>full configuration, defaults to openpgp.config</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>grammarValidator</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    null
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>delayErrors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>delay errors until the input stream has been read completely</p></td>
         </tr>
 
     
@@ -1097,7 +1281,7 @@ Equivalent to calling <code>read</code> on an empty PacketList instance.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L67">line 67</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L72">line 72</a>
     </li></ul></dd>
     
 
@@ -1200,7 +1384,7 @@ class instance.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.1.0/src/packet/packetlist.js#L148">line 148</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.2.0/src/packet/packetlist.js#L231">line 231</a>
     </li></ul></dd>
     
 
