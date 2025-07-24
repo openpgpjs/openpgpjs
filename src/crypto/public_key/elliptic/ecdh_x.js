@@ -61,8 +61,7 @@ export async function generate(algo) {
 
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
-      const k = x448.utils.randomPrivateKey();
-      const A = x448.getPublicKey(k);
+      const { secretKey: k, publicKey: A } = x448.keygen();
       return { A, k };
     }
     default:
@@ -246,10 +245,9 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
       }
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
-      const ephemeralSecretKey = x448.utils.randomPrivateKey();
+      const { secretKey: ephemeralSecretKey, publicKey: ephemeralPublicKey } = x448.keygen();
       const sharedSecret = x448.getSharedSecret(ephemeralSecretKey, recipientA);
       assertNonZeroArray(sharedSecret);
-      const ephemeralPublicKey = x448.getPublicKey(ephemeralSecretKey);
       return { ephemeralPublicKey, sharedSecret };
     }
     default:

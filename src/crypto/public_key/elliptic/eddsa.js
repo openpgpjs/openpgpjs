@@ -67,8 +67,7 @@ export async function generate(algo) {
 
     case enums.publicKey.ed448: {
       const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
-      const seed = ed448.utils.randomPrivateKey();
-      const A = ed448.getPublicKey(seed);
+      const { secretKey: seed, publicKey: A } = ed448.keygen();
       return { A, seed };
     }
     default:
