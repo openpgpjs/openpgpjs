@@ -82,14 +82,19 @@ export async function generate(algo) {
 */
 export async function validateParams(algo, A, k) {
   switch (algo) {
-    case enums.publicKey.x25519: {
-      /**
-       * Derive public point A' from private key
-       * and expect A == A'
-       */
-      const { publicKey } = x25519.box.keyPair.fromSecretKey(k);
-      return util.equalsUint8Array(A, publicKey);
-    }
+    case enums.publicKey.x25519:
+      // Validation is typically not run for ECDH, since encryption subkeys are only validated
+      // for gnu-dummy keys.
+      // So, for simplicity, we do an encrypt-decrypt round even if WebCrypto support is not available
+      try {
+        const { ephemeralPublicKey, sharedSecret } = await generateEphemeralEncryptionMaterial(algo, A);
+        const recomputedSharedSecret = await recomputeSharedSecret(algo, ephemeralPublicKey, A, k);
+
+        return util.equalsUint8Array(sharedSecret, recomputedSharedSecret);
+      } catch (_) {
+        return false;
+      }
+
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
       /**

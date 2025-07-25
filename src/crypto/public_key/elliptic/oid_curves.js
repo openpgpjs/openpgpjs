@@ -26,7 +26,7 @@ import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
 import { UnsupportedError } from '../../../packet/packet';
 import { generate as eddsaGenerate } from './eddsa';
-import { generate as ecdhXGenerate } from './ecdh_x';
+import { generate as ecdhXGenerate, validateParams as ecdhXValidateParams } from './ecdh_x';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -252,17 +252,12 @@ async function validateStandardParams(algo, oid, Q, d) {
   }
 
   if (curveName === enums.curve.curve25519Legacy) {
-    d = d.slice().reverse();
-    // Re-derive public point Q'
-    const { publicKey } = nacl.box.keyPair.fromSecretKey(d);
-
-    Q = new Uint8Array(Q);
-    const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
-    if (!util.equalsUint8Array(dG, Q)) {
+    const dLittleEndian = d.slice().reverse();
+    // First byte is relevant for encoding purposes only
+    if (Q.length < 1 || Q[0] !== 0x40) {
       return false;
     }
-
-    return true;
+    return ecdhXValidateParams(enums.publicKey.x25519, Q.subarray(1), dLittleEndian);
   }
 
   const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curveName); // excluding curve25519Legacy, ecdh and ecdsa use the same curves

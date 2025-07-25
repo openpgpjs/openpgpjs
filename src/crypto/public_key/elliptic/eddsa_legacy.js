@@ -21,12 +21,11 @@
  * @module crypto/public_key/elliptic/eddsa_legacy
  */
 
-import nacl from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
 import { getHashByteLength } from '../../hash';
 import { CurveWithOID, checkPublicPointEnconding } from './oid_curves';
-import { sign as eddsaSign, verify as eddsaVerify } from './eddsa';
+import { sign as eddsaSign, verify as eddsaVerify, validateParams as eddsaValidateParams } from './eddsa';
 
 /**
  * Sign a message using the provided legacy EdDSA key
@@ -97,12 +96,9 @@ export async function validateParams(oid, Q, k) {
     return false;
   }
 
-  /**
-   * Derive public point Q' = dG from private key
-   * and expect Q == Q'
-   */
-  const { publicKey } = nacl.sign.keyPair.fromSeed(k);
-  const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
-  return util.equalsUint8Array(Q, dG);
-
+  // First byte is relevant for encoding purposes only
+  if (Q.length < 1 || Q[0] !== 0x40) {
+    return false;
+  }
+  return eddsaValidateParams(enums.publicKey.ed25519, Q.subarray(1), k);
 }
