@@ -187,11 +187,11 @@ If you notice missing or incorrect type definitions, feel free to open a PR.
 
 We recommend updating to the latest major library version as soon as possible to benefit from security and performance improvements.
 
-When releasing a new major version, we will announce the end of life date of the older one.
+When releasing a new major version, we will announce the end of life date of the previous one.
 
-For information about which library versions are deprecated, and will thus not receive further security patches, you can refer to our [npm release page](https://www.npmjs.com/package/openpgp?activeTab=versions) .
+For information about which library versions are deprecated, and will thus not receive further security patches, you can refer to our [npm release page](https://www.npmjs.com/package/openpgp?activeTab=versions).
 
-For guidance on how to update to the latest library version, see [this wiki page](https://github.com/openpgpjs/openpgpjs/wiki/Updating-from-previous-versions) .
+For guidance on how to update to the latest library version, see [this wiki page](https://github.com/openpgpjs/openpgpjs/wiki/Updating-from-previous-versions).
 
 ### Code examples
 
