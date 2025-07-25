@@ -13,7 +13,8 @@ OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)
         - [Deno (experimental)](#deno-experimental)
         - [Browser (webpack)](#browser-webpack)
         - [Browser (plain files)](#browser-plain-files)
-    - [Examples](#examples)
+    - [Updating from older versions of the library](#updating-from-older-versions-of-the-library)
+    - [Code examples](#code-examples)
         - [Encrypt and decrypt *Uint8Array* data with a password](#encrypt-and-decrypt-uint8array-data-with-a-password)
         - [Encrypt and decrypt *String* data with PGP keys](#encrypt-and-decrypt-string-data-with-pgp-keys)
         - [Encrypt symmetrically with compression](#encrypt-symmetrically-with-compression)
@@ -182,7 +183,17 @@ npm install --save-dev @openpgp/web-stream-tools
 
 If you notice missing or incorrect type definitions, feel free to open a PR.
 
-### Examples
+### Updating from older versions of the library
+
+We recommend updating to the latest major library version as soon as possible to benefit from security and performance improvements.
+
+When releasing a new major version, we will announce the end of life date of the older one.
+
+For information about which library versions are deprecated, and will thus not receive further security patches, you can refer to our [npm release page](https://www.npmjs.com/package/openpgp?activeTab=versions) .
+
+For guidance on how to update to the latest library version, see [this wiki page](https://github.com/openpgpjs/openpgpjs/wiki/Updating-from-previous-versions) .
+
+### Code examples
 
 Here are some examples of how to use OpenPGP.js v6. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/v6-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
