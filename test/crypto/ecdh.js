@@ -323,13 +323,56 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
+      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto').returns({
+        generateKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; },
+        importKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; }
+      });
       getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();
       getNodeCryptoStub && getNodeCryptoStub.restore();
     };
+
+    /**
+     * Test that the result of `encryptFunction` can be decrypted by `decryptFunction`
+     * with and without native crypto support.
+     * @param encryptFunction - `(data: Uint8Array) => encryptFunctionResult`
+     * @param decryptFunction - `(encryptFunctionResult) => <decryption result>`
+     * @param expectNative - whether native usage is expected for the algorithm
+     */
+    const testRountripWithAndWithoutNative = async (
+      encryptFunction,
+      decryptFunction, // (encryptFunctionResult) => decryption result
+      expectNative
+    ) => {
+      const nodeCrypto = util.getNodeCrypto();
+      const webCrypto = util.getWebCrypto();
+      const data = random.getRandomBytes(16);
+
+      const nativeSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH'); // functions used both for encryption and decryption
+      const nativeResult = await encryptFunction(data);
+      const expectedNativeEncryptCallCount = nativeSpy.callCount;
+      disableNative();
+      const nonNativeResult = await encryptFunction(data);
+      expect(nativeSpy.callCount).to.equal(expectedNativeEncryptCallCount); // assert that fallback implementation was called
+      if (expectNative) {
+        expect(nativeSpy.calledOnce).to.be.true;
+      }
+
+      enableNative();
+      expect(await decryptFunction(nativeResult)).to.deep.equal(data);
+      expect(await decryptFunction(nonNativeResult)).to.deep.equal(data);
+      const expectedNativeCallCount = nativeSpy.callCount;
+      disableNative();
+      expect(await decryptFunction(nativeResult)).to.deep.equal(data);
+      expect(await decryptFunction(nonNativeResult)).to.deep.equal(data);
+      expect(nativeSpy.callCount).to.equal(expectedNativeCallCount); // assert that fallback implementation was called
+      if (expectNative) {
+        expect(nativeSpy.callCount).to.equal(3); // one encryption + two decryptions
+      }
+    };
+
 
     allCurves.forEach(curveName => {
       it(`${curveName}`, async function () {
@@ -344,21 +387,27 @@ export default () => describe('ECDH key exchange @lightweight', function () {
         const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
         const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-        const data = random.getRandomBytes(16);
         const Q = key_data[curveName].pub;
         const d = key_data[curveName].priv;
-        const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
 
-        const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH');
-        expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-        const expectedNativeCallCount = nativeDecryptSpy.callCount;
-        disableNative();
-        expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-        expect(nativeDecryptSpy.callCount).to.equal(expectedNativeCallCount); // assert that fallback implementation was called
-        if (expectNativeWeb.has(curveName)) {
-          expect(nativeDecryptSpy.calledOnce).to.be.true;
-        }
+        await testRountripWithAndWithoutNative(
+          data => ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1),
+          encryptResult => ecdh.decrypt(oid, kdfParams, encryptResult.publicKey, encryptResult.wrappedKey, Q, d, fingerprint1),
+          expectNativeWeb.has(curveName) // all major browsers implement x25519
+        );
       });
+    });
+
+    it('Successful exchange x25519 (legacy)', async function () {
+      const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
+      const oid = new OID(curve.oid);
+      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+
+      await testRountripWithAndWithoutNative(
+        data => ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1),
+        encryptResult => ecdh.decrypt(oid, kdfParams, encryptResult.publicKey, encryptResult.wrappedKey, Q1, d1, fingerprint1),
+        false // all major browsers implement x25519, but webkit linux falls back due to bugs
+      );
     });
   });
 });

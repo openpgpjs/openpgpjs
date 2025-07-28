@@ -6,9 +6,8 @@
 import enums from '../enums';
 import util from '../util';
 
-const webCrypto = util.getWebCrypto();
-
 export default async function computeHKDF(hashAlgo, inputKey, salt, info, outLen) {
+  const webCrypto = util.getWebCrypto();
   const hash = enums.read(enums.webHash, hashAlgo);
   if (!hash) throw new Error('Hash algo not supported with HKDF');
 

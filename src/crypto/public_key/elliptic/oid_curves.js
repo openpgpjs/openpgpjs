@@ -19,7 +19,6 @@
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
  */
-import nacl from '@openpgp/tweetnacl';
 import enums from '../../../enums';
 import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';

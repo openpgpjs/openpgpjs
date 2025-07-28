@@ -2,7 +2,7 @@ import testBigInteger from './biginteger';
 import testCipher from './cipher';
 import testHash from './hash';
 import testCrypto from './crypto';
-import testElliptic from './elliptic';
+import testElliptic from './ecdsa_eddsa';
 import testBrainpoolRFC7027 from './brainpool_rfc7027';
 import testECDH from './ecdh';
 import testPKCS5 from './pkcs5';

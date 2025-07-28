@@ -20,10 +20,9 @@
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import ed25519 from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
-import { computeDigest, getHashByteLength } from '../../hash';
+import { getHashByteLength } from '../../hash';
 import { getRandomBytes } from '../../random';
 import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
 
@@ -59,7 +58,9 @@ export async function generate(algo) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         const seed = getRandomBytes(getPayloadSize(algo));
+        // not using `ed25519.sign.keyPair` since it returns the expanded secret, so using `fromSeed` instead is more straightforward
         const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
         return { A, seed };
       }
@@ -111,6 +112,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         const secretKey = util.concatUint8Array([privateKey, publicKey]);
         const signature = ed25519.sign.detached(hashed, secretKey);
         return { RS: signature };
@@ -157,6 +159,7 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         return ed25519.sign.detached.verify(hashed, RS, publicKey);
       }
 
@@ -203,7 +206,7 @@ export async function validateParams(algo, A, seed) {
         if (err.name !== 'NotSupportedError') {
           return false;
         }
-
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         const { publicKey } = ed25519.sign.keyPair.fromSeed(seed);
         return util.equalsUint8Array(A, publicKey);
       }
