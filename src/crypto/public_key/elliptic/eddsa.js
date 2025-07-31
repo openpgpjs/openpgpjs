@@ -20,7 +20,6 @@
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import ed25519 from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
 import { getHashByteLength } from '../../hash';
@@ -59,7 +58,9 @@ export async function generate(algo) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         const seed = getRandomBytes(getPayloadSize(algo));
+        // not using `ed25519.sign.keyPair` since it returns the expanded secret, so using `fromSeed` instead is more straightforward
         const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
         return { A, seed };
       }
@@ -111,6 +112,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         const secretKey = util.concatUint8Array([privateKey, publicKey]);
         const signature = ed25519.sign.detached(hashed, secretKey);
         return { RS: signature };
@@ -157,6 +159,7 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
         return ed25519.sign.detached.verify(hashed, RS, publicKey);
       }
 
@@ -179,15 +182,34 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
  */
 export async function validateParams(algo, A, seed) {
   switch (algo) {
-    case enums.publicKey.ed25519: {
-      /**
-       * Derive public point A' from private key
-       * and expect A == A'
-       * TODO: move to sign-verify using WebCrypto (same as ECDSA) when curve is more widely implemented
-       */
-      const { publicKey } = ed25519.sign.keyPair.fromSeed(seed);
-      return util.equalsUint8Array(A, publicKey);
-    }
+    case enums.publicKey.ed25519:
+      // If webcrypto support is available, we sign-verify random data, as the import-export
+      // functions might not implement validity checks.
+      // If we need to fallback to JS, we instead only re-derive the public key,
+      // as this is much faster than sign-verify.
+      try {
+        const webCrypto = util.getWebCrypto();
+        const jwkPrivate = privateKeyToJWK(algo, A, seed);
+        const jwkPublic = publicKeyToJWK(algo, A);
+
+        const privateCryptoKey = await webCrypto.importKey('jwk', jwkPrivate, 'Ed25519', false, ['sign']);
+        const publicCryptoKey = await webCrypto.importKey('jwk', jwkPublic, 'Ed25519', false, ['verify']);
+
+        const randomData = getRandomBytes(8);
+        const signature = new Uint8Array(
+          await webCrypto.sign('Ed25519', privateCryptoKey, randomData)
+        );
+
+        const verified = await webCrypto.verify('Ed25519', publicCryptoKey, signature, randomData);
+        return verified;
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          return false;
+        }
+        const { default: ed25519 } = await import('@openpgp/tweetnacl');
+        const { publicKey } = ed25519.sign.keyPair.fromSeed(seed);
+        return util.equalsUint8Array(A, publicKey);
+      }
 
     case enums.publicKey.ed448: {
       const ed448 = await util.getNobleCurve(enums.publicKey.ed448);

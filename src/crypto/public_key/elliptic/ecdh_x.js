@@ -3,9 +3,7 @@
  * @module crypto/public_key/elliptic/ecdh
  */
 
-import x25519 from '@openpgp/tweetnacl';
 import * as aesKW from '../../aes_kw';
-import { getRandomBytes } from '../../random';
 
 import enums from '../../../enums';
 import util from '../../../util';
@@ -55,9 +53,9 @@ export async function generate(algo) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: x25519 } = await import('@openpgp/tweetnacl');
         // k stays in little-endian, unlike legacy ECDH over curve25519
-        const k = getRandomBytes(32);
-        const { publicKey: A } = x25519.box.keyPair.fromSecretKey(k);
+        const { secretKey: k, publicKey: A } = x25519.box.keyPair();
         return { A, k };
       }
 
@@ -82,14 +80,19 @@ export async function generate(algo) {
 */
 export async function validateParams(algo, A, k) {
   switch (algo) {
-    case enums.publicKey.x25519: {
-      /**
-       * Derive public point A' from private key
-       * and expect A == A'
-       */
-      const { publicKey } = x25519.box.keyPair.fromSecretKey(k);
-      return util.equalsUint8Array(A, publicKey);
-    }
+    case enums.publicKey.x25519:
+      // Validation is typically not run for ECDH, since encryption subkeys are only validated
+      // for gnu-dummy keys.
+      // So, for simplicity, we do an encrypt-decrypt round even if WebCrypto support is not available
+      try {
+        const { ephemeralPublicKey, sharedSecret } = await generateEphemeralEncryptionMaterial(algo, A);
+        const recomputedSharedSecret = await recomputeSharedSecret(algo, ephemeralPublicKey, A, k);
+
+        return util.equalsUint8Array(sharedSecret, recomputedSharedSecret);
+      } catch (_) {
+        return false;
+      }
+
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
       /**
@@ -235,10 +238,10 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
-        const ephemeralSecretKey = getRandomBytes(getPayloadSize(algo));
+        const { default: x25519 } = await import('@openpgp/tweetnacl');
+        const { secretKey: ephemeralSecretKey, publicKey: ephemeralPublicKey } = x25519.box.keyPair();
         const sharedSecret = x25519.scalarMult(ephemeralSecretKey, recipientA);
         assertNonZeroArray(sharedSecret);
-        const { publicKey: ephemeralPublicKey } = x25519.box.keyPair.fromSecretKey(ephemeralSecretKey);
         return { ephemeralPublicKey, sharedSecret };
       }
     case enums.publicKey.x448: {
@@ -273,6 +276,7 @@ export async function recomputeSharedSecret(algo, ephemeralPublicKey, A, k) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
+        const { default: x25519 } = await import('@openpgp/tweetnacl');
         const sharedSecret = x25519.scalarMult(k, ephemeralPublicKey);
         assertNonZeroArray(sharedSecret);
         return sharedSecret;

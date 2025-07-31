@@ -90,8 +90,10 @@ async function generatePrivateKeyObject(options) {
 export default () => {
   describe('EdDSA parameter validation (legacy format)', function() {
     let eddsaKey;
+    let anotherEddsaKey;
     before(async () => {
       eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
+      anotherEddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
     });
 
     it('EdDSA params should be valid', async function() {
@@ -100,11 +102,10 @@ export default () => {
 
     it('detect invalid edDSA Q', async function() {
       const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
-      const Q = eddsaKeyPacket.publicParams.Q;
-      Q[0]++;
+      eddsaKeyPacket.publicParams.Q = anotherEddsaKey.keyPacket.publicParams.Q;
       await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
 
-      const infQ = new Uint8Array(Q.length);
+      const infQ = new Uint8Array(eddsaKeyPacket.publicParams.Q.length);
       eddsaKeyPacket.publicParams.Q = infQ;
       await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
@@ -198,13 +199,19 @@ export default () => {
     describe(`ECC ${curve} parameter validation`, () => {
       let ecdsaKey;
       let ecdhKey;
+      let anotherEcdsaKey;
+      let anotherEcdhKey;
       before(async () => {
         if (curve !== 'curve25519Legacy') {
           ecdsaKey = await generatePrivateKeyObject({ curve });
           ecdhKey = ecdsaKey.subkeys[0];
+          anotherEcdsaKey = await generatePrivateKeyObject({ curve });
+          anotherEcdhKey = anotherEcdsaKey.subkeys[0];
         } else {
           const eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
           ecdhKey = eddsaKey.subkeys[0];
+          const anotherEddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
+          anotherEcdhKey = anotherEddsaKey.subkeys[0];
         }
       });
 
@@ -220,10 +227,9 @@ export default () => {
           this.skip();
         }
         const keyPacket = await cloneKeyPacket(ecdsaKey);
-        const Q = keyPacket.publicParams.Q;
-        Q[16]++;
+        keyPacket.publicParams.Q = anotherEcdsaKey.keyPacket.publicParams.Q;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
-        const infQ = new Uint8Array(Q.length);
+        const infQ = new Uint8Array(anotherEcdsaKey.keyPacket.publicParams.Q.length);
         infQ[0] = 4;
         keyPacket.publicParams.Q = infQ;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -235,11 +241,10 @@ export default () => {
 
       it(`ECDH ${curve} - detect invalid Q`, async function() {
         const keyPacket = await cloneKeyPacket(ecdhKey);
-        const Q = keyPacket.publicParams.Q;
-        Q[16]++;
+        keyPacket.publicParams.Q = anotherEcdhKey.keyPacket.publicParams.Q;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
 
-        const infQ = new Uint8Array(Q.length);
+        const infQ = new Uint8Array(keyPacket.publicParams.Q.length);
         keyPacket.publicParams.Q = infQ;
         infQ[0] = 4;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -252,9 +257,13 @@ export default () => {
     describe(`Ed${curveID}/X${curveID} parameter validation`, function() {
       let eddsaKey;
       let ecdhXKey;
+      let anotherEddsaKey;
+      let anotherEcdhXKey;
       before(async () => {
         eddsaKey = await generatePrivateKeyObject({ type: `curve${curveID}` });
         ecdhXKey = eddsaKey.subkeys[0];
+        anotherEddsaKey = await generatePrivateKeyObject({ type: `curve${curveID}` });
+        anotherEcdhXKey = anotherEddsaKey.subkeys[0];
       });
 
       it(`Ed${curveID} params should be valid`, async function() {
@@ -263,11 +272,10 @@ export default () => {
 
       it(`detect invalid Ed${curveID} public point`, async function() {
         const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
-        const A = eddsaKeyPacket.publicParams.A;
-        A[0]++;
+        eddsaKeyPacket.publicParams.A = anotherEddsaKey.keyPacket.publicParams.A;
         await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
 
-        const infA = new Uint8Array(A.length);
+        const infA = new Uint8Array(eddsaKeyPacket.publicParams.A.length);
         eddsaKeyPacket.publicParams.A = infA;
         await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
       });
@@ -278,11 +286,10 @@ export default () => {
 
       it(`detect invalid X${curveID} public point`, async function() {
         const ecdhXKeyPacket = await cloneKeyPacket(ecdhXKey);
-        const A = ecdhXKeyPacket.publicParams.A;
-        A[0]++;
+        ecdhXKeyPacket.publicParams.A = anotherEcdhXKey.keyPacket.publicParams.A;
         await expect(ecdhXKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
 
-        const infA = new Uint8Array(A.length);
+        const infA = new Uint8Array(ecdhXKeyPacket.publicParams.A.length);
         ecdhXKeyPacket.publicParams.A = infA;
         await expect(ecdhXKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
       });
@@ -291,8 +298,10 @@ export default () => {
 
   describe('RSA parameter validation', function() {
     let rsaKey;
+    let anotherRsaKey;
     before(async () => {
       rsaKey = await generatePrivateKeyObject({ type: 'rsa', rsaBits: 2048 });
+      anotherRsaKey = await generatePrivateKeyObject({ type: 'rsa', rsaBits: 2048 });
     });
 
     it('generated RSA params are valid', async function() {
@@ -301,15 +310,14 @@ export default () => {
 
     it('detect invalid RSA n', async function() {
       const keyPacket = await cloneKeyPacket(rsaKey);
-      const n = keyPacket.publicParams.n;
-      n[0]++;
+      keyPacket.publicParams.n = anotherRsaKey.keyPacket.publicParams.n;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
     it('detect invalid RSA e', async function() {
       const keyPacket = await cloneKeyPacket(rsaKey);
       const e = keyPacket.publicParams.e;
-      e[0]++;
+      e[0]++; // e is hard-coded so we don't take it from `anotherRsaKey`
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
   });

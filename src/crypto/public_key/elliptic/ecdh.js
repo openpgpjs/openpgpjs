@@ -30,9 +30,6 @@ import * as pkcs5 from '../../pkcs5';
 import { getCipherParams } from '../../cipher';
 import { generateEphemeralEncryptionMaterial as ecdhXGenerateEphemeralEncryptionMaterial, recomputeSharedSecret as ecdhXRecomputeSharedSecret } from './ecdh_x';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
-
 /**
  * Validate ECDH parameters
  * @param {module:type/oid} oid - Elliptic curve object identifier
@@ -238,6 +235,7 @@ async function jsPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
+  const webCrypto = util.getWebCrypto();
   const recipient = privateToJWK(curve.payloadSize, curve.web, Q, d);
   let privateKey = webCrypto.importKey(
     'jwk',
@@ -289,6 +287,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
+  const webCrypto = util.getWebCrypto();
   const jwk = rawPublicToJWK(curve.payloadSize, curve.web, Q);
   let keyPair = webCrypto.generateKey(
     {
@@ -338,6 +337,7 @@ async function webPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function nodePrivateEphemeralKey(curve, V, d) {
+  const nodeCrypto = util.getNodeCrypto();
   const recipient = nodeCrypto.createECDH(curve.node);
   recipient.setPrivateKey(d);
   const sharedKey = new Uint8Array(recipient.computeSecret(V));
@@ -354,6 +354,7 @@ async function nodePrivateEphemeralKey(curve, V, d) {
  * @async
  */
 async function nodePublicEphemeralKey(curve, Q) {
+  const nodeCrypto = util.getNodeCrypto();
   const sender = nodeCrypto.createECDH(curve.node);
   sender.generateKeys();
   const sharedKey = new Uint8Array(sender.computeSecret(Q));
