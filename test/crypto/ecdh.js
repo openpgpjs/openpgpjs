@@ -91,13 +91,13 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_invalid_point, secp256k1_data, []
     )).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|bad point/).notify(done);
   });
-  it('Invalid key data integrity', function (done) {
+  it('Invalid key data integrity', async function () {
     if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip();
     }
-    expect(decrypt_message(
+    await expect(decrypt_message(
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_point, secp256k1_data, []
-    )).to.be.rejectedWith(/Key Data Integrity failed/).notify(done);
+    )).to.be.rejectedWith(/Key Data Integrity faile|Invalid padding/); // invalid padding thrown by webkit on Windows
   });
 
   const Q1 = new Uint8Array([
@@ -160,7 +160,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
     await expect(
       ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint1)
-    ).to.be.rejectedWith(/Key Data Integrity failed/);
+    ).to.be.rejectedWith(/Key Data Integrity failed|Invalid padding/); // invalid padding thrown by webkit on Windows
   });
 
   it('Invalid fingerprint', async function () {
@@ -171,7 +171,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q2, fingerprint1);
     await expect(
       ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint2)
-    ).to.be.rejectedWith(/Key Data Integrity failed/);
+    ).to.be.rejectedWith(/Key Data Integrity failed|Invalid padding/); // invalid padding thrown by webkit on Windows
   });
 
   it('Successful exchange x25519 (legacy)', async function () {
