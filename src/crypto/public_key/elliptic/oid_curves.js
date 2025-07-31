@@ -297,7 +297,7 @@ export {
 //////////////////////////
 async function jsGenKeyPair(name) {
   const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, name); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
-  const privateKey = nobleCurve.utils.randomPrivateKey();
+  const { secretKey: privateKey } = nobleCurve.keygen();
   const publicKey = nobleCurve.getPublicKey(privateKey, false);
   return { publicKey, privateKey };
 }
