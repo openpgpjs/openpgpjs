@@ -36,7 +36,7 @@ export class CleartextMessage {
    * @param {Signature} signature - The detached signature or an empty signature for unsigned messages
    */
   constructor(text, signature) {
-    // remove trailing whitespace from each line
+    // remove trailing whitespace from each line and normalize line endings to LF
     this.text = util.removeTrailingSpaces(text);
     if (signature && !(signature instanceof Signature)) {
       throw new Error('Invalid signature input');
