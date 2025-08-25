@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true, // tested by tsx
+  },
+  "files": ["definitions.ts"]
+}
