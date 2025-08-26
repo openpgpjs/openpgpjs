@@ -7,6 +7,12 @@
   "engines": {
     "node": ">= 18.0.0"
   },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=22.0.0"
+    }
+  },
   "keywords": [
     "crypto",
     "pgp",
@@ -21,31 +27,30 @@
   },
   "exports": {
     ".": {
-      "types": "./openpgp.d.ts",
+      "types": "./dist/types/index.d.ts",
       "browser": "./dist/openpgp.min.mjs",
       "import": "./dist/node/openpgp.mjs",
       "require": "./dist/node/openpgp.min.cjs"
     },
     "./lightweight": {
-      "types": "./openpgp.d.ts",
+      "types": "./dist/types/index.d.ts",
       "browser": "./dist/lightweight/openpgp.min.mjs"
     }
   },
-  "types": "openpgp.d.ts",
+  "types": "dist/types/index.d.ts",
   "type": "module",
   "directories": {
     "lib": "src"
   },
   "files": [
     "dist/",
-    "lightweight/",
-    "openpgp.d.ts",
-    "**/*.d.ts"
+    "lightweight/"
   ],
   "scripts": {
     "build": "rollup --config",
+    "build-types": "rm -rf dist/types && tsc --project tsconfig.dist.json && cpy 'src/**/*.d.ts' dist/types",
     "build-test": "npm run build -- --config-build-only=test",
-    "prepare": "npm run build",
+    "prepare": "npm run build && npm run build-types",
     "test": "mocha --timeout 120000 test/unittests.js",
     "test-type-definitions": "tsc --project test/typescript/tsconfig.test.json && tsx test/typescript/definitions.ts",
     "benchmark-time": "node test/benchmarks/time.js",
@@ -93,6 +98,7 @@
     "c8": "^10.1.3",
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
+    "cpy-cli": "^6.0.0",
     "eckey-utils": "^0.7.14",
     "eslint": "^9.39.3",
     "eslint-import-resolver-typescript": "^4.4.4",

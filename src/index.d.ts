@@ -10,8 +10,8 @@
  */
 
 import type { WebStream as GenericWebStream, NodeWebStream as GenericNodeWebStream } from '@openpgp/web-stream-tools';
-import enums from './src/enums.ts';
-import config, { type Config, type PartialConfig } from './src/config.ts';
+import enums from './enums.ts';
+import config, { type Config, type PartialConfig } from './config.ts';
 
 export { enums, config, Config, PartialConfig };
 
@@ -24,6 +24,8 @@ export type NodeWebStream<T extends Data> = GenericNodeWebStream<T>;
 export type Stream<T extends Data> = WebStream<T> | NodeWebStream<T>;
 export type MaybeStream<T extends Data> = T | Stream<T>;
 type MaybeArray<T> = T | Array<T>;
+/** @dev this type is needed since jsdoc/better-doc fail to parse it when inlined as return type */
+type StreamedIfStream<T extends MaybeStream<Data>, DataType extends Data> = T extends Stream<Data> ? WebStream<DataType> : DataType;
 
 /* ############## KEY #################### */
 // The Key and PublicKey types can be used interchangably since TS cannot detect the difference, as they have the same class properties.
@@ -303,7 +305,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data that is the body of the message
    */
-  public getLiteralData(): (T extends Stream<Data> ? WebStream<Uint8Array> : Uint8Array) | null;
+  public getLiteralData(): StreamedIfStream<T, Uint8Array> | null;
 
   /** Returns the key IDs of the keys that signed the message
    */
@@ -311,7 +313,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data as text
    */
-  public getText(): (T extends Stream<Data> ? WebStream<string> : string) | null;
+  public getText(): StreamedIfStream<T, string> | null;
 
   public getFilename(): string | null;
 
