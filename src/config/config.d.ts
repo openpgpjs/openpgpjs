@@ -34,6 +34,7 @@ export interface Config {
   s2kIterationCountByte: number;
   s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
   maxUserIDLength: number;
+  maxDecompressedMessageSize: number;
   knownNotations: string[];
   useEllipticFallback: boolean;
   rejectHashAlgorithms: Set<enums.hash>;
