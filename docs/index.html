@@ -59,7 +59,8 @@
 <li><a href="#browser-plain-files">Browser (plain files)</a></li>
 </ul>
 </li>
-<li><a href="#examples">Examples</a>
+<li><a href="#updating-from-older-versions-of-the-library">Updating from older versions of the library</a></li>
+<li><a href="#code-examples">Code examples</a>
 <ul>
 <li><a href="#encrypt-and-decrypt-uint8array-data-with-a-password">Encrypt and decrypt <em>Uint8Array</em> data with a password</a></li>
 <li><a href="#encrypt-and-decrypt-string-data-with-pgp-keys">Encrypt and decrypt <em>String</em> data with PGP keys</a></li>
@@ -270,7 +271,12 @@ import * as openpgp from './openpgp.min.mjs';
 <pre class="prettyprint source lang-sh"><code>npm install --save-dev @openpgp/web-stream-tools
 </code></pre>
 <p>If you notice missing or incorrect type definitions, feel free to open a PR.</p>
-<h3 id="examples">Examples</h3>
+<h3 id="updating-from-older-versions-of-the-library">Updating from older versions of the library</h3>
+<p>We recommend updating to the latest major library version as soon as possible to benefit from security and performance improvements.</p>
+<p>When releasing a new major version, we will announce the end of life date of the previous one.</p>
+<p>For information about which library versions are deprecated, and will thus not receive further security patches, you can refer to our <a href="https://www.npmjs.com/package/openpgp?activeTab=versions">npm release page</a>.</p>
+<p>For guidance on how to update to the latest library version, see <a href="https://github.com/openpgpjs/openpgpjs/wiki/Updating-from-previous-versions">this wiki page</a>.</p>
+<h3 id="code-examples">Code examples</h3>
 <p>Here are some examples of how to use OpenPGP.js v6. For more elaborate examples and working code, please check out the <a href="https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js">public API unit tests</a>. If you're upgrading from v4 it might help to check out the <a href="https://github.com/openpgpjs/openpgpjs/wiki/v6-Changelog">changelog</a> and <a href="https://github.com/openpgpjs/openpgpjs#documentation">documentation</a>.</p>
 <h4 id="encrypt-and-decrypt-uint8array-data-with-a-password">Encrypt and decrypt <em>Uint8Array</em> data with a password</h4>
 <p>Encryption will use the algorithm specified in config.preferredSymmetricAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.</p>
