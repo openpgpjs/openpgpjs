@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import { isArrayStream, toStream, fromAsync as streamFromAsync, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
+import { isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -115,8 +115,22 @@ class CompressedDataPacket {
       throw new Error(`${compressionName} decompression not supported`);
     }
 
+    let decompressed = await decompressionFn(this.compressed);
+    if (config.maxDecompressedMessageSize !== Infinity) {
+      let decompressedSize = 0;
+      decompressed = streamTransform(decompressed, chunk => {
+        decompressedSize += chunk.length;
+        if (decompressedSize > config.maxDecompressedMessageSize) {
+          throw new Error('Maximum decompressed message size exceeded');
+        }
+        return chunk;
+      });
+    }
+    if (isArrayStream(this.compressed)) {
+      decompressed = await streamReadToEnd(decompressed);
+    }
     // Decompressing a Compressed Data packet MUST also yield a valid OpenPGP Message
-    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config, new MessageGrammarValidator());
+    this.packets = await PacketList.fromBinary(decompressed, allowedPackets, config, new MessageGrammarValidator());
   }
 
   /**
@@ -213,11 +227,7 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
 function bzip2Decompress() {
   return async function(data) {
     const { default: unbzip2Stream } = await import('@openpgp/unbzip2-stream');
-    let decompressed = unbzip2Stream(toStream(data));
-    if (isArrayStream(data)) {
-      decompressed = await streamReadToEnd(decompressed);
-    }
-    return decompressed;
+    return unbzip2Stream(toStream(data));
   };
 }
 
