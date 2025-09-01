@@ -219,9 +219,9 @@ import {
   } catch (err) {}
   const webTextStream = new WebReadableStream<string>();
   const messageFromWebTextStream = await createMessage({ text: webTextStream });
-  (await encrypt({ message: messageFromWebTextStream, passwords: 'password', format: 'armored' })) as WebStream<string>;
   messageFromWebTextStream.getText() as WebStream<string>;
   messageFromWebTextStream.getLiteralData() as WebStream<Uint8Array>;
+  (await encrypt({ message: messageFromWebTextStream, passwords: 'password', format: 'armored' })) as WebStream<string>;
 
   // Streaming - encrypt binary message (binary output)
   try {
@@ -231,9 +231,9 @@ import {
   } catch (err) {}
   const webBinaryStream = new WebReadableStream<Uint8Array>();
   const messageFromWebBinaryStream = await createMessage({ binary: webBinaryStream });
-  (await encrypt({ message: messageFromWebBinaryStream, passwords: 'password', format: 'binary' })) as WebStream<Uint8Array>;
   messageFromWebBinaryStream.getText() as WebStream<string>;
   messageFromWebBinaryStream.getLiteralData() as WebStream<Uint8Array>;
+  (await encrypt({ message: messageFromWebBinaryStream, passwords: 'password', format: 'binary' })) as WebStream<Uint8Array>;
 
   console.log('TypeScript definitions are correct');
 })().catch(e => {

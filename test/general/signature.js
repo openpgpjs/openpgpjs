@@ -988,12 +988,12 @@ AkLaG/AkATpuH+DMkYDmKbDLGgD+N4yuxXBJmBfC2IBe4J1S2Gg=
       format: 'object'
     });
     await loadStreamsPolyfill();
-    const { signatures: [sigInfo] } = await openpgp.verify({
+    const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
       config: { minRSABits: 1024 }
-
     });
+    await stream.readToEnd(data);
     await expect(sigInfo.verified).to.be.rejectedWith(/Primary key is expired/);
   });
 
@@ -1019,11 +1019,12 @@ aMsUdQBgnPAcSGVsbG8gV29ybGQgOik=
       format: 'object'
     });
     await loadStreamsPolyfill();
-    const { signatures: [sigInfo] } = await openpgp.verify({
+    const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
       config: { minRSABits: 1024 }
     });
+    await stream.readToEnd(data);
     await expect(sigInfo.verified).to.be.rejectedWith(/Primary key is expired/);
   });
 
@@ -1049,11 +1050,12 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       format: 'object'
     });
     await loadStreamsPolyfill();
-    const { signatures: [sigInfo] } = await openpgp.verify({
+    const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
       config: { minRSABits: 1024 }
     });
+    await stream.readToEnd(data);
     expect(await sigInfo.verified).to.be.true;
   });
 
@@ -1078,11 +1080,12 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       date: key.keyPacket.created,
       format: 'object'
     });
-    const { signatures: [sigInfo] } = await openpgp.verify({
+    const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage }),
       config: { minRSABits: 1024 }
     });
+    await stream.readToEnd(data);
     expect(await sigInfo.verified).to.be.true;
   });
 
