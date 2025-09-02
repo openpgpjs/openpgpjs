@@ -3698,6 +3698,26 @@ XfA3pqV4mTzF
             });
           });
 
+          it('should encrypt and decrypt with one password (larger message)', async function () {
+            const largerPlaintext = new Uint8Array(100_000);
+            const encOpt = modifyCompressionEncryptOptions({
+              message: await openpgp.createMessage({ binary: largerPlaintext }),
+              passwords: password1
+            });
+            const decOpt = {
+              passwords: password1,
+              format: 'binary'
+            };
+            return openpgp.encrypt(encOpt).then(async function (encrypted) {
+              decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
+              return openpgp.decrypt(decOpt);
+            }).then(function (decrypted) {
+              expect(util.equalsUint8Array(decrypted.data, largerPlaintext)).to.be.true;
+              expect(decrypted.signatures.length).to.equal(0);
+              verifyCompressionDecrypted(decrypted);
+            });
+          });
+
           it('Streaming encrypt and decrypt small message roundtrip', async function() {
             const plaintext = [];
             let i = 0;
