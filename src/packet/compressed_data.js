@@ -151,8 +151,12 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
       return streamFromAsync(() => streamReadToEnd(data).then(inputData => {
         return new Promise((resolve, reject) => {
           const zlibStream = new ZlibStreamedConstructor();
-          zlibStream.ondata = processedData => {
-            resolve(processedData);
+          const processedChunks = [];
+          zlibStream.ondata = (processedData, final) => {
+            processedChunks.push(processedData);
+            if (final) {
+              resolve(util.concatUint8Array(processedChunks));
+            }
           };
           try {
             zlibStream.push(inputData, true); // only one chunk to push
