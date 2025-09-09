@@ -54,3 +54,9 @@ updates:
         update-types: # major updates will trigger non-grouped MRs
           - "minor"
           - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    prefix: "CI"
