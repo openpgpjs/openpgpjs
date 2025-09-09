@@ -10,16 +10,15 @@ updates:
       interval: "daily"
     allow:
       - dependency-name: "playwright"
-    versioning-strategy: increase
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    allow:
       - dependency-name: "@noble*"
       - dependency-name: "fflate"
     versioning-strategy: increase
+    cooldown: # consider updates only X days after release
+      semver-major-days: 7
+      semver-minor-days: 1
+      semver-patch-days: 1
+      include:
+        - "*"
     groups:
       # Any packages matching the pattern @noble* where the highest resolvable
       # version is minor or patch will be grouped together.
@@ -31,3 +30,27 @@ updates:
         update-types:
         - "minor"
         - "patch"
+  # update other dependencies separately on a monthly basis
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    ignore: # targeted by other schedule above
+      - dependency-name: "playwright"
+      - dependency-name: "@noble*"
+      - dependency-name: "fflate"
+    versioning-strategy: increase
+    cooldown: # consider updates only X days after release
+      semver-major-days: 30
+      semver-minor-days: 3
+      semver-patch-days: 3
+      include:
+        - "*"
+    groups:
+      dev-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types: # major updates will trigger non-grouped MRs
+          - "minor"
+          - "patch"
