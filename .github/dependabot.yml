@@ -59,4 +59,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    prefix: "CI"
+    commit-message:
+      prefix: "CI"
