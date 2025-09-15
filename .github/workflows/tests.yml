@@ -153,7 +153,7 @@ jobs:
           key: cache-${{ github.sha }}
 
       - name: Wait for other Browserstack tests to finish
-        uses: softprops/turnstyle@v1
+        uses: softprops/turnstyle@v3
         with:
           poll-interval-seconds: 30
           abort-after-seconds: 900
