@@ -26,7 +26,7 @@ export function newPacketFromTag(tag, allowedPackets) {
     let packetType;
     try {
       packetType = enums.read(enums.packet, tag);
-    } catch (e) {
+    } catch {
       throw new UnknownPacketError(`Unknown packet type with tag: ${tag}`);
     }
     throw new Error(`Packet not allowed in this context: ${packetType}`);
@@ -174,7 +174,7 @@ class PacketList extends Array {
           // in case there's an MDC error, which should take precedence.
           if (unauthenticatedError) {
             await reader.readToEnd();
-            // eslint-disable-next-line @typescript-eslint/no-throw-literal
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
             throw unauthenticatedError;
           }
 

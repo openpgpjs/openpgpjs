@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 declare namespace enums {
   export function read(type: typeof armor, e: armor): armorNames;
   export function read(type: typeof compression, e: compression): compressionNames;

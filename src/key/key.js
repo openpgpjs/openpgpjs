@@ -442,7 +442,7 @@ class Key {
       } else {
         primaryKeyExpiry = selfSigKeyExpiry < selfSigExpiry ? selfSigKeyExpiry : selfSigExpiry;
       }
-    } catch (e) {
+    } catch {
       primaryKeyExpiry = null;
     }
 
@@ -510,7 +510,7 @@ class Key {
       }
     }
     if (!users.length) {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw exception || new Error('Could not find primary user');
     }
     await Promise.all(users.map(async function (a) {
@@ -751,8 +751,7 @@ class Key {
 }
 
 ['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
-  Key.prototype[name] =
-  Subkey.prototype[name];
+  Key.prototype[name] = Subkey.prototype[name];
 });
 
 export default Key;

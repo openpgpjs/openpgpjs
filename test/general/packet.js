@@ -35,7 +35,7 @@ export default () => describe('Packet', function() {
   const allAllowedPackets = util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]);
 
   const armored_key =
-      '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+    '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
       'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
       '\n' +
       'lQH+BFF79J8BBADDhRUOMUSGdYM1Kq9J/vVS3qLfaZHweycAKm9SnpLGLJE+Qbki\n' +
@@ -434,7 +434,7 @@ export default () => describe('Packet', function() {
 
   it('Sym. encrypted session key with a compressed packet', async function() {
     const msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'jA0ECQMCpo7I8WqsebTJ0koBmm6/oqdHXJU9aPe+Po+nk/k4/PZrLmlXwz2lhqBg\n' +
@@ -520,7 +520,7 @@ export default () => describe('Packet', function() {
 
   it('Secret key packet (reading, unencrypted)', async function() {
     const armored_key =
-        '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'lQHYBFF33iMBBAC9YfOYahJlWrVj2J1TjQiZLunWljI4G9e6ARTyD99nfOkV3swh\n' +
@@ -563,7 +563,7 @@ export default () => describe('Packet', function() {
 
   it('Public key encrypted packet (reading, GPG)', async function() {
     const armored_key =
-        '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'lQHYBFF6gtkBBADKUOWZK6/V75MNwBS+hLYicoS0Sojbo3qWXXpS7eM+uhiDm4bP\n' +
@@ -598,7 +598,7 @@ export default () => describe('Packet', function() {
         '-----END PGP PRIVATE KEY BLOCK-----';
 
     const armored_msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'hIwDFYET+7bfx/ABA/95Uc9942Tg8oqpO0vEu2eSKwPALM3a0DrVdAiFOIK/dJmZ\n' +
@@ -934,7 +934,7 @@ export default () => describe('Packet', function() {
 
   it('Secret key encryption/decryption test', async function() {
     const armored_msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'hIwD95D9aHS5fxEBA/98CwH54XZmwobOmHUcvWcDDQysBEC4uf7wASiGcRbejDaO\n' +
@@ -976,7 +976,7 @@ export default () => describe('Packet', function() {
 
   it('Reading a signed, encrypted message.', async function() {
     const armored_msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'hIwD95D9aHS5fxEBA/4/X4myvH+jB1HYNeZvdK+WsBNDMfLsBGOf205Rxr3vSob/\n' +
@@ -1016,8 +1016,7 @@ export default () => describe('Packet', function() {
   });
 
   it('Reading signersUserID from armored signature', async function() {
-    const armoredSignature =
-`-----BEGIN PGP SIGNATURE-----
+    const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
 iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
 QG1ldGFjb2RlLmJpegAKCRBrpV7YOrrhuw1PB/9KhFRR/M3OR6NmIent6ri1ekWn
@@ -1035,8 +1034,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
   });
 
   it('Reading notations from armored key', async function() {
-    const pubkey =
-`-----BEGIN PGP PUBLIC KEY BLOCK-----
+    const pubkey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQENBFzQOToBCADd0Pwh8edZ6gR3x49L1PaBPtiAQUr1QDUDWeNes8co5MTFl5hG
 lHzptt+VD0JGucuIkvi34f5z2ZbInAV/xYDX3kSYefy6LB8XJD527I/o9bqY1P7T

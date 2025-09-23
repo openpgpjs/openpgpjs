@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, @typescript-eslint/indent */
+/* eslint-disable @stylistic/indent */
 
 /**
  * Type definitions for OpenPGP.js http://openpgpjs.org/
@@ -411,7 +411,7 @@ export class AEADEncryptedDataPacket extends BasePacket {
   static readonly tag: enums.packet.aeadEncryptedData;
   private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
   private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
-  private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>;
+  private crypt(fn: (block: Uint8Array) => Uint8Array, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>;
 }
 
 export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {

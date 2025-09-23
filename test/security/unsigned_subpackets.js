@@ -61,7 +61,7 @@ async function makeKeyValid() {
         encryptionKeys: k
       });
       return false;
-    } catch (e) {
+    } catch {
       return true;
     }
   }

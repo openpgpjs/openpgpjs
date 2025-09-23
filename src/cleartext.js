@@ -189,7 +189,7 @@ function verifyHeaders(headers, packetlist) {
         .map(hashName => {
           try {
             return enums.write(enums.hash, hashName.toLowerCase());
-          } catch (e) {
+          } catch {
             throw new Error('Unknown hash algorithm in armor header: ' + hashName.toLowerCase());
           }
         });

@@ -1,4 +1,7 @@
+/* global require */
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable no-console */
+
 import assert from 'assert';
 import path from 'path';
 import { writeFileSync, unlinkSync } from 'fs';

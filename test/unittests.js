@@ -54,7 +54,7 @@ describe('Unit Tests', function () {
         openpgp.config[key] = decodeURIComponent(value);
         try {
           openpgp.config[key] = window.eval(openpgp.config[key]); // eslint-disable-line no-eval
-        } catch (e) {}
+        } catch {}
       }
     });
   } else {

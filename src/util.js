@@ -30,7 +30,7 @@ import defaultConfig from './config';
 const debugMode = (() => {
   try {
     return process.env.NODE_ENV === 'development'; // eslint-disable-line no-process-env
-  } catch (e) {}
+  } catch {}
   return false;
 })();
 
@@ -606,7 +606,7 @@ const util = {
       try {
         error.message += ': ' + cause.message;
         error.cause = cause;
-      } catch (e) {}
+      } catch {}
       return error;
     }
     return new Error(error + ': ' + cause.message, { cause });

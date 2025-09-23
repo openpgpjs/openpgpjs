@@ -161,7 +161,7 @@ export async function validateParams(oid, Q, d) {
         const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
         // eslint-disable-next-line @typescript-eslint/return-await
         return await verify(oid, hashAlgo, signature, message, Q, hashed);
-      } catch (err) {
+      } catch {
         return false;
       }
     }
@@ -284,7 +284,7 @@ async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
 
   try {
     return verify.verify({ key: derPublicKey, format: 'der', type: 'spki', dsaEncoding: 'ieee-p1363' }, signature);
-  } catch (err) {
+  } catch {
     return false;
   }
 }

@@ -143,7 +143,7 @@ class CurveWithOID {
       this.name = oidOrName instanceof OID ?
         oidOrName.getName() :
         enums.write(enums.curve,oidOrName);
-    } catch (err) {
+    } catch {
       throw new UnsupportedError('Unknown curve');
     }
     const params = curves[this.name];

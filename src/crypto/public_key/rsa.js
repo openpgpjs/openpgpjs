@@ -333,7 +333,7 @@ async function nodeVerify(hashAlgo, data, s, n, e) {
 
   try {
     return verify.verify(key, s);
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -361,7 +361,7 @@ async function nodeDecrypt(data, n, e, d, p, q, u) {
 
   try {
     return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
-  } catch (err) {
+  } catch {
     throw new Error('Decryption error');
   }
 }

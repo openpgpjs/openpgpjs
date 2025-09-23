@@ -112,7 +112,7 @@ class Subkey {
     let bindingSignature;
     try {
       bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-    } catch (e) {
+    } catch {
       return null;
     }
     const keyExpiry = helper.getKeyExpirationTime(this.keyPacket, bindingSignature);
@@ -153,7 +153,7 @@ class Subkey {
       try {
         await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, date, undefined, config);
         return true;
-      } catch (e) {
+      } catch {
         return false;
       }
     });

@@ -220,7 +220,7 @@ export class Message {
             if (selfCertification.preferredSymmetricAlgorithms) {
               algos = algos.concat(selfCertification.preferredSymmetricAlgorithms);
             }
-          } catch (e) {}
+          } catch {}
 
           await Promise.all(decryptionKeyPackets.map(async function(decryptionKeyPacket) {
             if (!decryptionKeyPacket.isDecrypted()) {
@@ -460,7 +460,7 @@ export class Message {
         try {
           await keyPacket.decrypt(password);
           return 1;
-        } catch (e) {
+        } catch {
           return 0;
         }
       };

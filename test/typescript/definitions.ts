@@ -16,7 +16,7 @@ import {
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
-  WebStream, NodeWebStream,
+  WebStream, NodeWebStream
 } from 'openpgp';
 
 (async () => {
@@ -47,7 +47,7 @@ import {
   const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
   expect(parsedBinaryPrivateKey.isPrivate()).to.be.true;
   // a generic Key can be directly used as PublicKey, since both classes have the same properties
-  // eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const unusedPublicKey: PublicKey = parsedKey;
 
   // Check PrivateKey type inference
@@ -55,23 +55,23 @@ import {
     expect(parsedKey.isDecrypted()).to.be.true;
   } else {
     // @ts-expect-error isDecrypted is not defined for public keys
-    try { parsedKey.isDecrypted(); } catch (e) {}
+    try { parsedKey.isDecrypted(); } catch {}
   }
   (await privateKey.update(privateKey)).isDecrypted();
   (await privateKey.toPublic().update(privateKey)).isDecrypted();
   // @ts-expect-error isDecrypted is not defined for public keys
-  try { (await privateKey.toPublic().update(privateKey.toPublic())).isDecrypted(); } catch (e) {}
+  try { (await privateKey.toPublic().update(privateKey.toPublic())).isDecrypted(); } catch {}
 
   // Revoke keys
   await revokeKey({ key: privateKey });
   // @ts-expect-error for missing revocation certificate
-  try { await revokeKey({ key: publicKey }); } catch (e) {}
+  try { await revokeKey({ key: publicKey }); } catch {}
   const { privateKey: revokedPrivateKey, publicKey: revokedPublicKey } = await revokeKey({ key: privateKey, revocationCertificate, format: 'object' });
   expect(revokedPrivateKey).to.be.instanceOf(PrivateKey);
   expect(revokedPublicKey).to.be.instanceOf(PublicKey);
   const revokedKeyPair = await revokeKey({ key: publicKey, revocationCertificate, format: 'object' });
   // @ts-expect-error for null private key
-  try { revokedKeyPair.privateKey.armor(); } catch (e) {}
+  try { revokedKeyPair.privateKey.armor(); } catch {}
   expect(revokedKeyPair.privateKey).to.be.null;
   expect(revokedKeyPair.publicKey).to.be.instanceOf(PublicKey);
 
@@ -123,16 +123,16 @@ import {
   const verifiedCleartextData: string = verificationResult.data;
   expect(verifiedCleartextData).to.equal(cleartextMessage.getText());
   // @ts-expect-error Binary output not available for cleartext messages
-  try { await verify({ message: cleartextMessage, verificationKeys: publicKey, format: 'binary' }) } catch (e) {}
+  try { await verify({ message: cleartextMessage, verificationKeys: publicKey, format: 'binary' }) } catch {}
 
   const clearSignedArmor = await sign({ signingKeys: privateKeys, message: cleartextMessage });
   expect(clearSignedArmor).to.include('-----BEGIN PGP SIGNED MESSAGE-----');
   const clearSignedObject: CleartextMessage = await sign({ signingKeys: privateKeys, message: cleartextMessage, format: 'object' });
   expect(clearSignedObject).to.be.instanceOf(CleartextMessage);
   // @ts-expect-error PublicKey not assignable to PrivateKey
-  try { await sign({ signingKeys: publicKeys, message: cleartextMessage }); } catch (e) {}
+  try { await sign({ signingKeys: publicKeys, message: cleartextMessage }); } catch {}
   // @ts-expect-error Key not assignable to PrivateKey
-  try { await sign({ signingKeys: parsedKey, message: cleartextMessage }); } catch (e) {}
+  try { await sign({ signingKeys: parsedKey, message: cleartextMessage }); } catch {}
 
   // Sign text message (armored)
   const textSignedArmor: string = await sign({ signingKeys: privateKeys, message: textMessage });
@@ -147,12 +147,15 @@ import {
   expect(textSignedObject).to.be.instanceOf(Message);
 
   // Sign text message (armored)
-  const textSignedWithNotations: string = await sign({ signingKeys: privateKeys, message: textMessage, signatureNotations: [{
-    name: 'test@example.org',
-    value: new TextEncoder().encode('test'),
-    humanReadable: true,
-    critical: false
-  }] });
+  const textSignedWithNotations: string = await sign({
+    signingKeys: privateKeys,
+    message: textMessage,
+    signatureNotations: [{
+      name: 'test@example.org',
+      value: new TextEncoder().encode('test'),
+      humanReadable: true,
+      critical: false
+    }] });
   expect(textSignedWithNotations).to.include('-----BEGIN PGP MESSAGE-----');
 
   // Verify signed text message (armored)
@@ -176,7 +179,7 @@ import {
   // @ts-expect-error for unsafe downcasting
   packets.map((packet: LiteralDataPacket) => packet.getText());
   // @ts-expect-error for non-packet element
-  try { new PacketList().push(1); } catch (e) {}
+  try { new PacketList().push(1); } catch {}
 
   // Packetlist of specific type
   const literalPackets = new PacketList<LiteralDataPacket>();
@@ -210,13 +213,13 @@ import {
   await createMessage({ binary: new WebReadableStream<string>() });
   // @ts-expect-error for passing binary stream as text data
   await createMessage({ text: new WebReadableStream<Uint8Array>() });
-  
+
   // Streaming - encrypt text message (armored output)
   try {
     const nodeTextStream = NodeNativeReadableStream.toWeb(createReadStream('non-existent-file', { encoding: 'utf8' }));
     const messageFromNodeTextStream = await createMessage({ text: nodeTextStream });
     (await encrypt({ message: messageFromNodeTextStream, passwords: 'password', format: 'armored' })) as NodeWebStream<string>;
-  } catch (err) {}
+  } catch {}
   const webTextStream = new WebReadableStream<string>();
   const messageFromWebTextStream = await createMessage({ text: webTextStream });
   (await encrypt({ message: messageFromWebTextStream, passwords: 'password', format: 'armored' })) as WebStream<string>;
@@ -228,7 +231,7 @@ import {
     const nodeBinaryStream = NodeNativeReadableStream.toWeb(createReadStream('non-existent-file'));
     const messageFromNodeBinaryStream = await createMessage({ binary: nodeBinaryStream });
     (await encrypt({ message: messageFromNodeBinaryStream, passwords: 'password', format: 'binary' })) as NodeWebStream<Uint8Array>;
-  } catch (err) {}
+  } catch {}
   const webBinaryStream = new WebReadableStream<Uint8Array>();
   const messageFromWebBinaryStream = await createMessage({ binary: webBinaryStream });
   (await encrypt({ message: messageFromWebBinaryStream, passwords: 'password', format: 'binary' })) as WebStream<Uint8Array>;
@@ -239,5 +242,6 @@ import {
 })().catch(e => {
   console.error('TypeScript definitions tests failed by throwing the following error');
   console.error(e);
+  // eslint-disable-next-line no-process-exit
   process.exit(1);
 });
