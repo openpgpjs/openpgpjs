@@ -53,10 +53,11 @@ class PaddingPacket {
    * Create random padding.
    * @param {Number} length - The length of padding to be generated.
    * @throws {Error} if padding generation was not successful
-   * @async
+   * @async needed to avoid breaking change until next major release
    */
+  // eslint-disable-next-line @typescript-eslint/require-await
   async createPadding(length) {
-    this.padding = await getRandomBytes(length);
+    this.padding = getRandomBytes(length);
   }
 }
 

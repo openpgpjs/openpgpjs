@@ -227,8 +227,7 @@ function removeChecksum(text) {
  * @static
  */
 export function unarmor(input) {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     try {
       const reSplit = /^-----[^-]+-----$/m;
       const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;

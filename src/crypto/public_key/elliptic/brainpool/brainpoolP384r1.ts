@@ -4,7 +4,6 @@ import { Field } from '@noble/curves/abstract/modular';
 
 // brainpoolP384 r1: https://datatracker.ietf.org/doc/html/rfc5639#section-3.6
 
-// eslint-disable-next-line new-cap
 const Fp = Field(BigInt('0x8cb91e82a3386d280f5d6f7e50e641df152f7109ed5456b412b1da197fb71123acd3a729901d1a71874700133107ec53'));
 const CURVE_A = Fp.create(BigInt('0x7bc382c63d8c150c3c72080ace05afa0c2bea28e4fb22787139165efba91f90f8aa5814a503ad4eb04a8c7dd22ce2826'));
 const CURVE_B = BigInt('0x04a8c7dd22ce28268b39b55416f0447c2fb77de107dcd2a62e880ea53eeb62d57cb4390295dbc9943ab78696fa504c11');

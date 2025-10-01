@@ -186,7 +186,7 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
 
     return new ReadableStream({
       async start(controller) {
-        zlibStream.ondata = async (value, isLast) => {
+        zlibStream.ondata = (value, isLast) => {
           controller.enqueue(value);
           if (isLast) {
             controller.close();

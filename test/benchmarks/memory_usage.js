@@ -108,7 +108,7 @@ class MemoryBenchamrkSuite {
  * Memory usage tests.
  * All the necessary variables must be declared inside the test function.
  */
-(async () => {
+void (async () => {
   const suite = new MemoryBenchamrkSuite();
 
   suite.add('empty test (baseline)', () => {});

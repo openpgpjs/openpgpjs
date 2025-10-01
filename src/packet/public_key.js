@@ -101,7 +101,7 @@ class PublicKeyPacket {
   /**
    * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
    * @param {Uint8Array} bytes - Input array to read the packet from
-   * @returns {Object} This object with attributes set by the parser
+   * @returns {Promise<number>} The number of bytes read from `bytes`
    * @async
    */
   async read(bytes, config = defaultConfig) {
@@ -284,12 +284,14 @@ class PublicKeyPacket {
  * Alias of read()
  * @see PublicKeyPacket#read
  */
+// eslint-disable-next-line @typescript-eslint/unbound-method
 PublicKeyPacket.prototype.readPublicKey = PublicKeyPacket.prototype.read;
 
 /**
  * Alias of write()
  * @see PublicKeyPacket#write
  */
+// eslint-disable-next-line @typescript-eslint/unbound-method
 PublicKeyPacket.prototype.writePublicKey = PublicKeyPacket.prototype.write;
 
 export default PublicKeyPacket;

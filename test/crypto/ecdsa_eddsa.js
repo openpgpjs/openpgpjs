@@ -112,6 +112,7 @@ export default () => describe('ECC signatures', function () {
     });
     it('Creating KeyPair', function () {
       if (!config.useEllipticFallback && !util.getNodeCrypto()) {
+        // eslint-disable-next-line no-invalid-this
         this.skip();
       }
       const names = config.useEllipticFallback ? ['nistP256', 'nistP384', 'nistP521', 'secp256k1', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
@@ -235,6 +236,7 @@ export default () => describe('ECC signatures', function () {
     });
     it('secp256k1 - Invalid public key', async function () {
       if (!config.useEllipticFallback && !util.getNodeCrypto()) {
+        // eslint-disable-next-line no-invalid-this
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
       await expect(verify_signature(
@@ -249,6 +251,7 @@ export default () => describe('ECC signatures', function () {
     });
     it('secp256k1 - Invalid signature', function (done) {
       if (!config.useEllipticFallback && !util.getNodeCrypto()) {
+        // eslint-disable-next-line no-invalid-this
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
       expect(verify_signature(

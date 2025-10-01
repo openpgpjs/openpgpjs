@@ -48,6 +48,7 @@ async function OMAC(key) {
 
 async function CTR(key) {
   if (util.getNodeCrypto()) { // Node crypto library
+    // eslint-disable-next-line @typescript-eslint/require-await
     return async function(pt, iv) {
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-ctr', key, iv);
       const ct = Buffer.concat([en.update(pt), en.final()]);
@@ -72,6 +73,7 @@ async function CTR(key) {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   return async function(pt, iv) {
     return nobleAesCtr(key, iv).encrypt(pt);
   };

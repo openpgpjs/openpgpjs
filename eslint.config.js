@@ -12,7 +12,7 @@ import pluginUnicorn from 'eslint-plugin-unicorn';
 
 export default defineConfig(
   eslint.configs.recommended,
-  tseslint.configs.recommended,
+  tseslint.configs.recommendedTypeChecked,
   globalIgnores(['dist/', 'test/lib/', 'docs/', '.jsdocrc.cjs']),
   {
     languageOptions: {
@@ -89,7 +89,7 @@ export default defineConfig(
       'prefer-spread': 'off', // TODO get rid of this
       'prefer-template': 'off',
       'quote-props': 'off',
-      'quotes': ['error', 'single', { 'avoidEscape': true }],
+      'quotes': 'off', // superseded by @stylistic/quotes
       'spaced-comment': 'off',
       'indent': 'off',
       'no-unused-vars': 'off',
@@ -132,6 +132,17 @@ export default defineConfig(
       '@typescript-eslint/no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': ['error', { 'allowShortCircuit': true }],
       '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'with-single-extends' }],
+      'no-invalid-this': 'error',
+      'require-await': 'off', // superseded by @typescript-eslint/require-await
+
+      '@typescript-eslint/no-unsafe-call': 'off', // function call to fn with `any` type
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      'prefer-promise-reject-errors': 'off',
+      '@typescript-eslint/prefer-promise-reject-errors': 'off',
 
       '@stylistic/indent': ['error', 2, { 'SwitchCase': 1 }],
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],

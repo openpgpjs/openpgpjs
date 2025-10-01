@@ -60,7 +60,7 @@ export default () => it('Does not trust subkeys without Primary Key Binding Sign
     fakeBindingSignature // faked key binding
   );
   let fakeKey = new PublicKey(newList);
-  fakeKey = await readKey({ armoredKey: await fakeKey.toPublic().armor() });
+  fakeKey = await readKey({ armoredKey: fakeKey.toPublic().armor() });
   const verifyAttackerIsBatman = await openpgp.verify({
     message: await readCleartextMessage({ cleartextMessage: signed }),
     verificationKeys: fakeKey

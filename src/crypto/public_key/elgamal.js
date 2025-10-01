@@ -35,6 +35,7 @@ const _1n = BigInt(1);
  * @returns {Promise<{ c1: Uint8Array, c2: Uint8Array }>}
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function encrypt(data, p, g, y) {
   p = uint8ArrayToBigInt(p);
   g = uint8ArrayToBigInt(g);
@@ -64,6 +65,7 @@ export async function encrypt(data, p, g, y) {
  * @throws {Error} on decryption error, unless `randomPayload` is given
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function decrypt(c1, c2, p, x, randomPayload) {
   c1 = uint8ArrayToBigInt(c1);
   c2 = uint8ArrayToBigInt(c2);
@@ -76,17 +78,18 @@ export async function decrypt(c1, c2, p, x, randomPayload) {
 
 /**
  * Validate ElGamal parameters
- * @param {Uint8Array} p - ElGamal prime
- * @param {Uint8Array} g - ElGamal group generator
- * @param {Uint8Array} y - ElGamal public key
- * @param {Uint8Array} x - ElGamal private exponent
+ * @param {Uint8Array} pBytes - ElGamal prime
+ * @param {Uint8Array} gBytes - ElGamal group generator
+ * @param {Uint8Array} yBytes - ElGamal public key
+ * @param {Uint8Array} xBytes - ElGamal private exponent
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
-export async function validateParams(p, g, y, x) {
-  p = uint8ArrayToBigInt(p);
-  g = uint8ArrayToBigInt(g);
-  y = uint8ArrayToBigInt(y);
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function validateParams(pBytes, gBytes, yBytes, xBytes) {
+  const p = uint8ArrayToBigInt(pBytes);
+  const g = uint8ArrayToBigInt(gBytes);
+  const y = uint8ArrayToBigInt(yBytes);
 
   // Check that 1 < g < p
   if (g <= _1n || g >= p) {
@@ -132,7 +135,7 @@ export async function validateParams(p, g, y, x) {
    *
    * Blinded exponentiation computes g**{r(p-1) + x} to compare to y
    */
-  x = uint8ArrayToBigInt(x);
+  const x = uint8ArrayToBigInt(xBytes);
   const r = getRandomBigInteger(_2n << (pSize - _1n), _2n << pSize); // draw r of same size as p-1
   const rqx = (p - _1n) * r + x;
   if (y !== modExp(g, rqx, p)) {

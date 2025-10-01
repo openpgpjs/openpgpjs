@@ -29,7 +29,7 @@ import defaultConfig from './config';
 
 const debugMode = (() => {
   try {
-    return process.env.NODE_ENV === 'development'; // eslint-disable-line no-process-env
+    return process.env.NODE_ENV === 'development';
   } catch {}
   return false;
 })();
@@ -255,7 +255,7 @@ const util = {
    */
   encodeUTF8: function (str) {
     const encoder = new TextEncoder('utf-8');
-    // eslint-disable-next-line no-inner-declarations
+
     function process(value, lastChunk = false) {
       return encoder.encode(value, { stream: !lastChunk });
     }
@@ -269,7 +269,7 @@ const util = {
    */
   decodeUTF8: function (utf8) {
     const decoder = new TextDecoder('utf-8');
-    // eslint-disable-next-line no-inner-declarations
+
     function process(value, lastChunk = false) {
       return decoder.decode(value, { stream: !lastChunk });
     }
@@ -638,17 +638,17 @@ const util = {
    *                          or rejected with the Error of the last resolved Promise (if all promises are rejected)
    */
   anyPromise: function(promises) {
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       let exception;
-      await Promise.all(promises.map(async promise => {
+      void Promise.all(promises.map(async promise => {
         try {
           resolve(await promise);
         } catch (e) {
           exception = e;
         }
-      }));
-      reject(exception);
+      })).then(() => {
+        reject(exception);
+      });
     });
   },
 

@@ -168,7 +168,7 @@ class PrivateKey extends PublicKey {
         throw new Error('Cannot validate an all-gnu-dummy key');
       }
 
-      return Promise.all(keys.map(async key => key.keyPacket.validate()));
+      return Promise.all(keys.map(key => key.keyPacket.validate()));
     }
   }
 

@@ -209,8 +209,9 @@ function verifyHeaders(headers, packetlist) {
  * @param {Object} options
  * @param {String} options.text
  * @static
- * @async
+ * @async not necessary, but needed to align with createMessage
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function createCleartextMessage({ text, ...rest }) {
   if (!text) {
     throw new Error('createCleartextMessage: must pass options object containing `text`');

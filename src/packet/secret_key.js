@@ -51,7 +51,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = null;
     /**
      * S2K usage
-     * @type {enums.symmetric}
+     * @type {number}
      */
     this.s2kUsage = 0;
     /**

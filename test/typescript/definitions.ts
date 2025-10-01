@@ -218,10 +218,12 @@ import {
   try {
     const nodeTextStream = NodeNativeReadableStream.toWeb(createReadStream('non-existent-file', { encoding: 'utf8' }));
     const messageFromNodeTextStream = await createMessage({ text: nodeTextStream });
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     (await encrypt({ message: messageFromNodeTextStream, passwords: 'password', format: 'armored' })) as NodeWebStream<string>;
   } catch {}
   const webTextStream = new WebReadableStream<string>();
   const messageFromWebTextStream = await createMessage({ text: webTextStream });
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   (await encrypt({ message: messageFromWebTextStream, passwords: 'password', format: 'armored' })) as WebStream<string>;
   messageFromWebTextStream.getText() as WebStream<string>;
   messageFromWebTextStream.getLiteralData() as WebStream<Uint8Array>;
@@ -230,10 +232,12 @@ import {
   try {
     const nodeBinaryStream = NodeNativeReadableStream.toWeb(createReadStream('non-existent-file'));
     const messageFromNodeBinaryStream = await createMessage({ binary: nodeBinaryStream });
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     (await encrypt({ message: messageFromNodeBinaryStream, passwords: 'password', format: 'binary' })) as NodeWebStream<Uint8Array>;
   } catch {}
   const webBinaryStream = new WebReadableStream<Uint8Array>();
   const messageFromWebBinaryStream = await createMessage({ binary: webBinaryStream });
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   (await encrypt({ message: messageFromWebBinaryStream, passwords: 'password', format: 'binary' })) as WebStream<Uint8Array>;
   messageFromWebBinaryStream.getText() as WebStream<string>;
   messageFromWebBinaryStream.getLiteralData() as WebStream<Uint8Array>;

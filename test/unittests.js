@@ -53,7 +53,7 @@ describe('Unit Tests', function () {
       if (key && key !== 'grep') {
         openpgp.config[key] = decodeURIComponent(value);
         try {
-          openpgp.config[key] = window.eval(openpgp.config[key]); // eslint-disable-line no-eval
+          openpgp.config[key] = window.eval(openpgp.config[key]);
         } catch {}
       }
     });

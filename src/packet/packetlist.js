@@ -49,7 +49,7 @@ class PacketList extends Array {
    * @param {Object} [config] - full configuration, defaults to openpgp.config
    * @param {function(enums.packet[], boolean, Object): void} [grammarValidator]
    * @param {Boolean} [delayErrors] - delay errors until the input stream has been read completely
-   * @returns {PacketList} parsed list of packets
+   * @returns {Promise<PacketList>} parsed list of packets
    * @throws on parsing errors
    * @async
    */

@@ -194,8 +194,11 @@ class OnePassSignaturePacket {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/unbound-method
 OnePassSignaturePacket.prototype.hash = SignaturePacket.prototype.hash;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 OnePassSignaturePacket.prototype.toHash = SignaturePacket.prototype.toHash;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 OnePassSignaturePacket.prototype.toSign = SignaturePacket.prototype.toSign;
 
 export default OnePassSignaturePacket;

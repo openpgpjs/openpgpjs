@@ -513,8 +513,10 @@ class Key {
       // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw exception || new Error('Could not find primary user');
     }
-    await Promise.all(users.map(async function (a) {
-      return a.selfCertification.revoked || a.user.isRevoked(a.selfCertification, null, date, config);
+    // Update `revoked` status, whose value is discarded here but used below;
+    // see https://github.com/openpgpjs/openpgpjs/issues/880 for Promise.all motivation
+    await Promise.all(users.map(async a => {
+      a.selfCertification.revoked || await a.user.isRevoked(a.selfCertification, null, date, config);
     }));
     // sort by primary user flag and signature creation time
     const primaryUser = users.sort(function(a, b) {

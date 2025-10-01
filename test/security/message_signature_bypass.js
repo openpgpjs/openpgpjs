@@ -84,12 +84,12 @@ async function fakeSignature() {
   });
   // read the standalone signature packet
   const tmp = new SignaturePacket();
-  await tmp.read(STANDALONE_PKT);
+  tmp.read(STANDALONE_PKT);
 
   // replace the "text" signature with the
   // "standalone" signature
   fake.signature.packets[0] = tmp;
-  const faked_armored = await fake.armor();
+  const faked_armored = fake.armor();
   // re-read the message to eliminate any
   // behaviour due to cached values.
   fake = await readCleartextMessage({ cleartextMessage: faked_armored });

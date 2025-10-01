@@ -23,7 +23,7 @@ const onError = err => {
  * Time benchmark tests.
  * NB: each test will be run multiple times, so any input must be consumable multiple times.
  */
-(async () => {
+void (async () => {
   const suite = new Benchmark.Suite();
   const { armoredKey, privateKey, publicKey, armoredEncryptedMessage, armoredSignedMessage } = await getTestData();
   function* largeDataGenerator({ chunk, numberOfChunks }) {

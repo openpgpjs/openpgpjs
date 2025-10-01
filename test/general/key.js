@@ -2272,7 +2272,7 @@ function versionSpecificTests() {
       expect(selfSignature.features).to.eql([expectedFeatures]);
     };
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello', format: 'object' };
-    return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
+    return openpgp.generateKey(opt).then(({ privateKey, publicKey }) => {
       testPref(privateKey);
       testPref(publicKey);
     });
@@ -3023,8 +3023,8 @@ export default () => describe('Key', function() {
     // ssb   cv25519 2019-03-20 [E]
     //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
     const key = await openpgp.readKey({ armoredKey: v5_sample_key, config: { enableParsingV5Entities: true } });
-    expect(await key.keyPacket.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
-    expect(await key.subkeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
+    expect(key.keyPacket.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
+    expect(key.subkeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
     await key.verifyPrimaryKey();
   });
 
@@ -3482,7 +3482,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
     expect(pubKeyV4).to.exist;
 
     expect(pubKeyV4.getKeyID().toHex()).to.equal('4a63613a4d6e4094');
-    expect(await pubKeyV4.getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
+    expect(pubKeyV4.getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
   });
 
   it('Create new key ID with fromID()', async function() {
@@ -3503,7 +3503,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
     );
 
     const subkeyPackets = [packetlist[8], packetlist[11]];
-    const subkeys = await pubKey.getSubkeys();
+    const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;
     expect(subkeys).to.have.length(2);
     expect(subkeys[0].getKeyID().equals(subkeyPackets[0].getKeyID())).to.be.true;

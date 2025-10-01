@@ -49,11 +49,10 @@ const nodeAlgos = {
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
  * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
  * @returns {Promise<Uint8Array>} Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
- * @async
  */
-export async function getPrefixRandom(algo) {
+export function getPrefixRandom(algo) {
   const { blockSize } = getCipherParams(algo);
-  const prefixrandom = await getRandomBytes(blockSize);
+  const prefixrandom = getRandomBytes(blockSize);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   return util.concat([prefixrandom, repeat]);
 }
@@ -156,7 +155,10 @@ class WebCryptoEncryptor {
     this.zeroBlock = new Uint8Array(this.blockSize);
   }
 
-  static async isSupported(algo) {
+  /**
+   * @returns {Promise<boolean>}
+   */
+  static isSupported(algo) {
     const { keySize } = getCipherParams(algo);
     return webCrypto.importKey('raw', new Uint8Array(keySize), 'aes-cbc', false, ['encrypt'])
       .then(() => true, () => false);
@@ -283,6 +285,7 @@ class NobleStreamProcessor {
     return dst;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async processChunk(value) {
     const missing = this.nextBlock.length - this.i;
     const added = value.subarray(0, missing);
@@ -321,6 +324,7 @@ class NobleStreamProcessor {
     return processedBlock;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async finish() {
     let result;
     if (this.i === 0) { // nothing more to encrypt
@@ -354,7 +358,7 @@ async function aesEncrypt(algo, key, pt, iv) {
   return nobleAesCfb(key, iv).encrypt(pt);
 }
 
-async function aesDecrypt(algo, key, ct, iv) {
+function aesDecrypt(algo, key, ct, iv) {
   if (util.isStream(ct)) {
     const cfb = new NobleStreamProcessor(false, algo, key, iv);
     return streamTransform(ct, value => cfb.processChunk(value), () => cfb.finish());

@@ -336,7 +336,7 @@ async function webPublicEphemeralKey(curve, Q) {
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
-async function nodePrivateEphemeralKey(curve, V, d) {
+function nodePrivateEphemeralKey(curve, V, d) {
   const nodeCrypto = util.getNodeCrypto();
   const recipient = nodeCrypto.createECDH(curve.node);
   recipient.setPrivateKey(d);
@@ -353,7 +353,7 @@ async function nodePrivateEphemeralKey(curve, V, d) {
  * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
-async function nodePublicEphemeralKey(curve, Q) {
+function nodePublicEphemeralKey(curve, Q) {
   const nodeCrypto = util.getNodeCrypto();
   const sender = nodeCrypto.createECDH(curve.node);
   sender.generateKeys();
