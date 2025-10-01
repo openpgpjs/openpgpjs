@@ -88,6 +88,7 @@
     "@web/test-runner-playwright": "^0.11.1",
     "argon2id": "^1.0.1",
     "benchmark": "^2.1.4",
+    "better-docs": "^2.7.3",
     "bn.js": "^5.2.2",
     "c8": "^10.1.3",
     "chai": "^4.5.0",

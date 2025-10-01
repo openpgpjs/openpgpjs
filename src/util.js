@@ -449,9 +449,10 @@ const util = {
     return webCrypto;
   },
 
+  /** @typedef {import('node:crypto')} NodeCrypto */
   /**
    * Get native Node.js crypto api.
-   * @returns {Object} The crypto module or 'undefined'.
+   * @returns {NodeCrypto} The crypto module or 'undefined'.
    */
   getNodeCrypto: function() {
     return this.nodeRequire('crypto');
