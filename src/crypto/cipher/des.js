@@ -1,3 +1,4 @@
+/** @access private */
 //Paul Tero, July 2001
 //http://www.tero.co.uk/des/
 //

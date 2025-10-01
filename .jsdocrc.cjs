@@ -20,5 +20,9 @@ module.exports = {
     },
     source: {
         includePattern: "\\.(js|ts)$",
+        include: ['src/', 'README.md']
+    },
+    opts: {
+        recurse: true,
     },
 };

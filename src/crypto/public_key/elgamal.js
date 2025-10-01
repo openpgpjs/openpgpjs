@@ -18,6 +18,7 @@
 /**
  * @fileoverview ElGamal implementation
  * @module crypto/public_key/elgamal
+ * @access private
  */
 import { getRandomBigInteger } from '../random';
 import { emeEncode, emeDecode } from '../pkcs1';

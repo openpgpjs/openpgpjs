@@ -18,6 +18,7 @@
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @module crypto/public_key/elliptic/ecdh
+ * @access private
  */
 
 import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves';

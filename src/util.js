@@ -20,6 +20,7 @@
 /**
  * This object contains utility functions
  * @module util
+ * @access private
  */
 
 import { concat as streamConcat, transform as streamTransform, concatUint8Array, isStream, isUint8Array } from '@openpgp/web-stream-tools';

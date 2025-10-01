@@ -1,6 +1,7 @@
 /**
  * @fileoverview Provides functions for asymmetric signing and signature verification
  * @module crypto/signature
+ * @access private
  */
 
 import { elliptic, rsa, dsa } from './public_key';

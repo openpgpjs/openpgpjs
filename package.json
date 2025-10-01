@@ -57,7 +57,7 @@
     "test-browserstack": "web-test-runner --config test/web-test-runner.browserstack.config.js",
     "coverage": "c8 npm test",
     "lint": "eslint .",
-    "docs": "jsdoc --configure .jsdocrc.cjs --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
+    "docs": "jsdoc --configure .jsdocrc.cjs --destination docs && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
     "preversion": "rm -rf dist docs node_modules && npm ci && npm test",
     "version": "npm run docs && git add -A docs",
     "postversion": "git push --follow-tags && npm publish"
@@ -98,6 +98,7 @@
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsdoc": "^60.7.0",
     "eslint-plugin-unicorn": "^48.0.1",
     "fflate": "^0.8.2",
     "globals": "^16.4.0",
