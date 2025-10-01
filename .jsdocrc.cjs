@@ -1,7 +1,10 @@
 const pkg = require('./package.json');
 
 module.exports = {
-    plugins: ['plugins/markdown'],
+    plugins: [
+        'plugins/markdown',
+        'node_modules/better-docs/typedef-import'
+    ],
     markdown: {
         idInHeadings: true
     },
