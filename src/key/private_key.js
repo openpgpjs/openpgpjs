@@ -1,3 +1,5 @@
+/** @access public */
+
 import PublicKey from './public_key';
 import { armor } from '../encoding/armor';
 import {

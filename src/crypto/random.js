@@ -20,6 +20,7 @@
 /**
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @module crypto/random
+ * @access private
  */
 import { byteLength, mod, uint8ArrayToBigInt } from './biginteger';
 import util from '../util';

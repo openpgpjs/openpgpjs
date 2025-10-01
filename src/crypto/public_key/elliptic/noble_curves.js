@@ -1,4 +1,5 @@
 /**
+ * @access private
  * This file is needed to dynamic import the noble-curves.
  * Separate dynamic imports are not convenient as they result in too many chunks,
  * which share a lot of code anyway.

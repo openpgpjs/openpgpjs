@@ -1,4 +1,5 @@
 /**
+ * @access public
  * Export high level API functions.
  * Usage:
  *

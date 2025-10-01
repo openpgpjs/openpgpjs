@@ -18,6 +18,7 @@
 /**
  * @fileoverview Functions for reading and writing packets
  * @module packet/packet
+ * @access private
  */
 
 import { ArrayStream, getWriter as streamGetWriter } from '@openpgp/web-stream-tools';

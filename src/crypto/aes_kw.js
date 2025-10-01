@@ -19,6 +19,7 @@
  * @fileoverview Implementation of RFC 3394 AES Key Wrap & Key Unwrap funcions
  * @see module:crypto/public_key/elliptic/ecdh
  * @module crypto/aes_kw
+ * @access private
  */
 
 import { aeskw as nobleAesKW } from '@noble/ciphers/aes';

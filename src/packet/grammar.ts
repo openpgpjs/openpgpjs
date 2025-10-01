@@ -1,3 +1,4 @@
+/** @access private */
 import enums from '../enums';
 
 export class GrammarError extends Error {
@@ -27,6 +28,7 @@ enum MessageType {
  * - `recordPacket` must be called for each packet in the sequence; the function will throw as soon as
  *  an invalid packet is detected.
  * - `recordEnd` must be called at the end of the packet sequence to confirm its validity.
+ * @access private
  */
 export class MessageGrammarValidator {
   // PDA validator inspired by https://blog.jabberhead.tk/2022/10/26/implementing-packet-sequence-validation-using-pushdown-automata/ .

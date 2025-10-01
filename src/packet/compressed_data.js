@@ -1,3 +1,5 @@
+/** @access public */
+
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -144,6 +146,7 @@ export default CompressedDataPacket;
  * @param {function(): CompressionStream|function(): DecompressionStream} compressionStreamInstantiator
  * @param {FunctionConstructor} ZlibStreamedConstructor - fflate constructor
  * @returns {ReadableStream<Uint8Array>} compressed or decompressed data
+ * @private
  */
 function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
   return data => {
@@ -220,6 +223,7 @@ function bzip2Decompress() {
  * (supported formats cannot be determined in advance).
  * @param {'deflate-raw'|'deflate'|'gzip'|string} compressionFormat
  * @returns {{ compressor: function(): CompressionStream | false, decompressor: function(): DecompressionStream | false }}
+ * @private
  */
 const getCompressionStreamInstantiators = compressionFormat => ({
   compressor: typeof CompressionStream !== 'undefined' && (() => new CompressionStream(compressionFormat)),

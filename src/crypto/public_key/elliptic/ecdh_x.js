@@ -1,6 +1,7 @@
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @module crypto/public_key/elliptic/ecdh
+ * @access private
  */
 
 import * as aesKW from '../../aes_kw';

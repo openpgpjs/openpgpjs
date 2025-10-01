@@ -3,6 +3,7 @@
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://github.com/indutny/hash.js|hash.js}
  * @module crypto/hash
+ * @access private
  */
 
 import { transform as streamTransform, isArrayStream, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';

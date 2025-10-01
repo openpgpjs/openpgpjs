@@ -1,5 +1,6 @@
 /**
  * @module enums
+ * @access public
  */
 
 const byValue = Symbol('byValue');

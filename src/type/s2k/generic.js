@@ -1,3 +1,4 @@
+/** @access private */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15,6 +16,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+import defaultConfig from '../../config';
+import { getRandomBytes, computeDigest } from '../../crypto';
+import enums from '../../enums';
+import { UnsupportedError } from '../../packet/packet';
+import util from '../../util';
+
 /**
  * Implementation of the String-to-key specifier
  *
@@ -24,15 +31,8 @@
  * places, currently: to encrypt the secret part of private keys in the
  * private keyring, and to convert passphrases to encryption keys for
  * symmetrically encrypted messages.
- * @module type/s2k
+ * @access private
  */
-
-import defaultConfig from '../../config';
-import { getRandomBytes, computeDigest } from '../../crypto';
-import enums from '../../enums';
-import { UnsupportedError } from '../../packet/packet';
-import util from '../../util';
-
 class GenericS2K {
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config

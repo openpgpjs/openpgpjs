@@ -18,6 +18,7 @@
 /**
  * @fileoverview RSA implementation
  * @module crypto/public_key/rsa
+ * @access private
  */
 import { randomProbablePrime } from './prime';
 import { getRandomBigInteger } from '../random';

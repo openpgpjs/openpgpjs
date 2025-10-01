@@ -14,15 +14,14 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-import util from '../util';
-
 /**
  * @fileoverview Functions to add and remove PKCS5 padding
  * @see PublicKeyEncryptedSessionKeyPacket
  * @module crypto/pkcs5
- * @private
+ * @access private
  */
+
+import util from '../util';
 
 /**
  * Add pkcs5 padding to a message

@@ -1,3 +1,8 @@
+/**
+ * @module biginteger
+ * @access private
+ */
+
 // Operations are not constant time, but we try and limit timing leakage where we can
 
 const _0n = BigInt(0);

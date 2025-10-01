@@ -1,3 +1,4 @@
+/** @access public */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -238,6 +239,7 @@ export default SymEncryptedIntegrityProtectedDataPacket;
  * @param {Uint8Array | ReadableStream<Uint8Array>} data - The data to en/decrypt
  * @returns {Promise<Uint8Array | ReadableStream<Uint8Array>>}
  * @async
+ * @access private
  */
 export async function runAEAD(packet, fn, key, data) {
   const isSEIPDv2 = packet instanceof SymEncryptedIntegrityProtectedDataPacket && packet.version === 2;

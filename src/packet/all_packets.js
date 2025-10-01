@@ -1,7 +1,7 @@
 /**
  * @fileoverview Exports all OpenPGP packet types
  * @module packet/all_packets
- * @private
+ * @access private
  */
 
 export { default as CompressedDataPacket } from './compressed_data';

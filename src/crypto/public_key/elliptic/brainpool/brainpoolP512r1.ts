@@ -1,3 +1,4 @@
+/** @access private */
 import { createCurve } from '@noble/curves/_shortw_utils';
 import { sha512 } from '@noble/hashes/sha512';
 import { Field } from '@noble/curves/abstract/modular';

@@ -1,4 +1,5 @@
 /**
+ * @access private
  * This file is needed to dynamic import the legacy ciphers.
  * Separate dynamic imports are not convenient as they result in multiple chunks.
  */

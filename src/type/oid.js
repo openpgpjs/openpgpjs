@@ -30,6 +30,7 @@
  * is constructed by omitting the first two octets.  Only the truncated
  * sequence of octets is the valid representation of a curve OID.
  * @module type/oid
+ * @access private
  */
 
 import util from '../util';

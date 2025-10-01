@@ -1,3 +1,4 @@
+/** @access public */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -566,6 +567,7 @@ class SecretKeyPacket extends PublicKeyPacket {
  * @param {Uint8Array} [serializedPacketTag] - for AEAD-encrypted keys only (excluding v5)
  * @param {Boolean} [isLegacyAEAD] - for AEAD-encrypted keys from RFC4880bis (v4 and v5 only)
  * @returns encryption key
+ * @access private
  */
 async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD) {
   if (s2k.type === 'argon2' && !aeadMode) {
