@@ -69,7 +69,7 @@
     "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/seek-bzip": "^1.0.5-git",
     "@openpgp/tweetnacl": "^1.0.4-2",
-    "@openpgp/web-stream-tools": "~0.1.3",
+    "@openpgp/web-stream-tools": "~0.2.0",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
@@ -78,7 +78,7 @@
     "@rollup/plugin-typescript": "^12.1.4",
     "@rollup/plugin-wasm": "^6.2.2",
     "@types/chai": "^4.3.20",
-    "@types/node": "^22.18.0",
+    "@types/node": "^24.3.1",
     "@types/sinon": "^17.0.4",
     "@typescript-eslint/parser": "^7.18.0",
     "@web/test-runner": "^0.19.0",
@@ -105,11 +105,9 @@
     "playwright": "^1.55.0",
     "rollup": "^4.48.1",
     "sinon": "^21.0.0",
-    "ts-node": "^10.9.2",
-    "tslib": "^2.8.1",
-    "web-streams-polyfill": "^4.1.0",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "web-streams-polyfill": "^4.2.0"
   },
   "overrides": {
     "@web/dev-server-core": "npm:@openpgp/wtr-dev-server-core@0.7.3-patch.1",
