@@ -44,12 +44,12 @@ export function encode(data) {
   return streamTransform(data, value => {
     buf = util.concatUint8Array([buf, value]);
     const r = [];
-    const bytesPerLine = 45; // 60 chars per line * (3 bytes / 4 chars of base64).
+    const bytesPerLine = 48; // 64 chars per line * (3 bytes / 4 chars of base64).
     const lines = Math.floor(buf.length / bytesPerLine);
     const bytes = lines * bytesPerLine;
     const encoded = encodeChunk(buf.subarray(0, bytes));
     for (let i = 0; i < lines; i++) {
-      r.push(encoded.substr(i * 60, 60));
+      r.push(encoded.substr(i * 64, 64));
       r.push('\n');
     }
     buf = buf.subarray(bytes);
