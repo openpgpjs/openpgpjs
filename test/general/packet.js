@@ -243,8 +243,12 @@ export default () => describe('Packet', function() {
         cryptCallsActive--;
       }
     });
+
+    const isChromeV141OrAbove = () => typeof window !== 'undefined' && window.navigator.userAgent.match(/Chrome/) && /Chrome\/([0-9.]+)/.exec(navigator.userAgent)[1].split('.')[0] >= 141;
     cryptStub.onCall(1).callsFake(function() {
-      expect(cryptCallsActive).to.equal(1);
+      // Chromium disabled some async WebCrypto operations in v141 .
+      // Context: https://github.com/w3c/webcrypto/issues/389#issuecomment-3136298597 .
+      expect(cryptCallsActive).to.equal(isChromeV141OrAbove() ? 0 : 1);
       return crypt.apply(this, arguments);
     });
     cryptStub.callThrough();
