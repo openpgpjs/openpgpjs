@@ -22,7 +22,7 @@
  * @access private
  */
 
-import { gcm as nobleAesGcm } from '@noble/ciphers/aes';
+import { gcm as nobleAesGcm } from '@noble/ciphers/aes.js';
 import util from '../../util.js';
 import enums from '../../enums.ts';
 

@@ -22,7 +22,7 @@
  * @access private
  */
 
-import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';
+import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes.js';
 
 import { transform as streamTransform, transformAsync as streamTransformAsync } from '@openpgp/web-stream-tools';
 import util from '../../util.js';

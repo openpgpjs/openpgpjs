@@ -22,7 +22,7 @@
  * @access private
  */
 
-import { ctr as nobleAesCtr } from '@noble/ciphers/aes';
+import { ctr as nobleAesCtr } from '@noble/ciphers/aes.js';
 import CMAC from '../cmac.js';
 import util from '../../util.js';
 import enums from '../../enums.ts';
