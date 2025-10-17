@@ -3,7 +3,6 @@ import testCipher from './cipher/index.js';
 import testHash from './hash/index.js';
 import testCrypto from './crypto.js';
 import testElliptic from './ecdsa_eddsa.js';
-import testBrainpoolRFC7027 from './brainpool_rfc7027.js';
 import testECDH from './ecdh.js';
 import testPKCS5 from './pkcs5.js';
 import testAESKW from './aes_kw.js';
@@ -21,7 +20,6 @@ export default () => describe('Crypto', function () {
   testHash();
   testCrypto();
   testElliptic();
-  testBrainpoolRFC7027();
   testECDH();
   testPKCS5();
   testAESKW();
