@@ -458,7 +458,7 @@ export function generateSessionKey(algo) {
 function checkSupportedCurve(oid) {
   try {
     oid.getName();
-  } catch (e) {
+  } catch {
     throw new UnsupportedError('Unknown curve OID');
   }
 }

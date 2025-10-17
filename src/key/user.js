@@ -222,7 +222,7 @@ class User {
       try {
         await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, false, config);
         return true;
-      } catch (e) {
+      } catch {
         return false;
       }
     });

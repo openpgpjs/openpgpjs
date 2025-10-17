@@ -706,7 +706,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       config: { minRSABits: 1024 }
     });
     const signature = await openpgp.readSignature({ armoredSignature });
-    expect(signature.getSigningKeyIDs).to.exist;
+    expect(signature.getSigningKeyIDs()).to.exist;
     expect(signature.getSigningKeyIDs().map(x => x.toHex())).to.include(publicKey.getKeyID().toHex());
   });
 
@@ -1180,7 +1180,7 @@ Fk7EflUZzngwY4lBzYAfnNBjEjc30xD/ddo+rwE=
       const sMsg = await openpgp.readMessage({ armoredMessage: signedArmor });
       const pub_key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
       const verified = await sMsg.verify([pub_key]);
-      stream.readToEnd(sMsg.getLiteralData());
+      await stream.readToEnd(sMsg.getLiteralData());
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(await verified[0].verified).to.be.true;
@@ -1574,7 +1574,7 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
     const latin1Binary = util.hexToUint8Array('48e46c6cf62057e86c74');
     const message = await openpgp.createMessage({ binary: latin1Binary });
 
-    message.appendSignature(`-----BEGIN PGP SIGNATURE-----
+    await message.appendSignature(`-----BEGIN PGP SIGNATURE-----
 
 iQIzBAEBCAAdFiEET5+J9VBawdGiYGMc2xGHud1faTsFAl5lE/AACgkQ2xGHud1f
 aTtIuw//YWrVaXLyP8sGBc0uUSLxQbmfQQYV8Oq8Vsg+jV4orc73wmEy8+Nj5m2g
@@ -1842,7 +1842,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       const keyIDs = message.getSigningKeyIDs();
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
-      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
+      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(({ data, signatures }) => {
         expect(data).to.equal(plaintext);
         expect(signatures).to.have.length(0);
       });

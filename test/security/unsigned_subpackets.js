@@ -61,7 +61,7 @@ async function makeKeyValid() {
         encryptionKeys: k
       });
       return false;
-    } catch (e) {
+    } catch {
       return true;
     }
   }
@@ -84,7 +84,7 @@ async function makeKeyValid() {
   let modifiedkey = new PrivateKey(newlist);
   // re-read the message to eliminate any
   // behaviour due to cached values.
-  modifiedkey = await readKey({ armoredKey: await modifiedkey.armor() });
+  modifiedkey = await readKey({ armoredKey: modifiedkey.armor() });
 
   expect(await encryptFails(invalidkey)).to.be.true;
   expect(await encryptFails(modifiedkey)).to.be.true;

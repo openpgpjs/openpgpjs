@@ -1,5 +1,3 @@
-/* eslint-disable no-process-env */
-
 import { builtinModules } from 'module';
 import { readFileSync } from 'fs';
 

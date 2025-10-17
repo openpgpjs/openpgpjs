@@ -44,6 +44,7 @@ const _1n = BigInt(1);
  * @returns {Promise<{ r: Uint8Array, s: Uint8Array }>}
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function sign(hashAlgo, hashed, g, p, q, x) {
   const _0n = BigInt(0);
   p = uint8ArrayToBigInt(p);
@@ -102,6 +103,7 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
  * @returns {boolean}
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
   r = uint8ArrayToBigInt(r);
   s = uint8ArrayToBigInt(s);
@@ -135,19 +137,20 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
 
 /**
  * Validate DSA parameters
- * @param {Uint8Array} p - DSA prime
- * @param {Uint8Array} q - DSA group order
- * @param {Uint8Array} g - DSA sub-group generator
- * @param {Uint8Array} y - DSA public key
- * @param {Uint8Array} x - DSA private key
+ * @param {Uint8Array} pBytes - DSA prime
+ * @param {Uint8Array} qBytes - DSA group order
+ * @param {Uint8Array} gBytes - DSA sub-group generator
+ * @param {Uint8Array} yBytes - DSA public key
+ * @param {Uint8Array} xBytes - DSA private key
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
-export async function validateParams(p, q, g, y, x) {
-  p = uint8ArrayToBigInt(p);
-  q = uint8ArrayToBigInt(q);
-  g = uint8ArrayToBigInt(g);
-  y = uint8ArrayToBigInt(y);
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function validateParams(pBytes, qBytes, gBytes, yBytes, xBytes) {
+  const p = uint8ArrayToBigInt(pBytes);
+  const q = uint8ArrayToBigInt(qBytes);
+  const g = uint8ArrayToBigInt(gBytes);
+  const y = uint8ArrayToBigInt(yBytes);
   // Check that 1 < g < p
   if (g <= _1n || g >= p) {
     return false;
@@ -183,7 +186,7 @@ export async function validateParams(p, q, g, y, x) {
    *
    * Blinded exponentiation computes g**{rq + x} to compare to y
    */
-  x = uint8ArrayToBigInt(x);
+  const x = uint8ArrayToBigInt(xBytes);
   const _2n = BigInt(2);
   const r = getRandomBigInteger(_2n << (qSize - _1n), _2n << qSize); // draw r of same size as q
   const rqx = q * r + x;

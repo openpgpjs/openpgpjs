@@ -48,6 +48,7 @@ async function GCM(cipher, key) {
 
   if (util.getNodeCrypto()) { // Node crypto library
     return {
+      // eslint-disable-next-line @typescript-eslint/require-await
       encrypt: async function(pt, iv, adata = new Uint8Array()) {
         const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
         en.setAAD(adata);
@@ -55,6 +56,7 @@ async function GCM(cipher, key) {
         return new Uint8Array(ct);
       },
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       decrypt: async function(ct, iv, adata = new Uint8Array()) {
         const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
         de.setAAD(adata);
@@ -105,10 +107,12 @@ async function GCM(cipher, key) {
   }
 
   return {
+    // eslint-disable-next-line @typescript-eslint/require-await
     encrypt: async function(pt, iv, adata) {
       return nobleAesGcm(key, iv, adata).encrypt(pt);
     },
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     decrypt: async function(ct, iv, adata) {
       return nobleAesGcm(key, iv, adata).decrypt(ct);
     }

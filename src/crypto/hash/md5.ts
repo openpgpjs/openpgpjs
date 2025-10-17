@@ -35,15 +35,12 @@ class MD5 extends HashMD<MD5> {
     // Compression function main loop, 64 rounds
     let { A, B, C, D } = this;
     for (let i = 0; i < 64; i++) {
-      // eslint-disable-next-line one-var, one-var-declaration-per-line
       let F, g, s;
       if (i < 16) {
-        // eslint-disable-next-line new-cap
         F = Chi(B, C, D);
         g = i;
         s = [7, 12, 17, 22];
       } else if (i < 32) {
-        // eslint-disable-next-line new-cap
         F = Chi(D, B, C);
         g = (5 * i + 1) % 16;
         s = [5, 9, 14, 20];

@@ -11,7 +11,7 @@ import * as input from './testInputs.js';
 
 export default () => (openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
   let rejectCurvesVal;
-  before(function() {
+  before(() => {
     //only x25519 crypto is fully functional in lightbuild
     if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip(); // eslint-disable-line no-invalid-this

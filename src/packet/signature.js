@@ -97,6 +97,7 @@ class SignaturePacket {
     this.keyFlags = null;
     this.signersUserID = null;
     this.reasonForRevocationFlag = null;
+    /** @type {String | null} */
     this.reasonForRevocationString = null;
     this.features = null;
     this.signatureTargetPublicKeyAlgorithm = null;

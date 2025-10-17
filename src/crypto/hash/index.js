@@ -17,6 +17,7 @@ function nodeHash(type) {
   if (!nodeCrypto || !nodeCryptoHashes.includes(type)) {
     return;
   }
+  // eslint-disable-next-line @typescript-eslint/require-await
   return async function (data) {
     const shasum = nodeCrypto.createHash(type);
     return streamTransform(data, value => {

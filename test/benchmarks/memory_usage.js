@@ -1,4 +1,7 @@
+/* global require */
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable no-console */
+
 import assert from 'assert';
 import path from 'path';
 import { writeFileSync, unlinkSync } from 'fs';
@@ -105,7 +108,7 @@ class MemoryBenchamrkSuite {
  * Memory usage tests.
  * All the necessary variables must be declared inside the test function.
  */
-(async () => {
+void (async () => {
   const suite = new MemoryBenchamrkSuite();
 
   suite.add('empty test (baseline)', () => {});

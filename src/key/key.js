@@ -442,7 +442,7 @@ class Key {
       } else {
         primaryKeyExpiry = selfSigKeyExpiry < selfSigExpiry ? selfSigKeyExpiry : selfSigExpiry;
       }
-    } catch (e) {
+    } catch {
       primaryKeyExpiry = null;
     }
 
@@ -510,11 +510,13 @@ class Key {
       }
     }
     if (!users.length) {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw exception || new Error('Could not find primary user');
     }
-    await Promise.all(users.map(async function (a) {
-      return a.selfCertification.revoked || a.user.isRevoked(a.selfCertification, null, date, config);
+    // Update `revoked` status, whose value is discarded here but used below;
+    // see https://github.com/openpgpjs/openpgpjs/issues/880 for Promise.all motivation
+    await Promise.all(users.map(async a => {
+      a.selfCertification.revoked || await a.user.isRevoked(a.selfCertification, null, date, config);
     }));
     // sort by primary user flag and signature creation time
     const primaryUser = users.sort(function(a, b) {
@@ -751,8 +753,7 @@ class Key {
 }
 
 ['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
-  Key.prototype[name] =
-  Subkey.prototype[name];
+  Key.prototype[name] = Subkey.prototype[name];
 });
 
 export default Key;

@@ -167,10 +167,10 @@ export async function reformat(options, config) {
  * Construct PrivateKey object from the given key packets, add certification signatures and set passphrase protection
  * The new key includes a revocation certificate that must be removed before returning the key, otherwise the key is considered revoked.
  * @param {SecretKeyPacket} secretKeyPacket
- * @param {SecretSubkeyPacket} secretSubkeyPackets
+ * @param {Array<SecretSubkeyPacket>} secretSubkeyPackets
  * @param {Object} options
  * @param {Object} config - Full configuration
- * @returns {PrivateKey}
+ * @returns {Promise<PrivateKey>}
  */
 async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config) {
   // set passphrase protection
@@ -295,12 +295,12 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     secretKeyPacket.clearPrivateParams();
   }
 
-  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+  secretSubkeyPackets.map(function(secretSubkeyPacket, index) {
     const subkeyPassphrase = options.subkeys[index].passphrase;
     if (subkeyPassphrase) {
       secretSubkeyPacket.clearPrivateParams();
     }
-  }));
+  });
 
   return new PrivateKey(packetlist);
 }

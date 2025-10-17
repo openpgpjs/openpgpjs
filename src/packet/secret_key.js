@@ -51,7 +51,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = null;
     /**
      * S2K usage
-     * @type {enums.symmetric}
+     * @type {number}
      */
     this.s2kUsage = 0;
     /**
@@ -481,7 +481,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     try {
       const { privateParams } = parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
       this.privateParams = privateParams;
-    } catch (err) {
+    } catch {
       throw new Error('Error reading MPIs');
     }
     this.isEncrypted = false;
@@ -515,7 +515,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     try {
       // this can throw if some parameters are undefined
       validParams = await validateParams(this.algorithm, this.publicParams, this.privateParams);
-    } catch (_) {
+    } catch {
       validParams = false;
     }
     if (!validParams) {

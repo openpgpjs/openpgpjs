@@ -73,6 +73,7 @@ export default async function CMAC(key) {
 
 async function CBC(key) {
   if (util.getNodeCrypto()) { // Node crypto library
+    // eslint-disable-next-line @typescript-eslint/require-await
     return async function(pt) {
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
       const ct = en.update(pt);
@@ -97,6 +98,7 @@ async function CBC(key) {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   return async function(pt) {
     return nobleAesCbc(key, zeroBlock, { disablePadding: true }).encrypt(pt);
   };

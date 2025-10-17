@@ -357,7 +357,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // TODO get an identifier of the revoked object instead
         revocationKeyIDs.push(revocationSignature.issuerKeyID);
       }
-    } catch (e) {}
+    } catch {}
   }));
   // TODO further verify that this is the signature that should be revoked
   if (signature) {
@@ -398,7 +398,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     case 'ecc': // NB: this case also handles legacy eddsa and x25519 keys, based on `options.curve`
       try {
         options.curve = enums.write(enums.curve, options.curve);
-      } catch (e) {
+      } catch {
         throw new Error('Unknown curve');
       }
       if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.curve25519Legacy ||

@@ -220,7 +220,7 @@ export class Message {
             if (selfCertification.preferredSymmetricAlgorithms) {
               algos = algos.concat(selfCertification.preferredSymmetricAlgorithms);
             }
-          } catch (e) {}
+          } catch {}
 
           await Promise.all(decryptionKeyPackets.map(async function(decryptionKeyPacket) {
             if (!decryptionKeyPacket.isDecrypted()) {
@@ -460,7 +460,7 @@ export class Message {
         try {
           await keyPacket.decrypt(password);
           return 1;
-        } catch (e) {
+        } catch {
           return 0;
         }
       };
@@ -639,9 +639,10 @@ export class Message {
    *   signature: Promise<Signature>,
    *   verified: Promise<true>
    * }>>} List of signer's keyID and validity of signature.
-   * @async
+   * @async needed to avoid breaking change until next major release
    */
-  verifyDetached(signature, verificationKeys, date = new Date(), config = defaultConfig) {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async verifyDetached(signature, verificationKeys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
@@ -751,15 +752,15 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, rec
  * @param {Date} [date] - Check signature validity with respect to the given date
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Promise<{
+ * @returns {{
  *   keyID: module:type/keyid~KeyID,
  *   signature: Promise<Signature>,
  *   verified: Promise<true>
- * }>} signer's keyID and validity of signature
+ * }} signer's keyID and validity of signature
  * @async
  * @private
  */
-async function createVerificationObject(signature, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
+function createVerificationObject(signature, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
   let primaryKey;
   let unverifiedSigningKey;
 
@@ -831,20 +832,17 @@ async function createVerificationObject(signature, literalDataList, verification
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Promise<Array<{
+ * @returns {Array<{
  *   keyID: module:type/keyid~KeyID,
  *   signature: Promise<Signature>,
  *   verified: Promise<true>
- * }>>} list of signer's keyID and validity of signatures (one entry per signature packet in input)
- * @async
+ * }>} list of signer's keyID and validity of signatures (one entry per signature packet in input)
  * @private
  */
-export async function createVerificationObjects(signatureList, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
-  return Promise.all(signatureList.filter(function(signature) {
-    return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
-  }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config);
-  }));
+export function createVerificationObjects(signatureList, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
+  return signatureList
+    .filter(signature => ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType)))
+    .map(signature => createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config));
 }
 
 /**
@@ -894,9 +892,10 @@ export async function readMessage({ armoredMessage, binaryMessage, config, ...re
  * @param {Date} [options.date=current date] - Date of the message, or modification date of the file
  * @param {'utf8'|'binary'|'text'|'mime'} [options.format='utf8' if text is passed, 'binary' otherwise] - Data packet type
  * @returns {Promise<Message>} New message object.
- * @async
+ * @async not necessary, but needed to align with readMessage
  * @static
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function createMessage({ text, binary, filename, date = new Date(), format = text !== undefined ? 'utf8' : 'binary', ...rest }) {
   const input = text !== undefined ? text : binary;
   if (input === undefined) {

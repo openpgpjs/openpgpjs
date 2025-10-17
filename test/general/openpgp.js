@@ -1116,7 +1116,7 @@ PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
         curve: 'curve25519',
         format: 'object'
       };
-      return openpgp.generateKey(opt).then(async function({ privateKey: key }) {
+      return openpgp.generateKey(opt).then(({ privateKey: key }) => {
         expect(key).to.exist;
         expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
         expect(key.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
@@ -1454,7 +1454,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
   describe('decrypt - unit tests', function() {
     let minRSABitsVal;
 
-    beforeEach(async function() {
+    beforeEach(() => {
       minRSABitsVal = openpgp.config.minRSABits;
       openpgp.config.minRSABits = 1024;
     });
@@ -1821,7 +1821,7 @@ BdPq
   describe('verify - unit tests', function() {
     let minRSABitsVal;
 
-    beforeEach(async function() {
+    beforeEach(() => {
       minRSABitsVal = openpgp.config.minRSABits;
       openpgp.config.minRSABits = 512;
     });
@@ -4533,7 +4533,7 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       expect(data).to.equal('test');
     });
 
-    describe('X25519/Ed25519 (new format)', async function () {
+    describe('X25519/Ed25519 (new format)', () => {
       it('should enforce using AES session keys with x25519 keys (v4 key)', async function () {
         // x25519 key (v4) with cast5 as preferred cipher
         const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
@@ -4667,7 +4667,7 @@ k0mXubZvyl4GBg==
       });
     });
 
-    describe('X448/Ed448', async function () {
+    describe('X448/Ed448', () => {
       it('should enforce using AES session keys with x448 keys (v4 key)', async function () {
         // X448 key (v4) with cast5 as preferred cipher
         const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
@@ -5093,7 +5093,7 @@ sEj+v9LKoMTYZGMfp3qDVFLtkBE88eVmVjgJOoLhrsv7yh0PAA==
 
     });
 
-    describe('Specific encryption/signing key testing', async function () {
+    describe('Specific encryption/signing key testing', () => {
       const encryptionKeyIDs = [
         keyIDType.fromID('87EAE0977B2185EA'),
         keyIDType.fromID('F94F9B34AF93FA14'),

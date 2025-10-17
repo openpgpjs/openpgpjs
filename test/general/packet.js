@@ -35,7 +35,7 @@ export default () => describe('Packet', function() {
   const allAllowedPackets = util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]);
 
   const armored_key =
-      '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+    '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
       'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
       '\n' +
       'lQH+BFF79J8BBADDhRUOMUSGdYM1Kq9J/vVS3qLfaZHweycAKm9SnpLGLJE+Qbki\n' +
@@ -157,7 +157,7 @@ export default () => describe('Packet', function() {
     expect(await stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
   });
 
-  describe('Sym. encrypted integrity protected packet - throw on unexpected session key size', async () => {
+  describe('Sym. encrypted integrity protected packet - throw on unexpected session key size', () => {
     async function testSEIPD(packetOptions) {
       const symmetricAlgo = openpgp.enums.symmetric.aes256;
       const key = random.getRandomBytes(crypto.getCipherParams(symmetricAlgo).keySize);
@@ -237,7 +237,7 @@ export default () => describe('Packet', function() {
     cryptStub.onCall(0).callsFake(async function() {
       cryptCallsActive++;
       try {
-        // eslint-disable-next-line @typescript-eslint/return-await
+        // eslint-disable-next-line no-invalid-this
         return await crypt.apply(this, arguments);
       } finally {
         cryptCallsActive--;
@@ -249,6 +249,7 @@ export default () => describe('Packet', function() {
       // Chromium disabled some async WebCrypto operations in v141 .
       // Context: https://github.com/w3c/webcrypto/issues/389#issuecomment-3136298597 .
       expect(cryptCallsActive).to.equal(isChromeV141OrAbove() ? 0 : 1);
+      // eslint-disable-next-line no-invalid-this
       return crypt.apply(this, arguments);
     });
     cryptStub.callThrough();
@@ -336,7 +337,7 @@ export default () => describe('Packet', function() {
   });
 
 
-  describe('Sym. encrypted integrity protected packet reading/writing test vector (SEIPDv2)', async function () {
+  describe('Sym. encrypted integrity protected packet reading/writing test vector (SEIPDv2)', () => {
     const testVectors = [{
       // from https://datatracker.ietf.org/doc/html/rfc9580#appendix-A.9
       algoLabel: 'EAX',
@@ -434,7 +435,7 @@ export default () => describe('Packet', function() {
 
   it('Sym. encrypted session key with a compressed packet', async function() {
     const msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'jA0ECQMCpo7I8WqsebTJ0koBmm6/oqdHXJU9aPe+Po+nk/k4/PZrLmlXwz2lhqBg\n' +
@@ -520,7 +521,7 @@ export default () => describe('Packet', function() {
 
   it('Secret key packet (reading, unencrypted)', async function() {
     const armored_key =
-        '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'lQHYBFF33iMBBAC9YfOYahJlWrVj2J1TjQiZLunWljI4G9e6ARTyD99nfOkV3swh\n' +
@@ -563,7 +564,7 @@ export default () => describe('Packet', function() {
 
   it('Public key encrypted packet (reading, GPG)', async function() {
     const armored_key =
-        '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'lQHYBFF6gtkBBADKUOWZK6/V75MNwBS+hLYicoS0Sojbo3qWXXpS7eM+uhiDm4bP\n' +
@@ -598,7 +599,7 @@ export default () => describe('Packet', function() {
         '-----END PGP PRIVATE KEY BLOCK-----';
 
     const armored_msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'hIwDFYET+7bfx/ABA/95Uc9942Tg8oqpO0vEu2eSKwPALM3a0DrVdAiFOIK/dJmZ\n' +
@@ -837,7 +838,7 @@ export default () => describe('Packet', function() {
     }));
   });
 
-  describe('Sym. encrypted session key reading/writing test vector (SKESK v6)', async function () {
+  describe('Sym. encrypted session key reading/writing test vector (SKESK v6)', () => {
     const testVectors = [{
       // from https://datatracker.ietf.org/doc/html/rfc9580#appendix-A.9.1
       algoLabel: 'EAX',
@@ -934,7 +935,7 @@ export default () => describe('Packet', function() {
 
   it('Secret key encryption/decryption test', async function() {
     const armored_msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'hIwD95D9aHS5fxEBA/98CwH54XZmwobOmHUcvWcDDQysBEC4uf7wASiGcRbejDaO\n' +
@@ -976,7 +977,7 @@ export default () => describe('Packet', function() {
 
   it('Reading a signed, encrypted message.', async function() {
     const armored_msg =
-        '-----BEGIN PGP MESSAGE-----\n' +
+      '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
         'hIwD95D9aHS5fxEBA/4/X4myvH+jB1HYNeZvdK+WsBNDMfLsBGOf205Rxr3vSob/\n' +
@@ -1016,8 +1017,7 @@ export default () => describe('Packet', function() {
   });
 
   it('Reading signersUserID from armored signature', async function() {
-    const armoredSignature =
-`-----BEGIN PGP SIGNATURE-----
+    const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
 iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
 QG1ldGFjb2RlLmJpegAKCRBrpV7YOrrhuw1PB/9KhFRR/M3OR6NmIent6ri1ekWn
@@ -1035,8 +1035,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
   });
 
   it('Reading notations from armored key', async function() {
-    const pubkey =
-`-----BEGIN PGP PUBLIC KEY BLOCK-----
+    const pubkey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQENBFzQOToBCADd0Pwh8edZ6gR3x49L1PaBPtiAQUr1QDUDWeNes8co5MTFl5hG
 lHzptt+VD0JGucuIkvi34f5z2ZbInAV/xYDX3kSYefy6LB8XJD527I/o9bqY1P7T
@@ -1114,7 +1113,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     expect(secretKeyPacket2.publicParams).to.deep.equal(secretKeyPacket.publicParams);
   });
 
-  it('Writing of unencrypted v5 secret key packet', async function() {
+  it('Writing of unencrypted v5 secret key packet', () => {
     const packet = new openpgp.SecretKeyPacket();
     packet.version = 5;
     packet.privateParams = { key: new Uint8Array([1, 2, 3]) };
@@ -1142,7 +1141,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     expect(written[25]).to.equal(3);
   });
 
-  it('Writing of unencrypted v6 secret key packet', async function() {
+  it('Writing of unencrypted v6 secret key packet', () => {
     const originalv6KeysSetting = openpgp.config.v6Keys;
     openpgp.config.v6Keys = true;
 
@@ -1378,7 +1377,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       expect(otherPackets[0].constructor.tag).to.equal(openpgp.enums.packet.userID);
     });
 
-    describe('Grammar validation', async function () {
+    describe('Grammar validation', () => {
       describe('MessageGrammarValidator - unit tests', () => {
         it('valid nested signed messages should be valid', () => {
           // Sig | OPS | Literal | Sig

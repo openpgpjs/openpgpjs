@@ -1,6 +1,3 @@
-/* eslint-disable no-mixed-operators, no-fallthrough */
-
-
 /* Modified by Recurity Labs GmbH
  *
  * Cipher.js
@@ -98,6 +95,7 @@ function createTwofish() {
     ];
     const ror4 = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15];
     const ashx = [0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12, 5, 14, 7];
+    /** @type {number[][]} */
     const q = [
       [],
       []
@@ -158,11 +156,13 @@ function createTwofish() {
           b = q[0][b] ^ getB(key[3], 1);
           c = q[0][c] ^ getB(key[3], 2);
           d = q[1][d] ^ getB(key[3], 3);
+        // eslint-disable-next-line no-fallthrough
         case 3:
           a = q[1][a] ^ getB(key[2], 0);
           b = q[1][b] ^ getB(key[2], 1);
           c = q[0][c] ^ getB(key[2], 2);
           d = q[0][d] ^ getB(key[2], 3);
+        // eslint-disable-next-line no-fallthrough
         case 2:
           a = q[0][q[0][a] ^ getB(key[1], 0)] ^ getB(key[0], 0);
           b = q[0][q[1][b] ^ getB(key[1], 1)] ^ getB(key[0], 1);
@@ -222,11 +222,13 @@ function createTwofish() {
           b = q[0][b] ^ getB(sKey[3], 1);
           c = q[0][c] ^ getB(sKey[3], 2);
           d = q[1][d] ^ getB(sKey[3], 3);
+        // eslint-disable-next-line no-fallthrough
         case 3:
           a = q[1][a] ^ getB(sKey[2], 0);
           b = q[1][b] ^ getB(sKey[2], 1);
           c = q[0][c] ^ getB(sKey[2], 2);
           d = q[0][d] ^ getB(sKey[2], 3);
+        // eslint-disable-next-line no-fallthrough
         case 2:
           tfsM[0][i] = m[0][q[0][q[0][a] ^ getB(sKey[1], 0)] ^ getB(sKey[0], 0)];
           tfsM[1][i] = m[1][q[0][q[1][b] ^ getB(sKey[1], 1)] ^ getB(sKey[0], 1)];

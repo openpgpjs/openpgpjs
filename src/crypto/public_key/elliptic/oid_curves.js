@@ -143,7 +143,7 @@ class CurveWithOID {
       this.name = oidOrName instanceof OID ?
         oidOrName.getName() :
         enums.write(enums.curve,oidOrName);
-    } catch (err) {
+    } catch {
       throw new UnsupportedError('Unknown curve');
     }
     const params = curves[this.name];
@@ -315,10 +315,10 @@ async function webGenKeyPair(name, wireFormatLeadingByte) {
   };
 }
 
-async function nodeGenKeyPair(name) {
+function nodeGenKeyPair(name) {
   // Note: ECDSA and ECDH key generation is structurally equivalent
   const ecdh = nodeCrypto.createECDH(nodeCurves[name]);
-  await ecdh.generateKeys();
+  ecdh.generateKeys();
   return {
     publicKey: new Uint8Array(ecdh.getPublicKey()),
     privateKey: new Uint8Array(ecdh.getPrivateKey())

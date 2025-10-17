@@ -70,6 +70,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  * @returns {Boolean}
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, publicKey);

@@ -88,7 +88,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  * @param {Uint8Array} message - Message to verify
  * @param {Uint8Array} publicKey - Public key used to verify the message
  * @param {Uint8Array} hashed - The hashed message
- * @returns {Boolean}
+ * @returns {Promise<Boolean>}
  * @async
  */
 export async function verify(oid, hashAlgo, signature, message, publicKey, hashed) {
@@ -124,7 +124,7 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
         }
         break;
       case 'node': {
-        const verified = await nodeVerify(curve, hashAlgo, signature, message, publicKey);
+        const verified = nodeVerify(curve, hashAlgo, signature, message, publicKey);
         return verified || tryFallbackVerificationForOldBug();
       }
     }
@@ -159,9 +159,8 @@ export async function validateParams(oid, Q, d) {
       const hashed = await computeDigest(hashAlgo, message);
       try {
         const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
-        // eslint-disable-next-line @typescript-eslint/return-await
         return await verify(oid, hashAlgo, signature, message, Q, hashed);
-      } catch (err) {
+      } catch {
         return false;
       }
     }
@@ -246,7 +245,7 @@ async function webVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   );
 }
 
-async function nodeSign(curve, hashAlgo, message, privateKey) {
+function nodeSign(curve, hashAlgo, message, privateKey) {
   // JWT encoding cannot be used for now, as Brainpool curves are not supported
   const ecKeyUtils = util.nodeRequire('eckey-utils');
   const nodeBuffer = util.getNodeBuffer();
@@ -268,7 +267,7 @@ async function nodeSign(curve, hashAlgo, message, privateKey) {
   };
 }
 
-async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
+function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   const ecKeyUtils = util.nodeRequire('eckey-utils');
   const nodeBuffer = util.getNodeBuffer();
   const { publicKey: derPublicKey } = ecKeyUtils.generateDer({
@@ -284,7 +283,7 @@ async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
 
   try {
     return verify.verify({ key: derPublicKey, format: 'der', type: 'spki', dsaEncoding: 'ieee-p1363' }, signature);
-  } catch (err) {
+  } catch {
     return false;
   }
 }

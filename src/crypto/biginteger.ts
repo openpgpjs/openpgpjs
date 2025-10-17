@@ -162,7 +162,7 @@ export function bitLength(x: bigint) {
   const target = x < _0n ? BigInt(-1) : _0n;
   let bitlen = 1;
   let tmp = x;
-  // eslint-disable-next-line no-cond-assign
+
   while ((tmp >>= _1n) !== target) {
     bitlen++;
   }
@@ -177,7 +177,7 @@ export function byteLength(x: bigint) {
   const _8n = BigInt(8);
   let len = 1;
   let tmp = x;
-  // eslint-disable-next-line no-cond-assign
+
   while ((tmp >>= _8n) !== target) {
     len++;
   }

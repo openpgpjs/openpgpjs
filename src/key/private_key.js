@@ -114,7 +114,7 @@ class PrivateKey extends PublicKey {
     }
 
     if (keys.length === 0) {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw exception || new Error('No decryption key packets found');
     }
 
@@ -168,7 +168,7 @@ class PrivateKey extends PublicKey {
         throw new Error('Cannot validate an all-gnu-dummy key');
       }
 
-      return Promise.all(keys.map(async key => key.keyPacket.validate()));
+      return Promise.all(keys.map(key => key.keyPacket.validate()));
     }
   }
 

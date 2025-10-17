@@ -53,6 +53,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     this.publicKeyFingerprint = null;
 
     // For all versions:
+    /** @type {enums.publicKey | null} */
     this.publicKeyAlgorithm = null;
 
     this.sessionKey = null;

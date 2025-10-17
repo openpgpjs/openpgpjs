@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, @typescript-eslint/indent */
+/* eslint-disable @stylistic/indent */
 
 /**
  * Type definitions for OpenPGP.js http://openpgpjs.org/
@@ -337,10 +337,9 @@ export class Message<T extends MaybeStream<Data>> {
 }
 
 /* ############## PACKET #################### */
-
-export declare abstract class BasePacket {
+export declare abstract class BasePacket<AsyncRead extends boolean = false> {
   static readonly tag: enums.packet;
-  public read(bytes: Uint8Array): void;
+  public read(bytes: Uint8Array): AsyncRead extends true ? Promise<void> : void;
   public write(): Uint8Array;
 }
 
@@ -349,7 +348,7 @@ export declare abstract class BasePacket {
  * - A Secret (Sub)Key Packet can always be used when a Public one is expected.
  * - A Subkey Packet cannot always be used when a Primary Key Packet is expected (and vice versa).
  */
-declare abstract class BasePublicKeyPacket extends BasePacket {
+declare abstract class BasePublicKeyPacket extends BasePacket<true> {
   public algorithm: enums.publicKey;
   public created: Date;
   public version: number;
@@ -397,21 +396,21 @@ export class SecretSubkeyPacket extends BaseSecretKeyPacket {
   protected isSubkey(): true;
 }
 
-export class CompressedDataPacket extends BasePacket {
+export class CompressedDataPacket extends BasePacket<true> {
   static readonly tag: enums.packet.compressedData;
   private compress(): void;
   private decompress(config?: Config): void;
 }
 
-export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
+export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket<true> {
   static readonly tag: enums.packet.symEncryptedIntegrityProtectedData;
 }
 
-export class AEADEncryptedDataPacket extends BasePacket {
+export class AEADEncryptedDataPacket extends BasePacket<true> {
   static readonly tag: enums.packet.aeadEncryptedData;
-  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
-  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
-  private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>;
+  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
+  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
+  private crypt(fn: (block: Uint8Array) => Uint8Array, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>;
 }
 
 export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
@@ -426,7 +425,7 @@ export class SymEncryptedSessionKeyPacket extends BasePacket {
   private encrypt(passphrase: string, config?: Config): Promise<void>;
 }
 
-export class LiteralDataPacket extends BasePacket {
+export class LiteralDataPacket extends BasePacket<true> {
   static readonly tag: enums.packet.literalData;
   private getText(clone?: boolean): MaybeStream<string>;
   private getBytes(clone?: boolean): MaybeStream<Uint8Array>;
@@ -439,8 +438,8 @@ export class LiteralDataPacket extends BasePacket {
 
 export class SymmetricallyEncryptedDataPacket extends BasePacket {
   static readonly tag: enums.packet.symmetricallyEncryptedData;
-  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
-  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
+  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
+  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
 }
 
 export class MarkerPacket extends BasePacket {
@@ -547,8 +546,8 @@ export type AnyKeyPacket = BasePublicKeyPacket;
 
 type AllowedPackets = Map<enums.packet, object>; // mapping to Packet classes (i.e. typeof LiteralDataPacket etc.)
 export class PacketList<T extends AnyPacket> extends Array<T> {
-  static fromBinary(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): PacketList<AnyPacket>; // the packet types depend on`allowedPackets`
-  public read(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): void;
+  static fromBinary(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): Promise<PacketList<AnyPacket>>; // the packet types depend on`allowedPackets`
+  public read(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): Promise<void>;
   public write(): Uint8Array;
   public filterByTag(...args: enums.packet[]): PacketList<T>;
   public indexOfTag(...tags: enums.packet[]): number[];

@@ -76,7 +76,7 @@ export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
  * @param {Uint8Array} n - RSA public modulus
  * @param {Uint8Array} e - RSA public exponent
  * @param {Uint8Array} hashed - Hashed message
- * @returns {Boolean}
+ * @returns {Promise<Boolean>}
  * @async
  */
 export async function verify(hashAlgo, data, s, n, e, hashed) {
@@ -102,6 +102,7 @@ export async function verify(hashAlgo, data, s, n, e, hashed) {
  * @returns {Promise<Uint8Array>} RSA Ciphertext.
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function encrypt(data, n, e) {
   if (util.getNodeCrypto()) {
     return nodeEncrypt(data, n, e);
@@ -124,13 +125,14 @@ export async function encrypt(data, n, e) {
  * @throws {Error} on decryption error, unless `randomPayload` is given
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
   // Node v18.19.1, 20.11.1 and 21.6.2 have disabled support for PKCS#1 decryption,
   // and we want to avoid checking the error type to decide if the random payload
   // should indeed be returned.
   if (util.getNodeCrypto() && !randomPayload) {
     try {
-      return await nodeDecrypt(data, n, e, d, p, q, u);
+      return nodeDecrypt(data, n, e, d, p, q, u);
     } catch (err) {
       util.printDebugError(err);
     }
@@ -146,8 +148,8 @@ export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
  * @see module:crypto/public_key/prime
  * @param {Integer} bits - RSA bit length
  * @param {Integer} e - RSA public exponent
- * @returns {{n, e, d,
- *            p, q ,u: Uint8Array}} RSA public modulus, RSA public exponent, RSA private exponent,
+ * @returns {Promise<{n, e, d,
+ *            p, q ,u: Uint8Array}>} RSA public modulus, RSA public exponent, RSA private exponent,
  *                                  RSA private prime p, RSA private prime q, u = p ** -1 mod q
  * @async
  */
@@ -231,6 +233,7 @@ export async function generate(bits, e) {
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function validateParams(n, e, d, p, q, u) {
   n = uint8ArrayToBigInt(n);
   p = uint8ArrayToBigInt(p);
@@ -269,7 +272,7 @@ export async function validateParams(n, e, d, p, q, u) {
   return true;
 }
 
-async function bnSign(hashAlgo, n, d, hashed) {
+function bnSign(hashAlgo, n, d, hashed) {
   n = uint8ArrayToBigInt(n);
   const m = uint8ArrayToBigInt(emsaEncode(hashAlgo, hashed, byteLength(n)));
   d = uint8ArrayToBigInt(d);
@@ -284,7 +287,7 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
    * does if the underlying Web Crypto does so (though the tested implementations
    * don't do so).
    */
-  const jwk = await privateToJWK(n, e, d, p, q, u);
+  const jwk = privateToJWK(n, e, d, p, q, u);
   const algo = {
     name: 'RSASSA-PKCS1-v1_5',
     hash: { name: hashName }
@@ -293,16 +296,16 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
   return new Uint8Array(await webCrypto.sign('RSASSA-PKCS1-v1_5', key, data));
 }
 
-async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
+function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
   const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   sign.write(data);
   sign.end();
 
-  const jwk = await privateToJWK(n, e, d, p, q, u);
+  const jwk = privateToJWK(n, e, d, p, q, u);
   return new Uint8Array(sign.sign({ key: jwk, format: 'jwk', type: 'pkcs1' }));
 }
 
-async function bnVerify(hashAlgo, s, n, e, hashed) {
+function bnVerify(hashAlgo, s, n, e, hashed) {
   n = uint8ArrayToBigInt(n);
   s = uint8ArrayToBigInt(s);
   e = uint8ArrayToBigInt(e);
@@ -323,7 +326,7 @@ async function webVerify(hashName, data, s, n, e) {
   return webCrypto.verify('RSASSA-PKCS1-v1_5', key, s, data);
 }
 
-async function nodeVerify(hashAlgo, data, s, n, e) {
+function nodeVerify(hashAlgo, data, s, n, e) {
   const jwk = publicToJWK(n, e);
   const key = { key: jwk, format: 'jwk', type: 'pkcs1' };
 
@@ -333,19 +336,19 @@ async function nodeVerify(hashAlgo, data, s, n, e) {
 
   try {
     return verify.verify(key, s);
-  } catch (err) {
+  } catch {
     return false;
   }
 }
 
-async function nodeEncrypt(data, n, e) {
+function nodeEncrypt(data, n, e) {
   const jwk = publicToJWK(n, e);
   const key = { key: jwk, format: 'jwk', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
 
   return new Uint8Array(nodeCrypto.publicEncrypt(key, data));
 }
 
-async function bnEncrypt(data, n, e) {
+function bnEncrypt(data, n, e) {
   n = uint8ArrayToBigInt(n);
   data = uint8ArrayToBigInt(emeEncode(data, byteLength(n)));
   e = uint8ArrayToBigInt(e);
@@ -355,18 +358,18 @@ async function bnEncrypt(data, n, e) {
   return bigIntToUint8Array(modExp(data, e, n), 'be', byteLength(n));
 }
 
-async function nodeDecrypt(data, n, e, d, p, q, u) {
-  const jwk = await privateToJWK(n, e, d, p, q, u);
+function nodeDecrypt(data, n, e, d, p, q, u) {
+  const jwk = privateToJWK(n, e, d, p, q, u);
   const key = { key: jwk, format: 'jwk' , type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
 
   try {
     return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
-  } catch (err) {
+  } catch {
     throw new Error('Decryption error');
   }
 }
 
-async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
+function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
   data = uint8ArrayToBigInt(data);
   n = uint8ArrayToBigInt(n);
   e = uint8ArrayToBigInt(e);
@@ -405,7 +408,7 @@ async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
  * @param {Uint8Array} q
  * @param {Uint8Array} u
  */
-async function privateToJWK(n, e, d, p, q, u) {
+function privateToJWK(n, e, d, p, q, u) {
   const pNum = uint8ArrayToBigInt(p);
   const qNum = uint8ArrayToBigInt(q);
   const dNum = uint8ArrayToBigInt(d);

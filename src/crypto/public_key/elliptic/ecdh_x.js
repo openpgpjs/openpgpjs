@@ -88,7 +88,7 @@ export async function validateParams(algo, A, k) {
         const recomputedSharedSecret = await recomputeSharedSecret(algo, ephemeralPublicKey, A, k);
 
         return util.equalsUint8Array(sharedSecret, recomputedSharedSecret);
-      } catch (_) {
+      } catch {
         return false;
       }
 

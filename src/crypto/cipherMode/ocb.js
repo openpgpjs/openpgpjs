@@ -61,6 +61,7 @@ const one = new Uint8Array([1]);
  * @param {enums.symmetric} cipher - The symmetric cipher algorithm to use
  * @param {Uint8Array} key - The encryption key
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 async function OCB(cipher, key) {
   const { keySize } = getCipherParams(cipher);
   // sanity checks
@@ -240,6 +241,7 @@ async function OCB(cipher, key) {
      * @param {Uint8Array} adata - Associated data to sign
      * @returns {Promise<Uint8Array>} The ciphertext output.
      */
+    // eslint-disable-next-line @typescript-eslint/require-await
     decrypt: async function(ciphertext, nonce, adata) {
       if (ciphertext.length < tagLength) throw new Error('Invalid OCB ciphertext');
 

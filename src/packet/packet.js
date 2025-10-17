@@ -112,7 +112,7 @@ export function supportsStreaming(tag) {
  *
  * @param {Uint8Array | ReadableStream<Uint8Array>} input - Input stream as string
  * @param {Function} callback - Function to call with the parsed packet
- * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
+ * @returns {Promise<Boolean>} Returns false if the stream was empty and parsing is done, and true otherwise.
  */
 export async function readPacket(reader, useStreamType, callback) {
   let writer;
@@ -155,7 +155,7 @@ export async function readPacket(reader, useStreamType, callback) {
         writer = streamGetWriter(transform.writable);
         packet = transform.readable;
       }
-      // eslint-disable-next-line callback-return
+
       callbackReturned = callback({ tag, packet });
     } else {
       packet = [];
@@ -244,7 +244,7 @@ export async function readPacket(reader, useStreamType, callback) {
       await writer.close();
     } else {
       packet = util.concatUint8Array(packet);
-      // eslint-disable-next-line callback-return
+
       await callback({ tag, packet });
     }
   } catch (e) {

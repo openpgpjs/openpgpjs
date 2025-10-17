@@ -31,7 +31,7 @@ const webCrypto = util.getWebCrypto();
  * @param {enums.symmetric.aes128|enums.symmetric.aes256|enums.symmetric.aes192} algo - AES algo
  * @param {Uint8Array} key - wrapping key
  * @param {Uint8Array} dataToWrap
- * @returns {Uint8Array} wrapped key
+ * @returns {Promise<Uint8Array>} wrapped key
  */
 export async function wrap(algo, key, dataToWrap) {
   const { keySize } = getCipherParams(algo);
@@ -63,7 +63,7 @@ export async function wrap(algo, key, dataToWrap) {
  * @param {enums.symmetric.aes128|enums.symmetric.aes256|enums.symmetric.aes192} algo - AES algo
  * @param {Uint8Array} key - wrapping key
  * @param {Uint8Array} wrappedData
- * @returns {Uint8Array} unwrapped data
+ * @returns {Promise<Uint8Array>} unwrapped data
  */
 export async function unwrap(algo, key, wrappedData) {
   const { keySize } = getCipherParams(algo);

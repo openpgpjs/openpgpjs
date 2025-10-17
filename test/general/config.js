@@ -456,7 +456,7 @@ c1HGHD56KA0Mu4eQksKNEugotEyBuWiZCVO+LBrDUFztC1IwXaNPL3bCjYaD
     await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
   });
 
-  describe('detects unknown config property', async function() {
+  describe('detects unknown config property', function() {
     const invalidConfig = { invalidProp: false };
     const fnNames = ['generateKey', 'encryptKey', 'decryptKey', 'reformatKey', 'revokeKey', 'sign', 'encrypt', 'verify', 'decrypt', 'generateSessionKey', 'encryptSessionKey', 'decryptSessionKeys'];
     fnNames.forEach(name => it(`openpgp.${name}`, async function() {

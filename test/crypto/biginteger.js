@@ -4,7 +4,7 @@ import BN from 'bn.js';
 import { bigIntToUint8Array, bitLength, byteLength, gcd, getBit, modExp, modInv } from '../../src/crypto/biginteger';
 import { getRandomBytes } from '../../src/crypto/random';
 
-async function getRandomBN(min, max) {
+function getRandomBN(min, max) {
   if (max.cmp(min) <= 0) {
     throw new Error('Illegal parameter value: max <= min');
   }
