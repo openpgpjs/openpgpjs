@@ -42,7 +42,7 @@ export default defineConfig(
     rules: {
       'arrow-body-style': 'off',
       'arrow-parens': ['error','as-needed'],
-      'class-methods-use-this': 'off', // TODO warn
+      'class-methods-use-this': 'warn',
 
       'comma-dangle': ['error', 'never'],
       '@typescript-eslint/comma-spacing': 'off',
@@ -64,12 +64,12 @@ export default defineConfig(
       'no-else-return': 'off',
       'no-empty': ['error', { 'allowEmptyCatch': true }],
       'no-multiple-empty-lines': ['error', { 'max': 2, 'maxEOF': 1, 'maxBOF':0 }],
-      'no-nested-ternary': 'off', // TODO warn
-      'no-param-reassign': 'off', // TODO get rid of this
+      'no-nested-ternary': 'warn',
+      'no-param-reassign': 'warn', // TODO get rid of this
       'no-plusplus': 'off',
       'no-restricted-syntax': ['error', 'ForInStatement', 'LabeledStatement', 'WithStatement'],
       'object-curly-newline': 'off',
-      '@typescript-eslint/no-shadow': 'off', // TODO get rid of this
+      '@typescript-eslint/no-shadow': 'warn', // TODO get rid of this
       'object-property-newline': [
         'error',
         {
@@ -85,8 +85,8 @@ export default defineConfig(
       'padded-blocks': 'off',
       'prefer-arrow-callback': 'off',
       'prefer-destructuring': 'off',
-      'prefer-rest-params': 'off', // TODO get rid of this
-      'prefer-spread': 'off', // TODO get rid of this
+      'prefer-rest-params': 'warn', // TODO get rid of this
+      'prefer-spread': 'warn', // TODO get rid of this
       'prefer-template': 'off',
       'quote-props': 'off',
       'quotes': 'off', // superseded by @stylistic/quotes
