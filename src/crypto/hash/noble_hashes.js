@@ -4,12 +4,9 @@
  * which share a lot of code anyway.
  */
 
-import { sha1 } from '@noble/hashes/sha1';
-import { sha224, sha256 } from '@noble/hashes/sha256';
-import { sha384, sha512 } from '@noble/hashes/sha512';
-import { sha3_256, sha3_512 } from '@noble/hashes/sha3';
-import { ripemd160 } from '@noble/hashes/ripemd160';
-import { md5 } from './md5';
+import { sha224, sha256, sha384, sha512 } from '@noble/hashes/sha2.js';
+import { sha3_256, sha3_512 } from '@noble/hashes/sha3.js';
+import { md5, ripemd160, sha1 } from '@noble/hashes/legacy.js';
 
 export const nobleHashes = new Map(Object.entries({
   md5,
