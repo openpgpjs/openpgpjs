@@ -21,7 +21,7 @@
  * @module crypto/mode/cfb
  */
 
-import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';
+import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes.js';
 
 import { transform as streamTransform } from '@openpgp/web-stream-tools';
 import util from '../../util';

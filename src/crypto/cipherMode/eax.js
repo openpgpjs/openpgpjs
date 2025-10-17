@@ -21,7 +21,7 @@
  * @module crypto/mode/eax
  */
 
-import { ctr as nobleAesCtr } from '@noble/ciphers/aes';
+import { ctr as nobleAesCtr } from '@noble/ciphers/aes.js';
 import CMAC from '../cmac';
 import util from '../../util';
 import enums from '../../enums';

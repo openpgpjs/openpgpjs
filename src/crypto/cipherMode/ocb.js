@@ -20,7 +20,7 @@
  * @module crypto/mode/ocb
  */
 
-import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes.js';
 import { getCipherParams } from '../cipher';
 import util from '../../util';
 

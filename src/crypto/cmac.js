@@ -4,7 +4,7 @@
  * @module crypto/cmac
  */
 
-import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes.js';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();
