@@ -21,7 +21,7 @@
  * @module crypto/aes_kw
  */
 
-import { aeskw as nobleAesKW } from '@noble/ciphers/aes';
+import { aeskw as nobleAesKW } from '@noble/ciphers/aes.js';
 import { getCipherParams } from './cipher';
 import util from '../util';
 
