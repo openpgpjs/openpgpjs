@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
       - name: Check for cached folders
         id: cache-full
         uses: actions/cache@v4
@@ -39,7 +39,7 @@ jobs:
     needs: build
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci --ignore-scripts # for mocha
@@ -68,7 +68,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
 
       - name: Retrieve cached built folders
         uses: actions/cache/restore@v4
@@ -129,7 +129,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
 
       - name: Generate self-signed HTTPS certificates for web-test-runner server
         uses: kofemann/action-create-certificate@v0.0.4
@@ -176,7 +176,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v6
     - run: npm ci --ignore-scripts # TS
     - name: Retrieve cached folders
       uses: actions/cache/restore@v4
@@ -195,7 +195,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v6
     - run: npm ci --ignore-scripts # linter
     - name: Retrieve cached folders
       uses: actions/cache/restore@v4
