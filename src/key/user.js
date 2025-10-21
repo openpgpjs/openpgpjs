@@ -1,5 +1,6 @@
 /**
  * @module key/User
+ * @access private
  */
 
 import enums from '../enums';

@@ -1,6 +1,7 @@
 /**
  * @fileoverview This module implements HKDF using either the WebCrypto API or Node.js' crypto API.
  * @module crypto/hkdf
+ * @access private
  */
 
 import enums from '../enums';

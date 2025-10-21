@@ -19,6 +19,7 @@
  * @fileoverview Implementation of legacy EdDSA following RFC4880bis-03 for OpenPGP.
  * This key type has been deprecated by the crypto-refresh RFC.
  * @module crypto/public_key/elliptic/eddsa_legacy
+ * @access private
  */
 
 import util from '../../../util';

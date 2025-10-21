@@ -19,6 +19,7 @@
 
 /**
  * @module crypto/mode/cfb
+ * @access private
  */
 
 import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';

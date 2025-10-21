@@ -1,3 +1,5 @@
+/** @access public */
+
 import enums from '../enums';
 import { UnsupportedError } from './packet';
 

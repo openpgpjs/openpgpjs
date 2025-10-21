@@ -2,6 +2,7 @@
  * @fileoverview This module implements AES-CMAC on top of
  * native AES-CBC using either the WebCrypto API or Node.js' crypto API.
  * @module crypto/cmac
+ * @access private
  */
 
 import { cbc as nobleAesCbc } from '@noble/ciphers/aes';

@@ -20,6 +20,7 @@
 /**
  * This object contains utility functions
  * @module util
+ * @access private
  */
 
 import { concat as streamConcat, transform as streamTransform, concatUint8Array, isStream, isUint8Array } from '@openpgp/web-stream-tools';
@@ -449,9 +450,10 @@ const util = {
     return webCrypto;
   },
 
+  /** @typedef {import('node:crypto')} NodeCrypto */
   /**
    * Get native Node.js crypto api.
-   * @returns {Object} The crypto module or 'undefined'.
+   * @returns {NodeCrypto} The crypto module or 'undefined'.
    */
   getNodeCrypto: function() {
     return this.nodeRequire('crypto');

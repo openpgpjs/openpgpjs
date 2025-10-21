@@ -24,7 +24,6 @@
  * places, currently: to encrypt the secret part of private keys in the
  * private keyring, and to convert passphrases to encryption keys for
  * symmetrically encrypted messages.
- * @module type/s2k
  */
 
 import defaultConfig from '../../config';
@@ -33,6 +32,7 @@ import enums from '../../enums';
 import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
 
+/** @access private */
 class GenericS2K {
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config

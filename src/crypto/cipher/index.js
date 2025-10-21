@@ -1,3 +1,7 @@
+/**
+ * @module crypto/cipher
+ * @access private
+ */
 import enums from '../../enums';
 
 export async function getLegacyCipher(algo) {

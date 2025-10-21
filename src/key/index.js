@@ -1,3 +1,4 @@
+/** @access private */
 import {
   readKey,
   readKeys,

@@ -1,3 +1,5 @@
+/** @access public */
+
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2022 Proton AG
 //
