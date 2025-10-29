@@ -25,7 +25,6 @@ import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import { computeDigest } from '../../hash';
 import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves';
-import { bigIntToUint8Array } from '../../biginteger';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -72,10 +71,10 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
 
   const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curve.name);
   // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
-  const signature = nobleCurve.sign(hashed, privateKey, { lowS: false });
+  const signature = nobleCurve.sign(hashed, privateKey, { lowS: false, prehash: false });
   return {
-    r: bigIntToUint8Array(signature.r, 'be', curve.payloadSize),
-    s: bigIntToUint8Array(signature.s, 'be', curve.payloadSize)
+    r: signature.slice(0, curve.payloadSize),
+    s: signature.slice(curve.payloadSize, curve.payloadSize << 1)
   };
 }
 
@@ -183,7 +182,7 @@ export async function validateParams(oid, Q, d) {
 async function jsVerify(curve, signature, hashed, publicKey) {
   const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curve.name);
   // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
-  return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false });
+  return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false, prehash: false });
 }
 
 async function webSign(curve, hashAlgo, message, keyPair) {
@@ -254,11 +253,11 @@ function nodeSign(curve, hashAlgo, message, privateKey) {
     privateKey: nodeBuffer.from(privateKey)
   });
 
-  const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
-  sign.write(message);
-  sign.end();
+  const signInstance = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
+  signInstance.write(message);
+  signInstance.end();
 
-  const signature = new Uint8Array(sign.sign({ key: derPrivateKey, format: 'der', type: 'sec1', dsaEncoding: 'ieee-p1363' }));
+  const signature = new Uint8Array(signInstance.sign({ key: derPrivateKey, format: 'der', type: 'sec1', dsaEncoding: 'ieee-p1363' }));
   const len = curve.payloadSize;
 
   return {
@@ -275,14 +274,14 @@ function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
     publicKey: nodeBuffer.from(publicKey)
   });
 
-  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
-  verify.write(message);
-  verify.end();
+  const verifyInstance = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
+  verifyInstance.write(message);
+  verifyInstance.end();
 
   const signature = util.concatUint8Array([r, s]);
 
   try {
-    return verify.verify({ key: derPublicKey, format: 'der', type: 'spki', dsaEncoding: 'ieee-p1363' }, signature);
+    return verifyInstance.verify({ key: derPublicKey, format: 'der', type: 'spki', dsaEncoding: 'ieee-p1363' }, signature);
   } catch {
     return false;
   }
