@@ -79,7 +79,7 @@ jobs:
         uses: actions/checkout@v5
       - name: Download test results json artifact
         id: download-test-results
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: test-suite-results.json
       - name: Compare with baseline
