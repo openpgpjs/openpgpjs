@@ -10,13 +10,17 @@ jobs:
     name: Run interoperability test suite
     runs-on: ubuntu-latest
     container: 
-      image: ghcr.io/protonmail/openpgp-interop-test-docker:v1.1.12
+      image: ghcr.io/protonmail/openpgp-interop-test-docker:v2.0.0
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
     steps:
       # check out repo for scripts
       - uses: actions/checkout@v5
+      # the interop image does not include Node.js
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.x'
       # check out pull request branch
       - name: Checkout openpgpjs-branch
         uses: actions/checkout@v5
