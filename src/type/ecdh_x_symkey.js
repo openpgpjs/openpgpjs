@@ -4,6 +4,7 @@
  * the former includes an algorithm byte preceeding the encrypted session key.
  *
  * @module type/x25519x448_symkey
+ * @access private
  */
 
 import util from '../util';

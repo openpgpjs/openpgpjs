@@ -18,6 +18,7 @@
 /**
  * @fileoverview Algorithms for probabilistic random prime generation
  * @module crypto/public_key/prime
+ * @access private
  */
 import { bigIntToNumber, bitLength, gcd, getBit, mod, modExp } from '../biginteger';
 import { getRandomBigInteger } from '../random';

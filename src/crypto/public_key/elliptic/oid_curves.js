@@ -18,6 +18,7 @@
 /**
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
+ * @access private
  */
 import enums from '../../../enums';
 import util from '../../../util';

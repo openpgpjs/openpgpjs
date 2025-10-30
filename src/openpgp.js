@@ -1,3 +1,4 @@
+/** @access public */
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2016 Tankred Hase
 //
@@ -723,6 +724,7 @@ function linkStreams(result, inputMessage, ...intermediateMessages) {
  * @param {'armored'|'binary'|'object'} format
  * @param {Object} config - Full configuration
  * @returns {String|Uint8Array|Object}
+ * @access private
  */
 function formatObject(object, format, config) {
   switch (format) {

@@ -1,3 +1,7 @@
+/**
+ * @module type/s2k
+ * @access private
+ */
 import defaultConfig from '../../config';
 import Argon2S2K, { Argon2OutOfMemoryError } from './argon2';
 import GenericS2K from './generic';
@@ -9,9 +13,10 @@ const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterat
 /**
  * Instantiate a new S2K instance of the given type
  * @param {module:enums.s2k} type
- * @oaram {Object} [config]
+ * @param {Object} [config]
  * @returns {Object} New s2k object
  * @throws {Error} for unknown or unsupported types
+
  */
 export function newS2KFromType(type, config = defaultConfig) {
   switch (type) {

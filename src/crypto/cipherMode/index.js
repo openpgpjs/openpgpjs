@@ -1,6 +1,7 @@
 /**
  * @fileoverview Cipher modes
  * @module crypto/cipherMode
+ * @access private
  */
 
 export * as cfb from './cfb';

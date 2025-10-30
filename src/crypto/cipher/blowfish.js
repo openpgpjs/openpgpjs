@@ -1,4 +1,6 @@
-/* Modified by Recurity Labs GmbH
+/**
+ * @access private
+ * Modified by Recurity Labs GmbH
  *
  * Originally written by nklein software (nklein.com)
  */

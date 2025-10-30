@@ -21,6 +21,7 @@
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
  * @module crypto/crypto
+ * @access private
  */
 
 import { rsa, elliptic, elgamal, dsa } from './public_key';
