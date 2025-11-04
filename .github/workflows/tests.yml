@@ -191,18 +191,9 @@ jobs:
   lint:
     name: ESLint
     runs-on: ubuntu-latest
-    needs: build
 
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-node@v6
-    - run: npm ci --ignore-scripts # linter
-    - name: Retrieve cached folders
-      uses: actions/cache/restore@v4
-      id: cache-full
-      with:
-        path: |
-          dist
-          test/lib
-        key: cache-${{ github.sha }}
+    - run: npm ci # cannot use `--ignore-scripts` since the linter also relies on type information from third-party lib imports in the tests
     - run: npm run lint
