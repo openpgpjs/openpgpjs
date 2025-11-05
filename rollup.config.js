@@ -150,11 +150,7 @@ const getBrowserTestBuild = useLightweightBuild => ({
       browser: true
     }),
     typescript({
-      compilerOptions: { outDir: './test/lib' },
-      // this exclusion is to address an issue with type-detect v4.1.0 that's imported by chai using `require()`;
-      // the TS plugin influences the resolution and causes the index.ts file to be imported
-      // (which the commonjs plugin cannot process) instead of the .js entrypoints.
-      exclude: ['node_modules/type-detect/*']
+      compilerOptions: { outDir: './test/lib' }
     }),
     commonjs({
       ignore: nodeBuiltinModules.concat(nodeDependencies),
