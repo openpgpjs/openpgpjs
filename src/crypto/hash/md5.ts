@@ -1,3 +1,4 @@
+/** @access private */
 // Copied from https://github.com/paulmillr/noble-hashes/blob/main/test/misc/md5.ts
 
 import { HashMD } from '@noble/hashes/_md';

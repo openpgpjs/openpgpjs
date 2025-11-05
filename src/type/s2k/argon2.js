@@ -1,3 +1,4 @@
+/** @access private */
 import defaultConfig from '../../config';
 import enums from '../../enums';
 import util from '../../util';
@@ -25,6 +26,7 @@ let argon2Promise;
 // reload wasm module above this treshold, to deallocated used memory
 const ARGON2_WASM_MEMORY_THRESHOLD_RELOAD = 2 << 19;
 
+/** @access private */
 class Argon2S2K {
   /**
   * @param {Object} [config] - Full configuration, defaults to openpgp.config

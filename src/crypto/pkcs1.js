@@ -21,6 +21,7 @@
  * @see module:crypto/public_key/elliptic/ecdh
  * @see PublicKeyEncryptedSessionKeyPacket
  * @module crypto/pkcs1
+ * @access private
  */
 
 import { getRandomBytes } from './random';

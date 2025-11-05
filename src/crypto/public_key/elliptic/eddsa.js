@@ -18,6 +18,7 @@
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
  * @module crypto/public_key/elliptic/eddsa
+ * @access private
  */
 
 import util from '../../../util';

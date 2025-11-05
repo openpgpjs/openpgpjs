@@ -1,3 +1,8 @@
+/**
+ * @module key/factory
+ * @access private
+ */
+
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015-2016 Decentral
 //

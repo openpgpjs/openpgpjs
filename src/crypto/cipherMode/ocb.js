@@ -18,6 +18,7 @@
 /**
  * @fileoverview This module implements AES-OCB en/decryption.
  * @module crypto/mode/ocb
+ * @access private
  */
 
 import { cbc as nobleAesCbc } from '@noble/ciphers/aes';

@@ -1,3 +1,4 @@
+/** @access private */
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015-2016 Decentral
 //
@@ -25,10 +26,8 @@ import { UnsupportedError } from '../packet/packet';
  * encryption.  The Concatenation Key Derivation Function (Approved
  * Alternative 1) [NIST-SP800-56A] with the KDF hash function that is
  * SHA2-256 [FIPS-180-3] or stronger is REQUIRED.
- * @module type/kdf_params
- * @private
+ * @access private
  */
-
 class KDFParams {
   /**
    * @param {enums.hash} hash - Hash algorithm

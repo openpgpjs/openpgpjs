@@ -1,3 +1,4 @@
+/** @access private */
 import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone } from '@openpgp/web-stream-tools';
 import {
   readPacket, supportsStreaming,
@@ -19,6 +20,7 @@ import defaultConfig from '../config';
  * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
  * @returns {Object} New packet object with type based on tag
  * @throws {Error|UnsupportedError} for disallowed or unknown packets
+ * @access private
  */
 export function newPacketFromTag(tag, allowedPackets) {
   if (!allowedPackets[tag]) {
@@ -39,6 +41,7 @@ export function newPacketFromTag(tag, allowedPackets) {
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
  * @extends Array
+ * @access public
  */
 class PacketList extends Array {
   /**

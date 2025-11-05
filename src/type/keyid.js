@@ -1,3 +1,4 @@
+/** @access private */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -15,10 +16,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @module type/keyid
- */
-
 import util from '../util';
 
 /**
@@ -29,6 +26,7 @@ import util from '../util';
  * Implementations SHOULD NOT assume that Key IDs are unique.  The
  * section "Enhanced Key Formats" below describes how Key IDs are
  * formed.
+ * @access private
  */
 class KeyID {
   constructor() {

@@ -19,6 +19,7 @@
  * @fileoverview This module implements AES-EAX en/decryption on top of
  * native AES-CTR using either the WebCrypto API or Node.js' crypto API.
  * @module crypto/mode/eax
+ * @access private
  */
 
 import { ctr as nobleAesCtr } from '@noble/ciphers/aes';

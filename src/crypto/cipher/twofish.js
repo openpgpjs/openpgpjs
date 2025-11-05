@@ -1,4 +1,6 @@
-/* Modified by Recurity Labs GmbH
+/**
+ * @access private
+ * Modified by Recurity Labs GmbH
  *
  * Cipher.js
  * A block-cipher algorithm implementation on JavaScript

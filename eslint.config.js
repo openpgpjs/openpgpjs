@@ -9,11 +9,23 @@ import pluginImport from 'eslint-plugin-import';
 import pluginStylistic from '@stylistic/eslint-plugin';
 // @ts-expect-error missing types
 import pluginUnicorn from 'eslint-plugin-unicorn';
+import pluginJSDoc from 'eslint-plugin-jsdoc';
 
 export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   globalIgnores(['dist/', 'test/lib/', 'docs/', '.jsdocrc.cjs']),
+  { // JSDoc-specific linting rules
+    files: ['src/**/!(*.d).{js,ts}'], // exclude .d.ts files
+    plugins: { 'jsdoc': pluginJSDoc },
+    rules: {
+      'jsdoc/require-file-overview': ['error', {
+        'tags': {
+          'access': { 'initialCommentsOnly': true, 'mustExist': true }
+        }
+      }]
+    }
+  },
   {
     languageOptions: {
       ecmaVersion: 2022,

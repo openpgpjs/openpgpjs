@@ -1,6 +1,7 @@
 /**
  * @fileoverview Asymmetric cryptography functions
  * @module crypto/public_key
+ * @access private
  */
 
 export * as rsa from './rsa';
