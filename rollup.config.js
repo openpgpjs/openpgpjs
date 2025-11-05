@@ -153,8 +153,7 @@ const getBrowserTestBuild = useLightweightBuild => ({
       compilerOptions: { outDir: './test/lib' }
     }),
     commonjs({
-      ignore: nodeBuiltinModules.concat(nodeDependencies),
-      requireReturnsDefault: 'preferred'
+      ignore: nodeBuiltinModules.concat(nodeDependencies)
     }),
     replace({
       "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
