@@ -24,7 +24,7 @@
 
 import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';
 
-import { transform as streamTransform } from '@openpgp/web-stream-tools';
+import { transform as streamTransform, transformAsync as streamTransformAsync } from '@openpgp/web-stream-tools';
 import util from '../../util';
 import enums from '../../enums';
 import { getLegacyCipher, getCipherParams } from '../cipher';
@@ -351,10 +351,10 @@ class NobleStreamProcessor {
 async function aesEncrypt(algo, key, pt, iv) {
   if (webCrypto && await WebCryptoEncryptor.isSupported(algo)) { // Chromium does not implement AES with 192-bit keys
     const cfb = new WebCryptoEncryptor(algo, key, iv);
-    return util.isStream(pt) ? streamTransform(pt, value => cfb.encryptChunk(value), () => cfb.finish()) : cfb.encrypt(pt);
+    return util.isStream(pt) ? streamTransformAsync(pt, value => cfb.encryptChunk(value), () => cfb.finish()) : cfb.encrypt(pt);
   } else if (util.isStream(pt)) { // async callbacks are not accepted by streamTransform unless the input is a stream
     const cfb = new NobleStreamProcessor(true, algo, key, iv);
-    return streamTransform(pt, value => cfb.processChunk(value), () => cfb.finish());
+    return streamTransformAsync(pt, value => cfb.processChunk(value), () => cfb.finish());
   }
   return nobleAesCfb(key, iv).encrypt(pt);
 }
@@ -362,7 +362,7 @@ async function aesEncrypt(algo, key, pt, iv) {
 function aesDecrypt(algo, key, ct, iv) {
   if (util.isStream(ct)) {
     const cfb = new NobleStreamProcessor(false, algo, key, iv);
-    return streamTransform(ct, value => cfb.processChunk(value), () => cfb.finish());
+    return streamTransformAsync(ct, value => cfb.processChunk(value), () => cfb.finish());
   }
   return nobleAesCfb(key, iv).decrypt(ct);
 }
