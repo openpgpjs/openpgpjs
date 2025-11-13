@@ -20,7 +20,7 @@ export default {
   testsStartTimeout: 25000,
   testsStartTimeoutMaxRetries: 3, // custom config from @openpgp/wtr-test-runner-core
   browserStartTimeout: 120000,
-  testsFinishTimeout: 450000,
+  testsFinishTimeout: 600000,
   concurrentBrowsers: 1,
   concurrency: 1, // see https://github.com/modernweb-dev/web/issues/2706
   coverage: false,
