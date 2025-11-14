@@ -91,7 +91,7 @@
     "better-docs": "^2.7.3",
     "bn.js": "^5.2.2",
     "c8": "^10.1.3",
-    "chai": "^6.2.0",
+    "chai": "^6.2.1",
     "chai-as-promised": "^8.0.2",
     "eckey-utils": "^0.7.14",
     "eslint": "^9.38.0",
