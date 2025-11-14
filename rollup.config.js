@@ -28,8 +28,8 @@ const getChunkFileName = (chunkInfo, extension) => `[name].${extension}`;
  * by default. We want to preserve the module name instead.
  */
 const setManualChunkName = chunkId => {
-  if (chunkId.includes('seek-bzip')) {
-    return 'seek-bzip';
+  if (chunkId.includes('unbzip2-stream')) {
+    return 'unbzip2-stream';
   } else if (chunkId.includes('argon2id')) {
     return 'argon2id';
   } else {
