@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import { isArrayStream, fromAsync as streamFromAsync, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
+import { isArrayStream, toStream, fromAsync as streamFromAsync, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -212,8 +212,12 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
 
 function bzip2Decompress() {
   return async function(data) {
-    const { decode: bunzipDecode } = await import('@openpgp/seek-bzip');
-    return streamFromAsync(async () => bunzipDecode(await streamReadToEnd(data)));
+    const { default: unbzip2Stream } = await import('@openpgp/unbzip2-stream');
+    let decompressed = unbzip2Stream(toStream(data));
+    if (isArrayStream(data)) {
+      decompressed = await streamReadToEnd(decompressed);
+    }
+    return decompressed;
   };
 }
 
