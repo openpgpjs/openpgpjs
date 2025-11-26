@@ -1,4 +1,5 @@
 /* eslint-disable max-lines */
+/* globals loadStreamsPolyfill */
 import * as stream from '@openpgp/web-stream-tools';
 import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
@@ -1490,6 +1491,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       });
 
       it('reject duplicate literal packet inside encrypted data (streaming)', async () => {
+        await loadStreamsPolyfill();
         const literalPackets = new openpgp.PacketList();
         literalPackets.push(new openpgp.LiteralDataPacket());
         literalPackets.push(new openpgp.LiteralDataPacket());
@@ -1517,6 +1519,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       });
 
       it('reject duplicate literal packet inside encrypted data (MDC error gets precedence)', async () => {
+        await loadStreamsPolyfill();
         const literalPackets = new openpgp.PacketList();
         literalPackets.push(new openpgp.LiteralDataPacket());
         const literal = new openpgp.LiteralDataPacket();
@@ -1549,6 +1552,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       });
 
       it('reject malformed packet inside encrypted data', async () => {
+        await loadStreamsPolyfill();
         const literalPackets = new openpgp.PacketList();
         const signature = new openpgp.SignaturePacket();
         signature.signatureData = signature.signedHashValue = new Uint8Array([4, 4]);
@@ -1580,6 +1584,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       });
 
       it('reject malformed packet inside encrypted data (MDC error gets precedence)', async () => {
+        await loadStreamsPolyfill();
         const literalPackets = new openpgp.PacketList();
         const signature = new openpgp.SignaturePacket();
         signature.signatureData = signature.signedHashValue = new Uint8Array([4, 4]);

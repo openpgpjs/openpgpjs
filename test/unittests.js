@@ -26,11 +26,10 @@ globalThis.tryTests = function(name, tests, options) {
   }
 };
 
-globalThis.loadStreamsPolyfill = function() {
-  // do not polyfill Node
-  const detectNodeWebStreams = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object' && globalThis.ReadableStream;
-
-  return detectNodeWebStreams() || import('web-streams-polyfill/polyfill');
+globalThis.loadStreamsPolyfill = async function() {
+  if (!globalThis.TransformStream) {
+    Object.assign(globalThis, await import('web-streams-polyfill'));
+  }
 };
 
 import runWorkerTests from './worker';
