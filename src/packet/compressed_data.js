@@ -229,7 +229,7 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
         const compressorOrDecompressor = compressionStreamInstantiator();
         return stream.pipeThrough(compressorOrDecompressor);
       } catch (err) {
-        // If format is unsupported in Compression/DecompressionStream, then a TypeError in thrown, and we fallback to fflate.
+        // If format is unsupported in Compression/DecompressionStream, then a TypeError is thrown, and we fallback to fflate.
         if (err.name !== 'TypeError') {
           throw err;
         }
@@ -278,8 +278,8 @@ function bzip2Decompress() {
 }
 
 /**
- * Get Compression Stream API instatiators if the constructors are implemented.
- * NB: the return instatiator functions will throw when called if the provided `compressionFormat` is not supported
+ * Get Compression Stream API instantiators if the constructors are implemented.
+ * NB: the return instantiator functions will throw when called if the provided `compressionFormat` is not supported
  * (supported formats cannot be determined in advance).
  * @param {'deflate-raw'|'deflate'|'gzip'|string} compressionFormat
  * @returns {{ compressor: function(): CompressionStream | false, decompressor: function(): DecompressionStream | false }}
