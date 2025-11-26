@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import { isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
+import { isStream, isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -126,7 +126,7 @@ class CompressedDataPacket {
         return chunk;
       });
     }
-    if (isArrayStream(this.compressed)) {
+    if (!isStream(this.compressed) || isArrayStream(this.compressed)) {
       decompressed = await streamReadToEnd(decompressed);
     }
     // Decompressing a Compressed Data packet MUST also yield a valid OpenPGP Message
@@ -143,7 +143,12 @@ class CompressedDataPacket {
       throw new Error(`${compressionName} compression not supported`);
     }
 
-    this.compressed = compressionFn(this.packets.write());
+    const data = this.packets.write();
+    let compressed = compressionFn(data);
+    if (!isStream(data) || isArrayStream(data)) {
+      compressed = streamFromAsync(() => streamReadToEnd(compressed));
+    }
+    this.compressed = compressed;
   }
 }
 
@@ -187,24 +192,22 @@ function splitStream(data) {
  */
 function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
   return data => {
-    if (!util.isStream(data) || isArrayStream(data)) {
-      return streamFromAsync(() => streamReadToEnd(data).then(inputData => {
-        return new Promise((resolve, reject) => {
-          const zlibStream = new ZlibStreamedConstructor();
-          const processedChunks = [];
-          zlibStream.ondata = (processedData, final) => {
-            processedChunks.push(processedData);
-            if (final) {
-              resolve(util.concatUint8Array(processedChunks));
-            }
-          };
+    let stream;
+    if (isArrayStream(data)) {
+      stream = new ReadableStream({
+        async start(controller) {
           try {
-            zlibStream.push(inputData, true); // only one chunk to push
-          } catch (err) {
-            reject(err);
+            controller.enqueue(await streamReadToEnd(data));
+            controller.close();
+          } catch (e) {
+            controller.error(e);
           }
-        });
-      }));
+        }
+      });
+    } else if (isStream(data)) {
+      stream = data;
+    } else {
+      stream = toStream(data);
     }
 
     // Split the input stream into chunks of 64KiB.
@@ -218,13 +221,13 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
     // API used) for simplicity and because it doesn't hurt much.
     // (This only does anything if the input chunks aren't already 64KiB
     // or smaller, e.g. when a large message is passed all at once.)
-    data = splitStream(data);
+    stream = splitStream(stream);
 
     // Use Compression Streams API if available (see https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API)
     if (compressionStreamInstantiator) {
       try {
         const compressorOrDecompressor = compressionStreamInstantiator();
-        return data.pipeThrough(compressorOrDecompressor);
+        return stream.pipeThrough(compressorOrDecompressor);
       } catch (err) {
         // If format is unsupported in Compression/DecompressionStream, then a TypeError in thrown, and we fallback to fflate.
         if (err.name !== 'TypeError') {
@@ -234,7 +237,7 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
     }
 
     // JS fallback
-    const inputReader = streamGetReader(data);
+    const inputReader = streamGetReader(stream);
     const zlibStream = new ZlibStreamedConstructor();
     let providedData = false;
     let allDone = false;
