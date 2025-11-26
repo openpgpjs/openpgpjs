@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import { isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
+import { isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -155,6 +155,29 @@ export default CompressedDataPacket;
 //                      //
 //////////////////////////
 
+function splitStream(data) {
+  const chunkSize = 65536;
+  const reader = streamGetReader(data);
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        const { value, done } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        for (let i = 0; i <= value.length; i += chunkSize) {
+          if (!i || i < value.length) {
+            controller.enqueue(value.subarray(i, i + chunkSize));
+          }
+        }
+      } catch (e) {
+        controller.error(e);
+      }
+    }
+  });
+}
+
 /**
  * Zlib processor relying on Compression Stream API if available, or falling back to fflate otherwise.
  * @param {function(): CompressionStream|function(): DecompressionStream} compressionStreamInstantiator
@@ -197,20 +220,38 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
       }
     }
 
+    // Split the input stream into chunks of 64KiB.
+    // This is only necessary for the fflate fallback decompressor,
+    // as it decompresses the entire input chunk and emits one output chunk,
+    // rather than outputting chunks incrementally as it decompresses the
+    // input.
+    // Therefore, for backpressure to work properly, we need to split the
+    // input chunks.
+    // (This only does anything if the input chunks aren't already 64KiB
+    // or smaller, e.g. when a large message is passed all at once.)
+    data = splitStream(data);
+
     // JS fallback
-    const inputReader = data.getReader();
+    const inputReader = streamGetReader(data);
     const zlibStream = new ZlibStreamedConstructor();
+    let providedData = false;
+    let allDone = false;
 
     return new ReadableStream({
-      async start(controller) {
+      start(controller) {
         zlibStream.ondata = (value, isLast) => {
           controller.enqueue(value);
+          providedData = true;
           if (isLast) {
             controller.close();
+            allDone = true;
           }
         };
+      },
 
-        while (true) {
+      async pull() {
+        providedData = false;
+        while (!providedData && !allDone) {
           const { done, value } = await inputReader.read();
           if (done) {
             zlibStream.push(new Uint8Array(), true);
