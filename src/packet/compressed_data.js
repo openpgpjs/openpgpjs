@@ -207,6 +207,19 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
       }));
     }
 
+    // Split the input stream into chunks of 64KiB.
+    // This is only necessary for the fflate fallback decompressor, and
+    // the native Compression API in WebKit, as they decompress the
+    // entire input chunk and emit one output chunk, rather than
+    // outputting chunks incrementally as it decompresses the input.
+    // Therefore, for backpressure to work properly, we need to split
+    // the input chunks.
+    // We do it unconditionally here (regardless of the platform and
+    // API used) for simplicity and because it doesn't hurt much.
+    // (This only does anything if the input chunks aren't already 64KiB
+    // or smaller, e.g. when a large message is passed all at once.)
+    data = splitStream(data);
+
     // Use Compression Streams API if available (see https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API)
     if (compressionStreamInstantiator) {
       try {
@@ -219,17 +232,6 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
         }
       }
     }
-
-    // Split the input stream into chunks of 64KiB.
-    // This is only necessary for the fflate fallback decompressor,
-    // as it decompresses the entire input chunk and emits one output chunk,
-    // rather than outputting chunks incrementally as it decompresses the
-    // input.
-    // Therefore, for backpressure to work properly, we need to split the
-    // input chunks.
-    // (This only does anything if the input chunks aren't already 64KiB
-    // or smaller, e.g. when a large message is passed all at once.)
-    data = splitStream(data);
 
     // JS fallback
     const inputReader = streamGetReader(data);
