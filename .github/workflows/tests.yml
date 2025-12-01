@@ -10,6 +10,7 @@ jobs:
   build: # cache both dist and tests (non-lightweight only), based on commit hash
     name: Build
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
@@ -37,6 +38,7 @@ jobs:
     name: Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     needs: build
+    permissions: {}
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-node@v6
@@ -65,6 +67,7 @@ jobs:
         # (e.g. webkit's WebCrypto API implementation is different in macOS vs Linux)
         runner: ['ubuntu-latest', 'macos-latest', 'windows-latest']
     runs-on: ${{ matrix.runner }}
+    permissions: {}
 
     steps:
       - uses: actions/checkout@v5
@@ -123,6 +126,7 @@ jobs:
     name: Browsers (older, on Browserstack)
     runs-on: ubuntu-latest
     needs: test-browsers-latest
+    permissions: {}
     env: # credentials need hardcoding for now since Github secrets aren't accessible on pull requests from forks
       BROWSERSTACK_USERNAME: openpgpjs_PlY4Uq885CQ
       BROWSERSTACK_ACCESS_KEY: VjgBVRMxNVBj7SjJFiau
@@ -173,6 +177,7 @@ jobs:
     name: Type definitions
     runs-on: ubuntu-latest
     needs: build
+    permissions: {}
 
     steps:
     - uses: actions/checkout@v5
@@ -192,6 +197,8 @@ jobs:
     name: ESLint
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      pull-requests: write # allow comments
 
     steps:
     - uses: actions/checkout@v5
