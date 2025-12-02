@@ -26,12 +26,6 @@ globalThis.tryTests = function(name, tests, options) {
   }
 };
 
-globalThis.loadStreamsPolyfill = async function() {
-  if (!globalThis.TransformStream) {
-    Object.assign(globalThis, await import('web-streams-polyfill'));
-  }
-};
-
 import runWorkerTests from './worker';
 import runCryptoTests from './crypto';
 import runGeneralTests from './general';

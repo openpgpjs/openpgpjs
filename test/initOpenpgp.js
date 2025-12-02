@@ -4,11 +4,16 @@
  */
 
 import * as openpgp from 'openpgp';
+import * as webStreamsPolyfill from 'web-streams-polyfill';
 
 if (typeof window !== 'undefined') {
   window.openpgp = openpgp;
 }
 
 openpgp.config.s2kIterationCountByte = 0;
+
+if (!globalThis.TransformStream) {
+  Object.assign(globalThis, webStreamsPolyfill);
+}
 
 export default openpgp;

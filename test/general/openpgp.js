@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-/* globals tryTests, loadStreamsPolyfill */
+/* globals tryTests */
 import sinon from 'sinon';
 import * as stream from '@openpgp/web-stream-tools';
 import { use as chaiUse, expect } from 'chai';
@@ -3400,7 +3400,6 @@ XfA3pqV4mTzF
         });
 
         it('should fail to decrypt modified message', async function() {
-          await loadStreamsPolyfill();
           // need to generate new key with AEAD support
           const { privateKey } = await openpgp.generateKey({ userIDs: [{ email: 'test@email.com' }], type: 'rsa', format: 'object' });
           const { aeadAlgo } = await getPreferredCipherSuite([privateKey], undefined, undefined, openpgp.config);
@@ -3721,7 +3720,6 @@ XfA3pqV4mTzF
           it('Streaming encrypt and decrypt small message roundtrip', async function() {
             const plaintext = [];
             let i = 0;
-            await loadStreamsPolyfill();
             const data = new globalThis.ReadableStream({
               pull(controller) {
                 if (i++ < 4) {
