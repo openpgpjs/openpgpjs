@@ -97,7 +97,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     }
     await expect(decrypt_message(
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_point, secp256k1_data, []
-    )).to.be.rejectedWith(/Key Data Integrity faile|Invalid padding/); // invalid padding thrown by webkit on Windows
+    )).to.be.rejectedWith(/Key Data Integrity failed/);
   });
 
   const Q1 = new Uint8Array([
