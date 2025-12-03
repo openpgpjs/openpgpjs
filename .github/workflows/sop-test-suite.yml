@@ -9,6 +9,7 @@ jobs:
   test-suite:
     name: Run interoperability test suite
     runs-on: ubuntu-latest
+    permissions: {}
     container: 
       image: ghcr.io/protonmail/openpgp-interop-test-docker:v2.0.0
       credentials:
@@ -74,6 +75,7 @@ jobs:
     name: Compare with main
     runs-on: ubuntu-latest
     needs: test-suite
+    permissions: {}
     steps:
       - name: Checkout
         uses: actions/checkout@v5

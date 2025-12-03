@@ -8,6 +8,8 @@ jobs:
   benchmark:
     name: Time and memory usage benchmark
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # allow comments
 
     steps:
       # check out pull request branch

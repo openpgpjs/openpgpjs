@@ -11,6 +11,7 @@ jobs:
     name: JSDoc
 
     runs-on: ubuntu-latest
+    permissions: {}
 
     steps:
     - uses: actions/checkout@v5
