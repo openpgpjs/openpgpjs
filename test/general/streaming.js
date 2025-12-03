@@ -931,12 +931,11 @@ function tests() {
 
     it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
       let coresStub;
-      if (detectNode()) {
+      if (typeof navigator !== 'undefined') {
+        Object.defineProperty(navigator, 'hardwareConcurrency', { value: 1, configurable: true });
+      } else {
         coresStub = sinon.stub(util.nodeRequire('os'), 'cpus');
         coresStub.returns(new Array(2));
-        // Object.defineProperty(require('os'), 'cpus', { value: () => [,], configurable: true });
-      } else {
-        Object.defineProperty(navigator, 'hardwareConcurrency', { value: 1, configurable: true });
       }
 
       const { dataStream, expectedType, dataArrived, dataChunks } = getLargeDataStream();
@@ -960,10 +959,10 @@ function tests() {
         await new Promise(resolve => { setTimeout(resolve, 3000); });
         expect(dataChunks.length).to.be.lessThan(expectedType === 'web' ? 50 : 300);
       } finally {
-        if (detectNode()) {
-          coresStub.restore();
-        } else {
+        if (typeof navigator !== 'undefined') {
           delete navigator.hardwareConcurrency;
+        } else {
+          coresStub.restore();
         }
       }
     });
