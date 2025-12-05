@@ -261,6 +261,13 @@ export default {
    */
   maxUserIDLength: 1024 * 5,
   /**
+   * Maximum size of decompressed messages
+   * When decompressing a larger message, OpenPGP.js will throw an error.
+   * @memberof module:config
+   * @property {Integer} maxDecompressedMessageSize
+   */
+  maxDecompressedMessageSize: Infinity,
+  /**
    * Contains notatations that are considered "known". Known notations do not trigger
    * validation error when the notation is marked as critical.
    * @memberof module:config
