@@ -185,7 +185,7 @@ export class Message {
         }
         await Promise.all(packets.map(async function(skeskPacket) {
           try {
-            await skeskPacket.decrypt(password);
+            await skeskPacket.decrypt(password, config);
             decryptedSessionKeyPackets.push(skeskPacket);
           } catch (err) {
             util.printDebugError(err);
@@ -460,7 +460,7 @@ export class Message {
     if (passwords) {
       const testDecrypt = async function(keyPacket, password) {
         try {
-          await keyPacket.decrypt(password);
+          await keyPacket.decrypt(password, config);
           return 1;
         } catch {
           return 0;

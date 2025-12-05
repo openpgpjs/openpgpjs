@@ -157,16 +157,17 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Decrypts the session key with the given passphrase
    * @param {String} passphrase - The passphrase in string form
+   * @param {Object} config
    * @throws {Error} if decryption was not successful
    * @async
    */
-  async decrypt(passphrase) {
+  async decrypt(passphrase, config = defaultConfig) {
     const algo = this.sessionKeyEncryptionAlgorithm !== null ?
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
     const { blockSize, keySize } = getCipherParams(algo);
-    const key = await this.s2k.produceKey(passphrase, keySize);
+    const key = await this.s2k.produceKey(passphrase, keySize, config);
 
     if (this.version >= 5) {
       const mode = cipherMode.getAEADMode(this.aeadAlgorithm, true);
@@ -206,7 +207,7 @@ class SymEncryptedSessionKeyPacket {
     this.s2k.generateSalt();
 
     const { blockSize, keySize } = getCipherParams(algo);
-    const key = await this.s2k.produceKey(passphrase, keySize);
+    const key = await this.s2k.produceKey(passphrase, keySize, config);
 
     if (this.sessionKey === null) {
       this.sessionKey = generateSessionKey(this.sessionKeyAlgorithm);

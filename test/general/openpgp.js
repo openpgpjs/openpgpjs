@@ -14,7 +14,7 @@ import { getPreferredCipherSuite } from '../../src/key';
 
 import * as input from './testInputs.js';
 
-const detectBrowser = () => typeof navigator === 'object';
+const detectBrowser = () => typeof navigator === 'object' && !navigator.userAgent.includes('Node.js');
 
 const pub_key = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -2551,7 +2551,7 @@ XfA3pqV4mTzF
         expect(decryptedSessionKey.algorithm).to.equal('aes128');
       } catch (err) {
         if (detectBrowser()) { // Expected to fail in the CI, especially in Browserstack
-          expect(err.message).to.match(/Could not allocate required memory/);
+          expect(err.message).to.match(/Could not allocate required memory|Argon2 required memory exceeds `config.maxArgon2MemoryExponent`/);
         }
       }
     });

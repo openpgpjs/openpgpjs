@@ -156,7 +156,7 @@ class GenericS2K {
    * hashAlgorithm hash length
    * @async
    */
-  async produceKey(passphrase, numBytes) {
+  async produceKey(passphrase, numBytes, _config) {
     passphrase = util.encodeUTF8(passphrase);
 
     const arr = [];
