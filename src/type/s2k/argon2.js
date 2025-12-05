@@ -97,11 +97,16 @@ class Argon2S2K {
   * Produces a key using the specified passphrase and the defined
   * hashAlgorithm
   * @param {String} passphrase - Passphrase containing user input
+  * @param {Number} keySize
+  * @param {Object} config
   * @returns {Promise<Uint8Array>} Produced key with a length corresponding to `keySize`
   * @throws {Argon2OutOfMemoryError|Errors}
   * @async
   */
-  async produceKey(passphrase, keySize) {
+  async produceKey(passphrase, keySize, config) {
+    if (this.encodedM > config.maxArgon2MemoryExponent) {
+      throw new Argon2OutOfMemoryError('Argon2 required memory exceeds `config.maxArgon2MemoryExponent`');
+    }
     const decodedM = 2 << (this.encodedM - 1);
 
     try {

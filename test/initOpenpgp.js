@@ -12,6 +12,13 @@ if (typeof window !== 'undefined') {
 
 openpgp.config.s2kIterationCountByte = 0;
 
+if (typeof window !== 'undefined' &&
+  /** Mobile Safari 26 reloads the page if Argon2 tries to allocate memory above 1GB */
+  window.navigator.userAgent.match(/Version\/26\.\d(\.\d)* (Mobile\/\w+ )Safari/)) {
+
+  openpgp.config.maxArgon2MemoryExponent = 20;
+}
+
 if (!globalThis.TransformStream) {
   Object.assign(globalThis, webStreamsPonyfill);
 }
