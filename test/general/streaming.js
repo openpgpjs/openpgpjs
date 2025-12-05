@@ -1,5 +1,4 @@
 /* eslint-disable max-lines */
-/* globals loadStreamsPolyfill */
 import * as stream from '@openpgp/web-stream-tools';
 import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
@@ -1002,8 +1001,6 @@ export default () => describe('Streaming', function() {
       privateKey: await openpgp.readKey({ armoredKey: priv_key }),
       passphrase: 'hello world'
     });
-
-    await loadStreamsPolyfill();
   });
 
   tests();

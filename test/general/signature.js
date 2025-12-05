@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-/* globals tryTests, loadStreamsPolyfill */
+/* globals tryTests */
 import * as stream from '@openpgp/web-stream-tools';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
@@ -987,7 +987,6 @@ AkLaG/AkATpuH+DMkYDmKbDLGgD+N4yuxXBJmBfC2IBe4J1S2Gg=
       date: key.keyPacket.created,
       format: 'object'
     });
-    await loadStreamsPolyfill();
     const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
@@ -1018,7 +1017,6 @@ aMsUdQBgnPAcSGVsbG8gV29ybGQgOik=
       date: key.keyPacket.created,
       format: 'object'
     });
-    await loadStreamsPolyfill();
     const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
@@ -1049,7 +1047,6 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       date: key.keyPacket.created,
       format: 'object'
     });
-    await loadStreamsPolyfill();
     const { data, signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
@@ -1798,7 +1795,6 @@ yYDnCgA=
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      await loadStreamsPolyfill();
       const message = await openpgp.readMessage({
         armoredMessage: new ReadableStream({
           async pull(controller) {
@@ -1853,7 +1849,6 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
     it('Streaming verify signed message with missing signature packet', async function() {
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      await loadStreamsPolyfill();
       const getStreamedMessage = config => {
         const armoredMessage = `-----BEGIN PGP MESSAGE-----
 Version: OpenPGP.js v3.1.3
