@@ -40,7 +40,7 @@ export default {
       capabilities: {
         ...sharedBrowserstackCapabilities,
         browserName: '[Browserstack] Safari iOS latest',
-        device: 'iPhone 16 Pro',
+        device: 'iPhone 17 Pro',
         real_mobile: true,
         os: 'ios',
         os_version: 'latest'
