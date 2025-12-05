@@ -399,7 +399,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.usedModernAEAD = !this.isLegacyAEAD; // legacy AEAD does not guarantee integrity of public key material
 
       const serializedPacketTag = writeTag(this.constructor.tag);
-      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD, config);
 
       const modeInstance = await mode(this.symmetric, key);
       this.iv = this.isLegacyAEAD ? getRandomBytes(blockSize) : getRandomBytes(mode.ivLength);
@@ -411,7 +411,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     } else {
       this.s2kUsage = 254;
       this.usedModernAEAD = false;
-      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric);
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, undefined, undefined, undefined, config);
       this.iv = getRandomBytes(blockSize);
       this.keyMaterial = await cipherMode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
         cleartext,
@@ -426,10 +426,11 @@ class SecretKeyPacket extends PublicKeyPacket {
    * {@link SecretKeyPacket.isDecrypted} should be false, as
    * otherwise calls to this function will throw an error.
    * @param {String} passphrase - The passphrase for this private key as string
+   * @param {Object} config
    * @throws {Error} if the key is already decrypted, or if decryption was not successful
    * @async
    */
-  async decrypt(passphrase) {
+  async decrypt(passphrase, config = defaultConfig) {
     if (this.isDummy()) {
       return false;
     }
@@ -446,7 +447,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     const serializedPacketTag = writeTag(this.constructor.tag); // relevant for AEAD only
     if (this.s2kUsage === 254 || this.s2kUsage === 253) {
       key = await produceEncryptionKey(
-        this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
+        this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD, config);
     } else if (this.s2kUsage === 255) {
       throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
     } else {
@@ -566,10 +567,11 @@ class SecretKeyPacket extends PublicKeyPacket {
  * @param {module:enums.aead} [aeadMode] - for AEAD-encrypted keys only (excluding v5)
  * @param {Uint8Array} [serializedPacketTag] - for AEAD-encrypted keys only (excluding v5)
  * @param {Boolean} [isLegacyAEAD] - for AEAD-encrypted keys from RFC4880bis (v4 and v5 only)
+ * @param {Object} config
  * @returns encryption key
  * @access private
  */
-async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD) {
+async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD, config) {
   if (s2k.type === 'argon2' && !aeadMode) {
     throw new Error('Using Argon2 S2K without AEAD is not allowed');
   }
@@ -577,7 +579,7 @@ async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aea
     throw new Error('Using Simple S2K with version 6 keys is not allowed');
   }
   const { keySize } = getCipherParams(cipherAlgo);
-  const derivedKey = await s2k.produceKey(passphrase, keySize);
+  const derivedKey = await s2k.produceKey(passphrase, keySize, config);
   if (!aeadMode || keyVersion === 5 || isLegacyAEAD) {
     return derivedKey;
   }
