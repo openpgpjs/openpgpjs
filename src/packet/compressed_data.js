@@ -175,7 +175,7 @@ function splitStream(data) {
         controller.error(e);
       }
     }
-  });
+  }, { highWaterMark: 0 });
 }
 
 /**
@@ -263,7 +263,7 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
           }
         }
       }
-    });
+    }, { highWaterMark: 0 });
   };
 }
 
