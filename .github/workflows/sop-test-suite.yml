@@ -17,14 +17,14 @@ jobs:
         password: ${{ secrets.github_token }}
     steps:
       # check out repo for scripts
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # the interop image does not include Node.js
       - uses: actions/setup-node@v6
         with:
           node-version: '22.x'
       # check out pull request branch
       - name: Checkout openpgpjs-branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: openpgpjs-branch
       - name: Install openpgpjs-branch
@@ -35,7 +35,7 @@ jobs:
           OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-branch
       # check out main branch
       - name: Checkout openpgpjs-main
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: main
           path: openpgpjs-main
@@ -78,7 +78,7 @@ jobs:
     permissions: {}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Download test results json artifact
         id: download-test-results
         uses: actions/download-artifact@v6

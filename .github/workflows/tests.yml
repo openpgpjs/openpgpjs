@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
       - name: Check for cached folders
         id: cache-full
@@ -40,7 +40,7 @@ jobs:
     needs: build
     permissions: {}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
@@ -70,7 +70,7 @@ jobs:
     permissions: {}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
 
       - name: Retrieve cached built folders
@@ -132,7 +132,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: VjgBVRMxNVBj7SjJFiau
     
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
 
       - name: Generate self-signed HTTPS certificates for web-test-runner server
@@ -180,7 +180,7 @@ jobs:
     permissions: {}
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions/setup-node@v6
     - run: npm ci --ignore-scripts # TS
     - name: Retrieve cached folders
@@ -201,7 +201,7 @@ jobs:
       pull-requests: write # allow comments
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions/setup-node@v6
     - run: npm ci --ignore-scripts # linter
     - name: Retrieve cached folders
