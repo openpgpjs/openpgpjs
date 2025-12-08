@@ -146,6 +146,9 @@ class CompressedDataPacket {
     const data = this.packets.write();
     let compressed = compressionFn(data);
     if (!isStream(data) || isArrayStream(data)) {
+      // Convert back to an ArrayStream when we weren't streaming before,
+      // even if web streams were used internally while compressing,
+      // so that we don't return a stream from the high-level function.
       compressed = streamFromAsync(() => streamReadToEnd(compressed));
     }
     this.compressed = compressed;
