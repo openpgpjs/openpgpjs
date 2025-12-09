@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import { isArrayStream, toStream, fromAsync as streamFromAsync, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
+import { isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -115,8 +115,22 @@ class CompressedDataPacket {
       throw new Error(`${compressionName} decompression not supported`);
     }
 
+    let decompressed = await decompressionFn(this.compressed);
+    if (config.maxDecompressedMessageSize !== Infinity) {
+      let decompressedSize = 0;
+      decompressed = streamTransform(decompressed, chunk => {
+        decompressedSize += chunk.length;
+        if (decompressedSize > config.maxDecompressedMessageSize) {
+          throw new Error('Maximum decompressed message size exceeded');
+        }
+        return chunk;
+      });
+    }
+    if (isArrayStream(this.compressed)) {
+      decompressed = await streamReadToEnd(decompressed);
+    }
     // Decompressing a Compressed Data packet MUST also yield a valid OpenPGP Message
-    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config, new MessageGrammarValidator());
+    this.packets = await PacketList.fromBinary(decompressed, allowedPackets, config, new MessageGrammarValidator());
   }
 
   /**
@@ -140,6 +154,29 @@ export default CompressedDataPacket;
 //   Helper functions   //
 //                      //
 //////////////////////////
+
+function splitStream(data) {
+  const chunkSize = 65536;
+  const reader = streamGetReader(data);
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        const { value, done } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        for (let i = 0; i <= value.length; i += chunkSize) {
+          if (!i || i < value.length) {
+            controller.enqueue(value.subarray(i, i + chunkSize));
+          }
+        }
+      } catch (e) {
+        controller.error(e);
+      }
+    }
+  }, { highWaterMark: 0 });
+}
 
 /**
  * Zlib processor relying on Compression Stream API if available, or falling back to fflate otherwise.
@@ -170,6 +207,19 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
       }));
     }
 
+    // Split the input stream into chunks of 64KiB.
+    // This is only necessary for the fflate fallback decompressor, and
+    // the native Compression API in WebKit, as they decompress the
+    // entire input chunk and emit one output chunk, rather than
+    // outputting chunks incrementally as it decompresses the input.
+    // Therefore, for backpressure to work properly, we need to split
+    // the input chunks.
+    // We do it unconditionally here (regardless of the platform and
+    // API used) for simplicity and because it doesn't hurt much.
+    // (This only does anything if the input chunks aren't already 64KiB
+    // or smaller, e.g. when a large message is passed all at once.)
+    data = splitStream(data);
+
     // Use Compression Streams API if available (see https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API)
     if (compressionStreamInstantiator) {
       try {
@@ -184,19 +234,26 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
     }
 
     // JS fallback
-    const inputReader = data.getReader();
+    const inputReader = streamGetReader(data);
     const zlibStream = new ZlibStreamedConstructor();
+    let providedData = false;
+    let allDone = false;
 
     return new ReadableStream({
-      async start(controller) {
+      start(controller) {
         zlibStream.ondata = (value, isLast) => {
           controller.enqueue(value);
+          providedData = true;
           if (isLast) {
             controller.close();
+            allDone = true;
           }
         };
+      },
 
-        while (true) {
+      async pull() {
+        providedData = false;
+        while (!providedData && !allDone) {
           const { done, value } = await inputReader.read();
           if (done) {
             zlibStream.push(new Uint8Array(), true);
@@ -206,18 +263,14 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
           }
         }
       }
-    });
+    }, { highWaterMark: 0 });
   };
 }
 
 function bzip2Decompress() {
   return async function(data) {
     const { default: unbzip2Stream } = await import('@openpgp/unbzip2-stream');
-    let decompressed = unbzip2Stream(toStream(data));
-    if (isArrayStream(data)) {
-      decompressed = await streamReadToEnd(decompressed);
-    }
-    return decompressed;
+    return unbzip2Stream(toStream(data));
   };
 }
 
