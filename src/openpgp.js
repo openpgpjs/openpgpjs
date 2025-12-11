@@ -192,7 +192,7 @@ export async function decryptKey({ privateKey, passphrase, config, ...rest }) {
   try {
     await Promise.all(clonedPrivateKey.getKeys().map(key => (
       // try to decrypt each key with any of the given passphrases
-      util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase)))
+      util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase, config)))
     )));
 
     await clonedPrivateKey.validate(config);
