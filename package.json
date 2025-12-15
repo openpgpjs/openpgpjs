@@ -83,7 +83,7 @@
     "@types/node": "^24.9.2",
     "@types/sinon": "^17.0.4",
     "@web/test-runner": "^0.20.2",
-    "@web/test-runner-browserstack": "^0.8.0",
+    "@web/test-runner-browserstack": "npm:@openpgp/wtr-test-runner-browserstack@0.8.1-patch.0",
     "@web/test-runner-mocha": "^0.9.0",
     "@web/test-runner-playwright": "^0.11.1",
     "argon2id": "^1.0.1",
@@ -113,7 +113,7 @@
   },
   "overrides": {
     "@web/dev-server-core": "npm:@openpgp/wtr-dev-server-core@0.7.3-patch.1",
-    "@web/test-runner-core": "npm:@openpgp/wtr-test-runner-core@0.13.4-patch.2"
+    "@web/test-runner-core": "npm:@openpgp/wtr-test-runner-core@0.13.4-patch.3"
   },
   "repository": {
     "type": "git",
