@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v6
       - name: Check for cached folders
         id: cache-full
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             dist
@@ -46,7 +46,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci --ignore-scripts # for mocha
     - name: Retrieve cached folders
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       id: cache-full
       with:
         # test/lib is not needed, but the path must be specified fully for a cache-hit
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/setup-node@v6
 
       - name: Retrieve cached built folders
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-full
         with:
           path: |
@@ -101,7 +101,7 @@ jobs:
       - name: Check for cached browsers
         id: cache-playwright-browsers
         if: ${{ matrix.runner  != 'windows-latest' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.playwright-version.outputs.playwright_cache }}
           key: playwright-browsers-${{ matrix.runner }}-${{ steps.playwright-version.outputs.version }}
@@ -148,7 +148,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Retrieve cached dist folder
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-full
         with:
           path: |
@@ -184,7 +184,7 @@ jobs:
     - uses: actions/setup-node@v6
     - run: npm ci --ignore-scripts # TS
     - name: Retrieve cached folders
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       id: cache-full
       with:
         path: |
@@ -205,7 +205,7 @@ jobs:
     - uses: actions/setup-node@v6
     - run: npm ci --ignore-scripts # linter
     - name: Retrieve cached folders
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       id: cache-full
       with:
         path: |

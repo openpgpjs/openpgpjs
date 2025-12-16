@@ -61,12 +61,12 @@ jobs:
          RESULTS_HTML: .github/test-suite/test-suite-results.html
       # Upload results
       - name: Upload test results json artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: test-suite-results.json
           path: .github/test-suite/test-suite-results.json
       - name: Upload test results html artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: test-suite-results.html
           path: .github/test-suite/test-suite-results.html
@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Download test results json artifact
         id: download-test-results
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: test-suite-results.json
       - name: Compare with baseline
