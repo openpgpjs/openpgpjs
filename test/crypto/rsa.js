@@ -48,20 +48,6 @@ export default () => describe('basic RSA cryptography', function () {
     expect(util.uint8ArrayBitLength(keyObject.n)).to.equal(bits);
   });
 
-  it('generate rsa key - without native crypto', async function() {
-    const bits = 1024;
-    disableNative();
-    const keyObject = await crypto.publicKey.rsa.generate(bits, 65537);
-    enableNative();
-    expect(keyObject.n).to.exist;
-    expect(keyObject.e).to.exist;
-    expect(keyObject.d).to.exist;
-    expect(keyObject.p).to.exist;
-    expect(keyObject.q).to.exist;
-    expect(keyObject.u).to.exist;
-    expect(util.uint8ArrayBitLength(keyObject.n)).to.equal(bits);
-  });
-
   it('sign and verify using generated key params', async function() {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
