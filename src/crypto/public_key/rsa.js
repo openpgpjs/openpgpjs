@@ -20,7 +20,6 @@
  * @module crypto/public_key/rsa
  * @access private
  */
-import { randomProbablePrime } from './prime';
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
@@ -192,35 +191,7 @@ export async function generate(bits, e) {
     });
     return jwkToPrivate(jwk, e);
   }
-
-  // RSA keygen fallback using 40 iterations of the Miller-Rabin test
-  // See https://stackoverflow.com/a/6330138 for justification
-  // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
-  let p;
-  let q;
-  let n;
-  do {
-    q = randomProbablePrime(bits - (bits >> 1), e, 40);
-    p = randomProbablePrime(bits >> 1, e, 40);
-    n = p * q;
-  } while (bitLength(n) !== bits);
-
-  const phi = (p - _1n) * (q - _1n);
-
-  if (q < p) {
-    [p, q] = [q, p];
-  }
-
-  return {
-    n: bigIntToUint8Array(n),
-    e: bigIntToUint8Array(e),
-    d: bigIntToUint8Array(modInv(e, phi)),
-    p: bigIntToUint8Array(p),
-    q: bigIntToUint8Array(q),
-    // dp: d.mod(p.subn(1)),
-    // dq: d.mod(q.subn(1)),
-    u: bigIntToUint8Array(modInv(p, q))
-  };
+  throw new Error('Native API support is required for RSA key generation')
 }
 
 /**

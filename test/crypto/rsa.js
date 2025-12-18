@@ -23,8 +23,6 @@ export default () => describe('basic RSA cryptography', function () {
     sinonSandbox.restore();
   });
 
-  const detectNative = () => !!(util.getWebCrypto() || util.getNodeCrypto());
-
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
@@ -39,20 +37,6 @@ export default () => describe('basic RSA cryptography', function () {
   it('generate rsa key', async function() {
     const bits = 1024;
     const keyObject = await crypto.publicKey.rsa.generate(bits, 65537);
-    expect(keyObject.n).to.exist;
-    expect(keyObject.e).to.exist;
-    expect(keyObject.d).to.exist;
-    expect(keyObject.p).to.exist;
-    expect(keyObject.q).to.exist;
-    expect(keyObject.u).to.exist;
-    expect(util.uint8ArrayBitLength(keyObject.n)).to.equal(bits);
-  });
-
-  it('generate rsa key - without native crypto', async function() {
-    const bits = 1024;
-    disableNative();
-    const keyObject = await crypto.publicKey.rsa.generate(bits, 65537);
-    enableNative();
     expect(keyObject.n).to.exist;
     expect(keyObject.e).to.exist;
     expect(keyObject.d).to.exist;
@@ -105,8 +89,6 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnSign', async function() {
-    if (!detectNative()) { this.skip(); }
-
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -122,8 +104,6 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnSign: throw on key size shorter than digest size', async function() {
-    if (!detectNative()) { this.skip(); }
-
     const bits = 512;
     const hashName = 'sha512'; // digest too long for a 512-bit key
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
@@ -138,8 +118,6 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnVerify', async function() {
-    if (!detectNative()) { this.skip(); }
-
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
