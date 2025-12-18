@@ -23,8 +23,6 @@ export default () => describe('basic RSA cryptography', function () {
     sinonSandbox.restore();
   });
 
-  const detectNative = () => !!(util.getWebCrypto() || util.getNodeCrypto());
-
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
@@ -91,8 +89,6 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnSign', async function() {
-    if (!detectNative()) { this.skip(); }
-
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -108,8 +104,6 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnSign: throw on key size shorter than digest size', async function() {
-    if (!detectNative()) { this.skip(); }
-
     const bits = 512;
     const hashName = 'sha512'; // digest too long for a 512-bit key
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
@@ -124,8 +118,6 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnVerify', async function() {
-    if (!detectNative()) { this.skip(); }
-
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
