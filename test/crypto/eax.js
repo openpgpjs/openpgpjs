@@ -143,11 +143,6 @@ export default () => describe('Symmetric AES-EAX', function() {
   };
 
   describe('Symmetric AES-EAX (native)', function() {
-    before(function () {
-      const detectNative = () => !!(util.getWebCrypto() || util.getNodeCrypto());
-      if (!detectNative()) { this.skip(); }
-    });
-
     beforeEach(function () {
       sinonSandbox = sinon.createSandbox();
       enableNative();
