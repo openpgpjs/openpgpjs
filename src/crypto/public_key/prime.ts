@@ -16,57 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @fileoverview Algorithms for probabilistic random prime generation
+ * @fileoverview Algorithms for probabilistic random prime testing
  * @module crypto/public_key/prime
  * @access private
  */
-import { bigIntToNumber, bitLength, gcd, getBit, mod, modExp } from '../biginteger.ts';
+import { bitLength, getBit, mod, modExp } from '../biginteger.ts';
 import { getRandomBigInteger } from '../random.js';
 
 const _1n = BigInt(1);
 
 /**
- * Generate a probably prime random number
- * @param bits - Bit length of the prime
- * @param e - Optional RSA exponent to check against the prime
- * @param k - Optional number of iterations of Miller-Rabin test
- */
-export function randomProbablePrime(bits: number, e: bigint, k: number) {
-  const _30n = BigInt(30);
-  const min = _1n << BigInt(bits - 1);
-  /*
-   * We can avoid any multiples of 3 and 5 by looking at n mod 30
-   * n mod 30 = 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29
-   * the next possible prime is mod 30:
-   *            1  7  7  7  7  7  7 11 11 11 11 13 13 17 17 17 17 19 19 23 23 23 23 29 29 29 29 29 29 1
-   */
-  const adds = [1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2];
-
-  let n = getRandomBigInteger(min, min << _1n);
-  let i = bigIntToNumber(mod(n, _30n));
-
-  do {
-    n += BigInt(adds[i]);
-    i = (i + adds[i]) % adds.length;
-    // If reached the maximum, go back to the minimum.
-    if (bitLength(n) > bits) {
-      n = mod(n, min << _1n); n += min;
-      i = bigIntToNumber(mod(n, _30n));
-    }
-  } while (!isProbablePrime(n, e, k));
-  return n;
-}
-
-/**
  * Probabilistic primality testing
  * @param n - Number to test
- * @param e - Optional RSA exponent to check against the prime
  * @param k - Optional number of iterations of Miller-Rabin test
  */
-export function isProbablePrime(n: bigint, e: bigint, k: number) {
-  if (e && gcd(n - _1n, e) !== _1n) {
-    return false;
-  }
+export function isProbablePrime(n: bigint, k: number) {
   if (!divisionTest(n)) {
     return false;
   }
@@ -87,11 +51,11 @@ export function isProbablePrime(n: bigint, e: bigint, k: number) {
  * @param n - Number to test
  * @param b - Optional Fermat test base
  */
-export function fermat(n: bigint, b = BigInt(2)) {
+function fermat(n: bigint, b = BigInt(2)) {
   return modExp(b, n - _1n, n) === _1n;
 }
 
-export function divisionTest(n: bigint) {
+function divisionTest(n: bigint) {
   const _0n = BigInt(0);
   return smallPrimes.every(m => mod(n, m) !== _0n);
 }
@@ -218,7 +182,7 @@ const smallPrimes = [
  * @returns {boolean}
  * @async
  */
-export function millerRabin(n: bigint, k: number, rand?: () => bigint) {
+function millerRabin(n: bigint, k: number, rand?: () => bigint) {
   const len = bitLength(n);
 
   if (!k) {
