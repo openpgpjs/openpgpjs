@@ -41,9 +41,9 @@ export function generateKey(options: GenerateKeyOptions & { format: 'binary' }):
 export function generateKey(options: GenerateKeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armored', signatureNotations?: MaybeArray<RawNotation>, config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', signatureNotations?: MaybeArray<RawNotation>, config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', signatureNotations?: MaybeArray<RawNotation>, config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
@@ -684,6 +684,7 @@ interface GenerateKeyOptions {
   date?: Date;
   subkeys?: SubkeyOptions[];
   format?: 'armored' | 'object' | 'binary';
+  signatureNotations?: MaybeArray<RawNotation>;
   config?: PartialConfig;
 }
 export type KeyOptions = GenerateKeyOptions;
