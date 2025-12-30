@@ -209,26 +209,29 @@ export default () => describe('API functional testing', function() {
   const data = util.stringToUint8Array('foobar');
 
   describe('Sign and verify', function () {
-    it('RSA', async function () {
-      const RSAsignedData = await crypto.signature.sign(
-        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAPublicParams, RSAPrivateParams, data, await crypto.computeDigest(2, data)
-      );
-      const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, data, await crypto.computeDigest(2, data)
-      );
-      return expect(success).to.be.true;
-    });
+    for (let [hashName, hash] of Object.entries(openpgp.enums.hash)) {
+      it(`RSA with ${hashName.toUpperCase()}`, async function () {
+        const RSAsignedData = await crypto.signature.sign(
+          openpgp.enums.publicKey.rsaEncryptSign, hash, RSAPublicParams, RSAPrivateParams, data, await crypto.computeDigest(hash, data)
+        );
+        const success = await crypto.signature.verify(
+          openpgp.enums.publicKey.rsaEncryptSign, hash, RSAsignedData, RSAPublicParams, data, await crypto.computeDigest(hash, data)
+        );
+        expect(success).to.be.true;
+      });
+    }
 
-    it('DSA', async function () {
-      const DSAsignedData = await crypto.signature.sign(
-        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAPublicParams, DSAPrivateParams, data, await crypto.computeDigest(2, data)
-      );
-      const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, data, await crypto.computeDigest(2, data)
-      );
-
-      return expect(success).to.be.true;
-    });
+    for (let [hashName, hash] of Object.entries(openpgp.enums.hash)) {
+      it(`DSA with ${hashName.toUpperCase()}`, async function () {
+        const DSAsignedData = await crypto.signature.sign(
+          openpgp.enums.publicKey.dsa, hash, DSAPublicParams, DSAPrivateParams, data, await crypto.computeDigest(hash, data)
+        );
+        const success = await crypto.signature.verify(
+          openpgp.enums.publicKey.dsa, hash, DSAsignedData, DSAPublicParams, data, await crypto.computeDigest(hash, data)
+        );
+        expect(success).to.be.true;
+      });
+    }
 
     it('Ed448', async function () {
       // key data from https://www.rfc-editor.org/rfc/rfc8032#section-7.4
