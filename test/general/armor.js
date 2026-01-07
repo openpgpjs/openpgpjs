@@ -64,7 +64,7 @@ export default () => describe('ASCII armor', function() {
     let msg = [
       '-----BEGIN PGP SIGNED MESSAGE-----',
       'Hash: SHA1',
-      ' \f\r\t\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000',
+      ' \r\t',
       'sign this',
       '-----BEGIN PGP SIGNATURE-----',
       'Version: GnuPG v2.0.22 (GNU/Linux)',
@@ -79,6 +79,26 @@ export default () => describe('ASCII armor', function() {
 
     msg = await openpgp.readCleartextMessage({ cleartextMessage: msg });
     expect(msg).to.be.an.instanceof(openpgp.CleartextMessage);
+  });
+
+  it('Do not filter Unicode whitespace in blank line', async function () {
+    let msg = [
+      '-----BEGIN PGP SIGNED MESSAGE-----',
+      'Hash: SHA1',
+      ' \f\r\t\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000',
+      'sign this',
+      '-----BEGIN PGP SIGNATURE-----',
+      'Version: GnuPG v2.0.22 (GNU/Linux)',
+      '',
+      'iJwEAQECAAYFAlMrPj0ACgkQ4IT3RGwgLJfYkQQAgHMQieazCVdfGAfzQM69Egm5',
+      'HhcQszODD898wpoGCHgiNdNo1+5nujQAtXnkcxM+Vf7onfbTvUqut/siyO3fzqhK',
+      'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
+      'skTzzVXIxMYw8ihbHfk=',
+      '=e/eA',
+      '-----END PGP SIGNATURE-----'
+    ].join('\n');
+
+    await expect(openpgp.readCleartextMessage({ cleartextMessage: msg })).to.be.rejectedWith('Mandatory blank line missing between armor headers and armor data');
   });
 
   it('Ignore improperly formatted armor header', async function () {
