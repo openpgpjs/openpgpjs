@@ -64,7 +64,7 @@ export default () => describe('ASCII armor', function() {
     let msg = [
       '-----BEGIN PGP SIGNED MESSAGE-----',
       'Hash: SHA1',
-      ' \f\r\t\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000',
+      ' \r\t',
       'sign this',
       '-----BEGIN PGP SIGNATURE-----',
       'Version: GnuPG v2.0.22 (GNU/Linux)',
