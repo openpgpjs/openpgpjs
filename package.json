@@ -72,7 +72,7 @@
     "@openpgp/unbzip2-stream": "^2.0.0",
     "@openpgp/web-stream-tools": "~0.3.0",
     "@rollup/plugin-alias": "^6.0.0",
-    "@rollup/plugin-commonjs": "^28.0.9",
+    "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",
     "@rollup/plugin-terser": "^0.4.4",
