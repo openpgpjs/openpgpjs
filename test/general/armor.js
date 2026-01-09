@@ -64,7 +64,7 @@ export default () => describe('ASCII armor', function() {
     let msg = [
       '-----BEGIN PGP SIGNED MESSAGE-----',
       'Hash: SHA1',
-      ' \f\r\t\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000',
+      ' \r\t',
       'sign this',
       '-----BEGIN PGP SIGNATURE-----',
       'Version: GnuPG v2.0.22 (GNU/Linux)',
@@ -252,7 +252,7 @@ export default () => describe('ASCII armor', function() {
   it('Do not filter blank lines after header', async function () {
     let msg = getArmor(['Hash: SHA1', '']);
     msg = await openpgp.readCleartextMessage({ cleartextMessage: msg });
-    expect(msg.text).to.equal('\r\nsign this');
+    expect(msg.getText()).to.equal('\nsign this');
   });
 
   it('Selectively output CRC checksum', async function () {
@@ -353,8 +353,38 @@ NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
     ).to.equal(
       pubKey
         .replace('\n-', '-')
-        .replace(/\n\r/g, '\n')
     );
+  });
+
+  it('Armored messages use LF newlines', async function () {
+    const usesLF = armoredData => {
+      return !armoredData.includes('\r');
+    };
+
+    const { privateKey: v4Key } = await openpgp.generateKey({ userIDs: { email: 'v4@armor.test' }, format: 'object' });
+    expect(usesLF(v4Key.armor())).to.be.true;
+    const { privateKey: v6Key } = await openpgp.generateKey({ userIDs: { email: 'v6@armor.test' }, config: { v6Keys: true, aeadProtect: true }, format: 'object' });
+    expect(usesLF(v6Key.armor())).to.be.true;
+
+    const messageWithSEIPDv1 = await openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: v4Key });
+    expect(usesLF(messageWithSEIPDv1)).to.be.true;
+    const messageWithSEIPDv2 = await openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: v6Key });
+    expect(usesLF(messageWithSEIPDv2)).to.be.true;
+
+    const signatureV4V6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: [v4Key, v6Key] });
+    expect(usesLF(signatureV4V6)).to.be.true;
+    const signatureV6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: v6Key });
+    expect(usesLF(signatureV6)).to.be.true;
+
+    const detachedSignatureV4V6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: [v4Key, v6Key], detached: true });
+    expect(usesLF(detachedSignatureV4V6)).to.be.true;
+    const detachedSignatureV6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: v6Key, detached: true });
+    expect(usesLF(detachedSignatureV6)).to.be.true;
+
+    const cleartextSignatureV4V6 = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: 'test' }), signingKeys: [v4Key, v6Key] });
+    expect(usesLF(cleartextSignatureV4V6)).to.be.true;
+    const cleartextSignatureV6 = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: 'test' }), signingKeys: v6Key });
+    expect(usesLF(cleartextSignatureV6)).to.be.true;
   });
 
 });
