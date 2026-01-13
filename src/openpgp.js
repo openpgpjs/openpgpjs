@@ -50,13 +50,14 @@ import { checkKeyRequirements } from './key/helper';
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
+ * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the primary self-signature, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBits = 4096, keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBits = 4096, keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   if (!type && !curve) {
     type = config.v6Keys ? 'curve25519' : 'ecc'; // default to new curve25519 for v6 keys (legacy curve25519 cannot be used with them)
@@ -65,7 +66,7 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
     type = type || 'ecc';
     curve = curve || 'curve25519Legacy';
   }
-  userIDs = toArray(userIDs);
+  userIDs = toArray(userIDs); signatureNotations = toArray(signatureNotations);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   if (userIDs.length === 0 && !config.v6Keys) {
@@ -75,7 +76,7 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
   }
 
-  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
+  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys, signatureNotations };
 
   try {
     const { key, revocationCertificate } = await generate(options, config);
@@ -101,21 +102,22 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
  * @param {Date}   [options.date] - Override the creation date of the key signatures. If the key was previously used to sign messages, it is recommended
  *                                  to set the same date as the key creation time to ensure that old message signatures will still be verifiable using the reformatted key.
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
+ * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the primary self-signature, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExpirationTime = 0, date, format = 'armored', config, ...rest }) {
+export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExpirationTime = 0, date, format = 'armored', signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
-  userIDs = toArray(userIDs);
+  userIDs = toArray(userIDs); signatureNotations = toArray(signatureNotations);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   if (userIDs.length === 0 && privateKey.keyPacket.version !== 6) {
     throw new Error('UserIDs are required for V4 keys');
   }
-  const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
+  const options = { privateKey, userIDs, passphrase, keyExpirationTime, date, signatureNotations };
 
   try {
     const { key: reformattedKey, revocationCertificate } = await reformat(options, config);
