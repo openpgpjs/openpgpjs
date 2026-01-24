@@ -682,7 +682,7 @@ export default () => describe('PQC', function () {
     const sessionKey = { data: new Uint8Array(16).fill(1), algorithm: 'aes128' };
 
     const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.mlkem768X25519);
-    const encryptedSessionKeyParams = await publicKeyEncrypt(openpgp.enums.publicKey.mlkem768X25519, undefined, publicParams, sessionKey.data);
+    const encryptedSessionKeyParams = await publicKeyEncrypt(openpgp.enums.publicKey.mlkem768X25519, undefined, publicParams, {}, sessionKey.data);
     const decryptedSessionKey = await publicKeyDecrypt(openpgp.enums.publicKey.mlkem768X25519, publicParams, privateParams, encryptedSessionKeyParams);
     expect(decryptedSessionKey).to.deep.equal(sessionKey.data);
   });
@@ -836,7 +836,7 @@ Fy70NCeqH2b6JeETZ1xFQEiEInk6B9WE558S9Mi6yjeSXdV65yNK2km5
 
     const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.mldsa65Ed25519);
     const signature = await sign(openpgp.enums.publicKey.mldsa65Ed25519, hashAlgo, publicParams, privateParams, null, digest);
-    const verified = await verify(openpgp.enums.publicKey.mldsa65Ed25519, hashAlgo, signature, publicParams, null, digest);
+    const verified = await verify(openpgp.enums.publicKey.mldsa65Ed25519, hashAlgo, signature, publicParams, {}, null, digest);
     expect(verified).to.be.true;
   });
 

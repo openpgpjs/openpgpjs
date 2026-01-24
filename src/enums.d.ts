@@ -71,11 +71,13 @@ declare namespace enums {
     symEncryptedIntegrityProtectedData = 18,
     modificationDetectionCode = 19,
     aeadEncryptedData = 20,
-    padding = 21
+    padding = 21,
+    persistentSymmetricKey = 40
   }
 
-  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448' | 'mlkem768X25519' | 'mldsa65Ed25519';
+  export type publicKeyNames = 'aead' | 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'x25519' | 'x448' | 'ed25519' | 'ed448' | 'mldsa65Ed25519' | 'mlkem768X25519';
   export enum publicKey {
+    aead = 0,
     rsaEncryptSign = 1,
     rsaEncrypt = 2,
     rsaSign = 3,

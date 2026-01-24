@@ -240,6 +240,9 @@ class PrivateKey extends PublicKey {
     if (options.rsaBits < config.minRSABits) {
       throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
     }
+    if (options.type === 'symmetric') {
+      throw new Error('Cannot add persistent symmetric subkey');
+    }
     const secretKeyPacket = this.keyPacket;
     if (secretKeyPacket.isDummy()) {
       throw new Error('Cannot add subkey to gnu-dummy primary key');
