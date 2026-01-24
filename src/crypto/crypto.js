@@ -27,6 +27,8 @@
 import { rsa, elliptic, elgamal, dsa } from './public_key';
 import { getRandomBytes } from './random';
 import { getCipherParams } from './cipher';
+import { getAEADMode } from './cipherMode';
+import computeHKDF from './hkdf';
 import ECDHSymkey from '../type/ecdh_symkey';
 import KDFParams from '../type/kdf_params';
 import enums from '../enums';
@@ -40,26 +42,46 @@ import ECDHXSymmetricKey from '../type/ecdh_x_symkey';
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
  * @param {module:enums.publicKey} keyAlgo - Public key algorithm
  * @param {module:enums.symmetric|null} symmetricAlgo - Cipher algorithm (v3 only)
- * @param {Object} publicParams - Algorithm-specific public key parameters
+ * @param {Object} publicKeyParams - Algorithm-specific public key parameters
+ * @param {Object} privateKeyParams - Algorithm-specific private key parameters (for AEAD only)
  * @param {Uint8Array} data - Session key data to be encrypted
  * @param {Uint8Array} fingerprint - Recipient fingerprint
+ * @param {Object} config
  * @returns {Promise<Object>} Encrypted session key parameters.
  * @async
  */
-export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, data, fingerprint) {
+export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicKeyParams, privateKeyParams, data, fingerprint, config) {
   switch (keyAlgo) {
+    case enums.publicKey.aead: {
+      const { symAlgo } = publicKeyParams;
+      const { key } = privateKeyParams;
+      const { keySize } = getCipherParams(symAlgo);
+      const aeadAlgo = config.preferredAEADAlgorithm;
+      const mode = getAEADMode(aeadAlgo);
+      const { ivLength } = mode;
+      const salt = getRandomBytes(32);
+      const packetID = 0xC0 | enums.packet.publicKeyEncryptedSessionKey;
+      const version = symmetricAlgo ? 3 : 6;
+      const info = new Uint8Array([packetID, version, symAlgo, aeadAlgo]);
+      const hkdf = await computeHKDF(enums.hash.sha512, key, salt, info, keySize + ivLength);
+      const encKey = hkdf.subarray(0, keySize);
+      const iv = hkdf.subarray(keySize);
+      const modeInstance = await mode(symAlgo, encKey);
+      const ciphertext = await modeInstance.encrypt(data, iv, new Uint8Array());
+      return { aeadAlgo, salt, ciphertext };
+    }
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign: {
-      const { n, e } = publicParams;
+      const { n, e } = publicKeyParams;
       const c = await rsa.encrypt(data, n, e);
       return { c };
     }
     case enums.publicKey.elgamal: {
-      const { p, g, y } = publicParams;
+      const { p, g, y } = publicKeyParams;
       return elgamal.encrypt(data, p, g, y);
     }
     case enums.publicKey.ecdh: {
-      const { oid, Q, kdfParams } = publicParams;
+      const { oid, Q, kdfParams } = publicKeyParams;
       const { publicKey: V, wrappedKey: C } = await elliptic.ecdh.encrypt(
         oid, kdfParams, data, Q, fingerprint);
       return { V, C: new ECDHSymkey(C) };
@@ -70,7 +92,7 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
         // see https://gitlab.com/openpgp-wg/rfc4880bis/-/merge_requests/276
         throw new Error('X25519 and X448 keys can only encrypt AES session keys');
       }
-      const { A } = publicParams;
+      const { A } = publicKeyParams;
       const { ephemeralPublicKey, wrappedKey } = await elliptic.ecdhX.encrypt(
         keyAlgo, data, A);
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
@@ -97,6 +119,23 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
  */
 export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload) {
   switch (algo) {
+    case enums.publicKey.aead: {
+      const { symAlgo } = publicKeyParams;
+      const { key } = privateKeyParams;
+      const { keySize } = getCipherParams(symAlgo);
+      const { aeadAlgo, salt, ciphertext } = sessionKeyParams;
+      const mode = getAEADMode(aeadAlgo);
+      const { ivLength } = mode;
+      const packetID = 0xC0 | enums.packet.publicKeyEncryptedSessionKey;
+      const version = ciphertext.length % 2 ? 3 : 6;
+      const info = new Uint8Array([packetID, version, symAlgo, aeadAlgo]);
+      const hkdf = await computeHKDF(enums.hash.sha512, key, salt, info, keySize + ivLength);
+      const encKey = hkdf.subarray(0, keySize);
+      const iv = hkdf.subarray(keySize);
+      const modeInstance = await mode(symAlgo, encKey);
+      const plaintext = await modeInstance.decrypt(ciphertext, iv, new Uint8Array());
+      return plaintext;
+    }
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {
       const { c } = sessionKeyParams;
@@ -142,6 +181,11 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
 export function parsePublicKeyParams(algo, bytes) {
   let read = 0;
   switch (algo) {
+    case enums.publicKey.aead: {
+      const symAlgo = bytes[read]; read++;
+      const fpSeed = util.readExactSubarray(bytes, read, read + 32); read += fpSeed.length;
+      return { read, publicParams: { symAlgo, fpSeed } };
+    }
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign: {
@@ -207,6 +251,12 @@ export function parsePublicKeyParams(algo, bytes) {
 export function parsePrivateKeyParams(algo, bytes, publicParams) {
   let read = 0;
   switch (algo) {
+    case enums.publicKey.aead: {
+      const { symAlgo } = publicParams;
+      const { keySize } = getCipherParams(symAlgo);
+      const key = util.readExactSubarray(bytes, read, read + keySize); read += key.length;
+      return { read, privateParams: { key } };
+    }
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign: {
@@ -262,6 +312,17 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
 export function parseEncSessionKeyParams(algo, bytes) {
   let read = 0;
   switch (algo) {
+    //   Algorithm-Specific Fields for Persistent Symmetric Encryption:
+    //       - A 1-octet AEAD algorithm.
+    //       - 32 octets of salt.
+    //       - A symmetric key encryption of the plaintext value.
+    case enums.publicKey.aead: {
+      const aeadAlgo = bytes[read]; read++;
+      const salt = util.readExactSubarray(bytes, read, read + 32); read += salt.length;
+      let ciphertext = bytes.subarray(read);
+      return { aeadAlgo, salt, ciphertext };
+    }
+
     //   Algorithm-Specific Fields for RSA encrypted session keys:
     //       - MPI of RSA encrypted value m**e mod n.
     case enums.publicKey.rsaEncrypt:
@@ -315,10 +376,11 @@ export function serializeParams(algo, params) {
     enums.publicKey.ed25519,
     enums.publicKey.x25519,
     enums.publicKey.ed448,
-    enums.publicKey.x448
+    enums.publicKey.x448,
+    enums.publicKey.aead
   ]);
-  const orderedParams = Object.keys(params).map(name => {
-    const param = params[name];
+  const orderedParams = Object.values(params).map(param => {
+    if (typeof param === 'number') return new Uint8Array([param]); // Enum value.
     if (!util.isUint8Array(param)) return param.write();
     return algosWithNativeRepresentation.has(algo) ? param : util.uint8ArrayToMPI(param);
   });
@@ -328,13 +390,24 @@ export function serializeParams(algo, params) {
 /**
  * Generate algorithm-specific key parameters
  * @param {module:enums.publicKey} algo - The public key algorithm
- * @param {Integer} bits - Bit length for RSA keys
+ * @param {Integer} bits - Bit length for RSA and symmetric keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
+ * @param {Object} config
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export function generateParams(algo, bits, oid) {
+export async function generateParams(algo, bits, oid, config) {
   switch (algo) {
+    case enums.publicKey.aead: {
+      const symAlgo = config.preferredSymmetricAlgorithm;
+      const { keySize } = getCipherParams(symAlgo);
+      const key = getRandomBytes(keySize);
+      const fpSeed = getRandomBytes(32);
+      return {
+        privateParams: { key },
+        publicParams: { symAlgo, fpSeed }
+      };
+    }
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign:

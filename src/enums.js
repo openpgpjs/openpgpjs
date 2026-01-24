@@ -68,6 +68,8 @@ export default {
    * @readonly
    */
   publicKey: {
+    /** AEAD (symmetric, for Persistent Symmetric Key Packets only) */
+    aead: 0,
     /** RSA (Encrypt or Sign) [HAC] */
     rsaEncryptSign: 1,
     /** RSA (Encrypt only) [HAC] */
@@ -190,7 +192,8 @@ export default {
     symEncryptedIntegrityProtectedData: 18,
     modificationDetectionCode: 19,
     aeadEncryptedData: 20, // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
-    padding: 21
+    padding: 21,
+    persistentSymmetricKey: 40
   },
 
   /** Data types in the literal packet

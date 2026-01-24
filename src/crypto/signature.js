@@ -5,6 +5,10 @@
  */
 
 import { elliptic, rsa, dsa } from './public_key';
+import { getCipherParams } from './cipher';
+import { getAEADMode } from './cipherMode';
+import { getRandomBytes } from './random';
+import computeHKDF from './hkdf';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from '../packet/packet';
@@ -23,6 +27,17 @@ import { UnsupportedError } from '../packet/packet';
 export function parseSignatureParams(algo, signature) {
   let read = 0;
   switch (algo) {
+    // Algorithm-Specific Fields for AEAD signatures:
+    // -  A 1-octet AEAD algorithm (see section 9.6 of [RFC9580]).
+    // -  32 octets of salt.
+    // -  An authentication tag of the size specified by the AEAD mode.
+    case enums.publicKey.aead: {
+      const aeadAlgo = signature[read]; read++;
+      const salt = util.readExactSubarray(signature, read, read + 32); read += salt.length;
+      const { tagLength } = getAEADMode(aeadAlgo);
+      const authTag = util.readExactSubarray(signature, read, read + tagLength); read += authTag.length;
+      return { read, signatureParams: { aeadAlgo, salt, authTag } };
+    }
     // Algorithm-Specific Fields for RSA signatures:
     // -  MPI of RSA signature value m**d mod n.
     case enums.publicKey.rsaEncryptSign:
@@ -80,28 +95,52 @@ export function parseSignatureParams(algo, signature) {
  * @param {module:enums.publicKey} algo - Public key algorithm
  * @param {module:enums.hash} hashAlgo - Hash algorithm
  * @param {Object} signature - Named algorithm-specific signature parameters
- * @param {Object} publicParams - Algorithm-specific public key parameters
+ * @param {Object} publicKeyParams - Algorithm-specific public and private key parameters
+ * @param {Object} privateKeyParams - Algorithm-specific public and private key parameters (for AEAD only)
  * @param {Uint8Array} data - Data for which the signature was created
  * @param {Uint8Array} hashed - The hashed data
  * @returns {Promise<Boolean>} True if signature is valid.
  * @async
  */
-export async function verify(algo, hashAlgo, signature, publicParams, data, hashed) {
+export async function verify(algo, hashAlgo, signature, publicKeyParams, privateKeyParams, data, hashed) {
   switch (algo) {
+    case enums.publicKey.aead: {
+      const { aeadAlgo, salt, authTag } = signature;
+      const { symAlgo } = publicKeyParams;
+      const { key } = privateKeyParams;
+      const { keySize } = getCipherParams(symAlgo);
+      const mode = getAEADMode(aeadAlgo);
+      const { ivLength } = mode;
+      const packetID = 0xC0 | enums.packet.signature;
+      const version = 6;
+      const info = new Uint8Array([packetID, version, symAlgo, aeadAlgo]);
+      const hkdf = await computeHKDF(enums.hash.sha512, key, salt, info, keySize + ivLength);
+      const authKey = hkdf.subarray(0, keySize);
+      const iv = hkdf.subarray(keySize);
+      const modeInstance = await mode(symAlgo, authKey);
+      try {
+        return util.equalsUint8Array(
+          await modeInstance.decrypt(authTag, iv, hashed),
+          new Uint8Array()
+        );
+      } catch {
+        return false;
+      }
+    }
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
-      const { n, e } = publicParams;
+      const { n, e } = publicKeyParams;
       const s = util.leftPad(signature.s, n.length); // padding needed for webcrypto and node crypto
       return rsa.verify(hashAlgo, data, s, n, e, hashed);
     }
     case enums.publicKey.dsa: {
-      const { g, p, q, y } = publicParams;
+      const { g, p, q, y } = publicKeyParams;
       const { r, s } = signature; // no need to pad, since we always handle them as BigIntegers
       return dsa.verify(hashAlgo, r, s, hashed, g, p, q, y);
     }
     case enums.publicKey.ecdsa: {
-      const { oid, Q } = publicParams;
+      const { oid, Q } = publicKeyParams;
       const curveSize = new elliptic.CurveWithOID(oid).payloadSize;
       // padding needed for webcrypto
       const r = util.leftPad(signature.r, curveSize);
@@ -109,7 +148,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       return elliptic.ecdsa.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
     case enums.publicKey.eddsaLegacy: {
-      const { oid, Q } = publicParams;
+      const { oid, Q } = publicKeyParams;
       const curveSize = new elliptic.CurveWithOID(oid).payloadSize;
       // When dealing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
       // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
@@ -119,7 +158,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     }
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
-      const { A } = publicParams;
+      const { A } = publicKeyParams;
       return elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
     default:
@@ -138,14 +177,33 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
  * @param {Object} privateKeyParams - Algorithm-specific public and private key parameters
  * @param {Uint8Array} data - Data to be signed
  * @param {Uint8Array} hashed - The hashed data
+ * @param {Object} config
  * @returns {Promise<Object>} Signature                      Object containing named signature parameters.
  * @async
  */
-export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed) {
+export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed, config) {
   if (!publicKeyParams || !privateKeyParams) {
     throw new Error('Missing key parameters');
   }
   switch (algo) {
+    case enums.publicKey.aead: {
+      const { symAlgo } = publicKeyParams;
+      const { key } = privateKeyParams;
+      const { keySize } = getCipherParams(symAlgo);
+      const aeadAlgo = config.preferredAEADAlgorithm;
+      const mode = getAEADMode(aeadAlgo);
+      const { ivLength } = mode;
+      const salt = getRandomBytes(32);
+      const packetID = 0xC0 | enums.packet.signature;
+      const version = 6;
+      const info = new Uint8Array([packetID, version, symAlgo, aeadAlgo]);
+      const hkdf = await computeHKDF(enums.hash.sha512, key, salt, info, keySize + ivLength);
+      const authKey = hkdf.subarray(0, keySize);
+      const iv = hkdf.subarray(keySize);
+      const modeInstance = await mode(symAlgo, authKey);
+      const authTag = await modeInstance.encrypt(new Uint8Array(), iv, hashed);
+      return { aeadAlgo, salt, authTag };
+    }
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {

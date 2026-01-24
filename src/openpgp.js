@@ -38,8 +38,9 @@ import { checkKeyRequirements } from './key/helper';
  * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {'ecc'|'rsa'|'curve448'|'curve25519'} [options.type='ecc'] - The primary key algorithm type: ECC (default for v4 keys), RSA, Curve448 or Curve25519 (new format, default for v6 keys).
+ * @param {'ecc'|'rsa'|'curve25519'|'curve448'|'symmetric'} [options.type='ecc'] - The primary key algorithm type: ECC (default for v4 keys), RSA, Curve25519/Curve448 (new format, default for v6 keys) or symmetric.
  *                                                                     Note: Curve448 and Curve25519 (new format) are not widely supported yet.
+ *                                                                     Note: Persistent symmetric keys can't have subkeys. The `options.subkeys` parameter is ignored when `type` is `'symmetric'`.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519Legacy'] - Elliptic curve for ECC keys:
@@ -69,8 +70,11 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
   userIDs = toArray(userIDs); signatureNotations = toArray(signatureNotations);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if (userIDs.length === 0 && !config.v6Keys) {
+  if (userIDs.length === 0 && !config.v6Keys && type !== 'symmetric') {
     throw new Error('UserIDs are required for V4 keys');
+  }
+  if (userIDs.length !== 0 && type === 'symmetric') {
+    throw new Error('Persistent symmetric keys cannot have User IDs');
   }
   if (type === 'rsa' && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
@@ -84,7 +88,7 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
 
     return {
       privateKey: formatObject(key, format, config),
-      publicKey: formatObject(key.toPublic(), format, config),
+      publicKey: type !== 'symmetric' ? formatObject(key.toPublic(), format, config) : undefined,
       revocationCertificate
     };
   } catch (err) {
@@ -117,6 +121,9 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExp
   if (userIDs.length === 0 && privateKey.keyPacket.version !== 6) {
     throw new Error('UserIDs are required for V4 keys');
   }
+  if (userIDs.length !== 0 && privateKey.keyPacket.algorithm === 0) {
+    throw new Error('Persistent symmetric keys cannot have User IDs');
+  }
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date, signatureNotations };
 
   try {
@@ -124,7 +131,7 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExp
 
     return {
       privateKey: formatObject(reformattedKey, format, config),
-      publicKey: formatObject(reformattedKey.toPublic(), format, config),
+      publicKey: privateKey.keyPacket.algorithm !== 0 ? formatObject(reformattedKey.toPublic(), format, config) : undefined,
       revocationCertificate
     };
   } catch (err) {

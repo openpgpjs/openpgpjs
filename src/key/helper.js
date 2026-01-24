@@ -7,6 +7,7 @@
 import {
   SecretKeyPacket,
   SecretSubkeyPacket,
+  PersistentSymmetricKeyPacket,
   SignaturePacket
 } from '../packet';
 import enums from '../enums';
@@ -24,10 +25,11 @@ export async function generateSecretSubkey(options, config) {
 }
 
 export async function generateSecretKey(options, config) {
-  const secretKeyPacket = new SecretKeyPacket(options.date, config);
+  const KeyPacket = options.algorithm === enums.publicKey.aead ? PersistentSymmetricKeyPacket : SecretKeyPacket;
+  const secretKeyPacket = new KeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, config);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
@@ -125,6 +127,9 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
   const defaultAlgo = enums.hash.sha256; // MUST implement
   const preferredSenderAlgo = config.preferredHashAlgorithm;
 
+  // Ignore Persistent Symmetric Keys
+  targetKeys = targetKeys.filter(key => !(key.keyPacket instanceof PersistentSymmetricKeyPacket));
+
   const supportedAlgosPerTarget = await Promise.all(targetKeys.map(async (key, i) => {
     const selfCertification = await key.getPrimarySelfSignature(date, targetUserIDs[i], config);
     const targetPrefs = selfCertification.preferredHashAlgorithms;
@@ -205,6 +210,9 @@ export async function getPreferredCompressionAlgo(keys = [], date = new Date(), 
   const defaultAlgo = enums.compression.uncompressed;
   const preferredSenderAlgo = config.preferredCompressionAlgorithm;
 
+  // Ignore Persistent Symmetric Keys
+  keys = keys.filter(key => !(key.keyPacket instanceof PersistentSymmetricKeyPacket));
+
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
@@ -226,6 +234,9 @@ export async function getPreferredCompressionAlgo(keys = [], date = new Date(), 
  * @async
  */
 export async function getPreferredCipherSuite(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  // Ignore Persistent Symmetric Keys
+  keys = keys.filter(key => !(key.keyPacket instanceof PersistentSymmetricKeyPacket));
+
   const selfSigs = await Promise.all(keys.map((key, i) => key.getPrimarySelfSignature(date, userIDs[i], config)));
   const withAEAD = keys.length ?
     selfSigs.every(selfSig => selfSig.features && (selfSig.features[0] & enums.features.seipdv2)) :
@@ -396,6 +407,10 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.sign = options.sign || false;
 
   switch (options.type) {
+    case 'symmetric':
+      options.algorithm = enums.publicKey.aead;
+      options.subkeys = []; // Persistent Symmetric Keys can't have subkeys.
+      break;
     case 'ecc': // NB: this case also handles legacy eddsa and x25519 keys, based on `options.curve`
       try {
         options.curve = enums.write(enums.curve, options.curve);

@@ -391,7 +391,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     const { blockSize } = getCipherParams(this.symmetric);
 
-    if (config.aeadProtect) {
+    if (config.aeadProtect || this.algorithm === enums.publicKey.aead) {
       this.s2kUsage = 253;
       this.aead = config.preferredAEADAlgorithm;
       const mode = cipherMode.getAEADMode(this.aead);
@@ -525,7 +525,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
   }
 
-  async generate(bits, curve) {
+  async generate(bits, curve, config) {
+    // Sanity check
+    if (this.algorithm === enums.publicKey.aead && this.constructor.tag !== enums.packet.persistentSymmetricKey) {
+      throw new Error('AEAD may only be used with Persistent Symmetric Key packets');
+    }
     // The deprecated OIDs for Ed25519Legacy and Curve25519Legacy are used in legacy version 4 keys and signatures.
     // Implementations MUST NOT accept or generate v6 key material using the deprecated OIDs.
     if (this.version === 6 && (
@@ -534,7 +538,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     )) {
       throw new Error(`Cannot generate v6 keys of type 'ecc' with curve ${curve}. Generate a key of type 'curve25519' instead`);
     }
-    const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve);
+    const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve, config);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;
