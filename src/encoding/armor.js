@@ -273,7 +273,7 @@ export function unarmor(input) {
                 // Reverse dash-escaping for msg
                 text.push(line.replace(/^- /, ''));
               } else {
-                text = text.join('\r\n');
+                text = text.join('\n');
                 textDone = true;
                 verifyHeaders(lastHeaders);
                 lastHeaders = [];
