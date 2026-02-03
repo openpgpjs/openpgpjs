@@ -79,7 +79,7 @@
     "@rollup/plugin-typescript": "^12.3.0",
     "@rollup/plugin-wasm": "^6.2.2",
     "@stylistic/eslint-plugin": "^5.7.1",
-    "@types/chai": "^4.3.20",
+    "@types/chai": "^5.2.3",
     "@types/node": "^24.10.4",
     "@types/sinon": "^21.0.0",
     "@web/test-runner": "^0.20.2",
