@@ -250,7 +250,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     const signatureProperties = getKeySignatureProperties();
     signatureProperties.signatureType = enums.signature.key;
 
-    const signaturePacket = await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, signatureProperties, options.date, undefined, options.signatureNotations, undefined, config);
     packetlist.push(signaturePacket);
   }
 
@@ -266,7 +266,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signatureProperties.isPrimaryUserID = true;
     }
 
-    const signaturePacket = await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, signatureProperties, options.date, undefined, options.signatureNotations, undefined, config);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {

@@ -1364,14 +1364,14 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     expect(await sig.verified).to.be.true;
   });
 
-  it('Can create notations', async function() {
+  it('Can create signature notations when encrypting a message', async function() {
     const privKey = await openpgp.decryptKey({
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
       passphrase: 'hello world'
     });
 
     const config = { minRSABits: 1024 };
-    const message_with_notation = await openpgp.encrypt({
+    const messageWithNotation = await openpgp.encrypt({
       message: await openpgp.createMessage({ text: 'test' }),
       encryptionKeys: privKey,
       signingKeys: privKey,
@@ -1392,14 +1392,14 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
       config
     });
     await expect(openpgp.decrypt({
-      message: await openpgp.readMessage({ armoredMessage: message_with_notation }),
+      message: await openpgp.readMessage({ armoredMessage: messageWithNotation }),
       decryptionKeys: privKey,
       verificationKeys: privKey,
       expectSigned: true,
       config
     })).to.be.rejectedWith('Unknown critical notation: test@example.com');
     const { signatures: [sig] } = await openpgp.decrypt({
-      message: await openpgp.readMessage({ armoredMessage: message_with_notation }),
+      message: await openpgp.readMessage({ armoredMessage: messageWithNotation }),
       decryptionKeys: privKey,
       verificationKeys: privKey,
       config: {
@@ -1421,6 +1421,121 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     expect(notations[2].name).to.equal('salt@notations.openpgpjs.org');
     expect(notations[2].humanReadable).to.be.false;
     expect(notations[2].critical).to.be.false;
+  });
+
+  [4, 6].forEach(version => {
+    it(`Can create signature notations when generating a v${version} key`, async function() {
+      const { privateKey: armoredKeyWithNotations } = await openpgp.generateKey({
+        userIDs: [{ name: 'Test' }],
+        signatureNotations: [
+          {
+            name: 'test@example.com',
+            value: new TextEncoder().encode('test'),
+            humanReadable: true,
+            critical: true
+          },
+          {
+            name: 'séparation-de-domaine@proton.ch',
+            value: new Uint8Array([0, 1, 2, 3]),
+            humanReadable: false,
+            critical: false
+          }
+        ],
+        config: {
+          v6Keys: version === 6
+        }
+      });
+      const keyWithNotations = await openpgp.readKey({ armoredKey: armoredKeyWithNotations });
+      await expect(openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: keyWithNotations
+      })).to.be.rejectedWith('Unknown critical notation: test@example.com');
+      await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: keyWithNotations,
+        config: {
+          knownNotations: ['test@example.com']
+        }
+      });
+      const { rawNotations: notations } = await keyWithNotations.getPrimarySelfSignature(undefined, undefined, {
+        ...openpgp.config,
+        knownNotations: ['test@example.com']
+      });
+      // v4 keys include the salt notation too
+      expect(notations).to.have.length(2 + (version === 4));
+      expect(notations[0].name).to.equal('test@example.com');
+      expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
+      expect(notations[0].humanReadable).to.be.true;
+      expect(notations[0].critical).to.be.true;
+      expect(notations[1].name).to.equal('séparation-de-domaine@proton.ch');
+      expect(notations[1].value).to.deep.equal(new Uint8Array([0, 1, 2, 3]));
+      expect(notations[1].humanReadable).to.be.false;
+      expect(notations[1].critical).to.be.false;
+      if (version === 4) {
+        expect(notations[2].name).to.equal('salt@notations.openpgpjs.org');
+        expect(notations[2].humanReadable).to.be.false;
+        expect(notations[2].critical).to.be.false;
+      }
+    });
+
+    it(`Can create signature notations when reformatting a v${version} key`, async function() {
+      const { privateKey: keyWithoutNotations } = await openpgp.generateKey({
+        userIDs: [{ name: 'Test' }],
+        format: 'object',
+        config: {
+          v6Keys: version === 6
+        }
+      });
+      const { privateKey: armoredKeyWithNotations } = await openpgp.reformatKey({
+        privateKey: keyWithoutNotations,
+        userIDs: [{ name: 'Test' }],
+        signatureNotations: [
+          {
+            name: 'test@example.com',
+            value: new TextEncoder().encode('test'),
+            humanReadable: true,
+            critical: true
+          },
+          {
+            name: 'séparation-de-domaine@proton.ch',
+            value: new Uint8Array([0, 1, 2, 3]),
+            humanReadable: false,
+            critical: false
+          }
+        ]
+      });
+      const keyWithNotations = await openpgp.readKey({ armoredKey: armoredKeyWithNotations });
+      await expect(openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: keyWithNotations
+      })).to.be.rejectedWith('Unknown critical notation: test@example.com');
+      await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: keyWithNotations,
+        config: {
+          knownNotations: ['test@example.com']
+        }
+      });
+      const { rawNotations: notations } = await keyWithNotations.getPrimarySelfSignature(undefined, undefined, {
+        ...openpgp.config,
+        knownNotations: ['test@example.com']
+      });
+      // v4 keys include the salt notation too
+      expect(notations).to.have.length(2 + (version === 4));
+      expect(notations[0].name).to.equal('test@example.com');
+      expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
+      expect(notations[0].humanReadable).to.be.true;
+      expect(notations[0].critical).to.be.true;
+      expect(notations[1].name).to.equal('séparation-de-domaine@proton.ch');
+      expect(notations[1].value).to.deep.equal(new Uint8Array([0, 1, 2, 3]));
+      expect(notations[1].humanReadable).to.be.false;
+      expect(notations[1].critical).to.be.false;
+      if (version === 4) {
+        expect(notations[2].name).to.equal('salt@notations.openpgpjs.org');
+        expect(notations[2].humanReadable).to.be.false;
+        expect(notations[2].critical).to.be.false;
+      }
+    });
   });
 
   it('v4 signatures are randomized via salt notation (`config.nonDeterministicSignaturesViaNotation`)', async function() {
