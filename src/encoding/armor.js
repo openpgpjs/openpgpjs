@@ -36,7 +36,7 @@ import defaultConfig from '../config';
  * @private
  */
 function getType(text) {
-  const reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$/m;
+  const reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----[ \t\r\n]*$/;
 
   const header = text.match(reHeader);
 
@@ -231,8 +231,8 @@ function removeChecksum(text) {
 export function unarmor(input) {
   return new Promise((resolve, reject) => {
     try {
-      const reSplit = /^-----[^-]+-----$/m;
-      const reEmptyLine = /^[ \f\r\t\u00a0\u2000-\u200a\u202f\u205f\u3000]*$/;
+      const reSplit = /^-----[^-]+-----[ \t\r]*$/m;
+      const reEmptyLine = /^[ \t\r\n]*$/;
 
       let type;
       const headers = [];
@@ -248,8 +248,6 @@ export function unarmor(input) {
             if (line === undefined) {
               throw new Error('Misformed armored text');
             }
-            // remove trailing whitespace at end of lines
-            line = util.removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -259,7 +257,7 @@ export function unarmor(input) {
                 reject(new Error('Mandatory blank line missing between armor headers and armor data'));
               }
               if (!reEmptyLine.test(line)) {
-                lastHeaders.push(line);
+                lastHeaders.push(line.replace(/[ \t\r\n]+$/, ''));
               } else {
                 verifyHeaders(lastHeaders);
                 headersDone = true;
@@ -270,10 +268,13 @@ export function unarmor(input) {
               }
             } else if (!textDone && type === enums.armor.signed) {
               if (!reSplit.test(line)) {
-                // Reverse dash-escaping for msg
+                // Reverse dash-escaping for CSF message body
                 text.push(line.replace(/^- /, ''));
               } else {
-                text = text.join('\r\n');
+                // Join the lines (which already include '\n's)
+                text = text.join('');
+                // Remove the final newline, which is not part of the signed text
+                text = text.substring(0, text.length - 1);
                 textDone = true;
                 verifyHeaders(lastHeaders);
                 lastHeaders = [];
@@ -300,7 +301,7 @@ export function unarmor(input) {
               let remainder = await reader.readToEnd();
               if (!remainder.length) remainder = '';
               remainder = line + remainder;
-              remainder = util.removeTrailingSpaces(remainder.replace(/\r/g, ''));
+              remainder = util.removeTrailingSpaces(remainder);
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
