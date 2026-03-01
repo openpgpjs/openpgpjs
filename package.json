@@ -101,7 +101,7 @@
     "eslint-plugin-jsdoc": "^61.7.1",
     "eslint-plugin-unicorn": "^62.0.0",
     "fflate": "^0.8.2",
-    "globals": "^16.5.0",
+    "globals": "^17.2.0",
     "mocha": "^11.7.5",
     "playwright": "^1.58.1",
     "rollup": "^4.57.1",
