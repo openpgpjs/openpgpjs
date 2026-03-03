@@ -79,7 +79,21 @@ class PrivateKey extends PublicKey {
    * @async
    */
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
-    return this.getSigningOrVerificationKey(true, keyID, date, userID, config);
+    return this.getSigningOrVerificationKey(true, helper.validateSigningKeyPacket, keyID, date, userID, config);
+  }
+
+  /**
+   * Returns last created key or key by given keyID that is available for certification signing
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
+   * @param  {Date} [date] - use the given date to check key validity instead of the current date
+   * @param  {Object} [userID] - filter keys for the given user ID
+   * @param  {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Key|Subkey>} certification signing key
+   * @throws if no valid certification signing key was found
+   * @async
+   */
+  async getCertSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+    return this.getSigningOrVerificationKey(true, helper.validateCertificationKeyPacket, keyID, date, userID, config);
   }
 
   /**

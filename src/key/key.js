@@ -259,6 +259,7 @@ class Key {
   /**
    * Returns last created key or key by given keyID that is available for signing or verification
    * @param  {Boolean} [needPrivateKeyMaterial] - whether the key will be used for signing
+   * @param  {Function} [validateKeyPacket] - function to verify the signing/certification key packet
    * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
    * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
    * @param  {Object} [userID] - filter keys for the given user ID
@@ -268,7 +269,7 @@ class Key {
    * @async
    * @private
    */
-  async getSigningOrVerificationKey(needPrivateKeyMaterial = false, keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+  async getSigningOrVerificationKey(needPrivateKeyMaterial = false, validateKeyPacket, keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
     try {
@@ -294,7 +295,7 @@ class Key {
           const bindingSignature = await helper.getLatestValidSignature(
             subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
           );
-          if (!helper.validateSigningKeyPacket(subkey.keyPacket, bindingSignature, config)) {
+          if (!validateKeyPacket(subkey.keyPacket, bindingSignature, config)) {
             continue;
           }
           if (!bindingSignature.embeddedSignature) {
@@ -315,7 +316,7 @@ class Key {
     try {
       const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
-          helper.validateSigningKeyPacket(primaryKey, selfCertification, config)) {
+          validateKeyPacket(primaryKey, selfCertification, config)) {
         if (needPrivateKeyMaterial && helper.isPublicOrDummyKeyPacket(primaryKey)) {
           throw new Error('Cannot sign with a public or dummy key');
         }
@@ -339,7 +340,21 @@ class Key {
    * @async
    */
   async getVerificationKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
-    return this.getSigningOrVerificationKey(false, keyID, date, userID, config);
+    return this.getSigningOrVerificationKey(false, helper.validateSigningKeyPacket, keyID, date, userID, config);
+  }
+
+  /**
+   * Returns last created key or key by given keyID that is available for certification verification
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
+   * @param  {Date} [date] - use the given date to check key validity instead of the current date
+   * @param  {Object} [userID] - filter keys for the given user ID
+   * @param  {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Key|Subkey>} certification verification key
+   * @throws if no valid certification verification key was found
+   * @async
+   */
+  async getCertVerificationKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+    return this.getSigningOrVerificationKey(false, helper.validateCertificationKeyPacket, keyID, date, userID, config);
   }
 
   /**

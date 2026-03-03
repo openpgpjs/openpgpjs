@@ -80,6 +80,7 @@ export abstract class Key {
   public isRevoked(signature?: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<MaybeStream<string> | undefined>;
   public getVerificationKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
+  public getCertVerificationKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getKeys(keyID?: KeyID): (this | Subkey)[];
   public getSubkeys(keyID?: KeyID): Subkey[];
@@ -101,6 +102,7 @@ export class PrivateKey extends PublicKey {
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
   public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
+  public getCertSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<(PrivateKey | Subkey)[]>;
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
 }
