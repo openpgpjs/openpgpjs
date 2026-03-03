@@ -446,6 +446,25 @@ export function validateSigningKeyPacket(keyPacket, signature, config) {
   }
 }
 
+export function validateSigningKeyPacket(keyPacket, signature, config) {
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaSign:
+    case enums.publicKey.dsa:
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
+      if (!signature.keyFlags && !config.allowMissingKeyFlags) {
+        throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
+      }
+      return !signature.keyFlags ||
+        (signature.keyFlags[0] & enums.keyFlags.certifyKeys) !== 0;
+    default:
+      return false;
+  }
+}
+
 export function validateEncryptionKeyPacket(keyPacket, signature, config) {
   switch (keyPacket.algorithm) {
     case enums.publicKey.rsaEncryptSign:
