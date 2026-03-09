@@ -118,5 +118,13 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/openpgpjs/openpgpjs"
+  },
+  "peerDependencies": {
+    "@openpgp/web-stream-tools": "~0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@openpgp/web-stream-tools": {
+      "optional": true
+    }
   }
 }

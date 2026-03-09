@@ -2,7 +2,7 @@
  * The config module cannot be written in TS directly for now,
  * since our JSDoc compiler does not support TS.
  */
-import config, { type Config } from './config';
+import config, { type Config } from './config.js';
 
 
 // PartialConfig has the same properties as Config, but declared as optional.
