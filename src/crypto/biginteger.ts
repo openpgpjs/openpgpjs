@@ -23,6 +23,18 @@ export function mod(a: bigint, m: bigint) {
 }
 
 /**
+ * Return either `a` or `b` based on `cond`, in algorithmic constant time.
+ * @param {BigInt} cond
+ * @param {BigInt} a
+ * @param {BigInt} b
+ * @returns `a` if `cond` is `1n`, `b` otherwise
+ */
+function selectBigInt(cond: 0n | 1n, a: bigint, b: bigint) {
+  const mask = -cond; // ~0n === -1n
+  return (a & mask) | (b & ~mask);
+}
+
+/**
  * Compute modular exponentiation using square and multiply
  * @param {BigInt} a - Base
  * @param {BigInt} e - Exponent
@@ -40,12 +52,12 @@ export function modExp(b: bigint, e: bigint, n: bigint) {
   x %= n;
   let r = BigInt(1);
   while (exp > _0n) {
-    const lsb = exp & _1n;
+    const lsb = (exp & _1n) as 1n | 0n;
     exp >>= _1n; // e / 2
     // Always compute multiplication step, to reduce timing leakage
     const rx = (r * x) % n;
     // Update r only if lsb is 1 (odd exponent)
-    r = lsb ? rx : r;
+    r = selectBigInt(lsb, rx, r);
     x = (x * x) % n; // Square
   }
   return r;
