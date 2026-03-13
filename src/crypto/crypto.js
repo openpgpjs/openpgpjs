@@ -183,6 +183,9 @@ export function parsePublicKeyParams(algo, bytes) {
   switch (algo) {
     case enums.publicKey.aead: {
       const symAlgo = bytes[read]; read++;
+      if (![enums.symmetric.aes128, enums.symmetric.aes192, enums.symmetric.aes256].includes(symAlgo)) {
+        throw new Error('Persistent Symmetric Key packets cannot be used with weak symmetric algorithms');
+      }
       const fpSeed = util.readExactSubarray(bytes, read, read + 32); read += fpSeed.length;
       return { read, publicParams: { symAlgo, fpSeed } };
     }
@@ -400,6 +403,9 @@ export async function generateParams(algo, bits, oid, config) {
   switch (algo) {
     case enums.publicKey.aead: {
       const symAlgo = config.preferredSymmetricAlgorithm;
+      if (![enums.symmetric.aes128, enums.symmetric.aes192, enums.symmetric.aes256].includes(symAlgo)) {
+        throw new Error('Persistent Symmetric Key packets cannot be used with weak symmetric algorithms');
+      }
       const { keySize } = getCipherParams(symAlgo);
       const key = getRandomBytes(keySize);
       const fpSeed = getRandomBytes(32);
