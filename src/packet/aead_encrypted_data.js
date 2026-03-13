@@ -18,19 +18,19 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { clone as streamClone, parse as streamParse } from '@openpgp/web-stream-tools';
-import { cipherMode, getRandomBytes } from '../crypto';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
-import { UnsupportedError } from './packet';
-import { runAEAD } from './sym_encrypted_integrity_protected_data';
+import { cipherMode, getRandomBytes } from '../crypto/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config/index.ts';
+import { UnsupportedError } from './packet.js';
+import { runAEAD } from './sym_encrypted_integrity_protected_data.js';
 
-import LiteralDataPacket from './literal_data';
-import CompressedDataPacket from './compressed_data';
-import OnePassSignaturePacket from './one_pass_signature';
-import SignaturePacket from './signature';
-import PacketList from './packetlist';
-import { MessageGrammarValidator } from './grammar';
+import LiteralDataPacket from './literal_data.js';
+import CompressedDataPacket from './compressed_data.js';
+import OnePassSignaturePacket from './one_pass_signature.js';
+import SignaturePacket from './signature.js';
+import PacketList from './packetlist.js';
+import { MessageGrammarValidator } from './grammar.ts';
 
 // An AEAD-encrypted Data packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([

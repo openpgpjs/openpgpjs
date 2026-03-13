@@ -1,18 +1,18 @@
-import testBigInteger from './biginteger';
-import testCipher from './cipher';
-import testHash from './hash';
-import testCrypto from './crypto';
-import testElliptic from './ecdsa_eddsa';
-import testBrainpoolRFC7027 from './brainpool_rfc7027';
-import testECDH from './ecdh';
-import testPKCS5 from './pkcs5';
-import testAESKW from './aes_kw';
-import testHKDF from './hkdf';
-import testGCM from './gcm';
-import testEAX from './eax';
-import testOCB from './ocb';
-import testRSA from './rsa';
-import testValidate from './validate';
+import testBigInteger from './biginteger.js';
+import testCipher from './cipher/index.js';
+import testHash from './hash/index.js';
+import testCrypto from './crypto.js';
+import testElliptic from './ecdsa_eddsa.js';
+import testBrainpoolRFC7027 from './brainpool_rfc7027.js';
+import testECDH from './ecdh.js';
+import testPKCS5 from './pkcs5.js';
+import testAESKW from './aes_kw.js';
+import testHKDF from './hkdf.js';
+import testGCM from './gcm.js';
+import testEAX from './eax.js';
+import testOCB from './ocb.js';
+import testRSA from './rsa.js';
+import testValidate from './validate.js';
 
 export default () => describe('Crypto', function () {
   testBigInteger();

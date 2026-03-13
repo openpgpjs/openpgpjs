@@ -19,15 +19,15 @@
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
 import { isStream, isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config/index.ts';
 
-import LiteralDataPacket from './literal_data';
-import OnePassSignaturePacket from './one_pass_signature';
-import SignaturePacket from './signature';
-import PacketList from './packetlist';
-import { MessageGrammarValidator } from './grammar';
+import LiteralDataPacket from './literal_data.js';
+import OnePassSignaturePacket from './one_pass_signature.js';
+import SignaturePacket from './signature.js';
+import PacketList from './packetlist.js';
+import { MessageGrammarValidator } from './grammar.ts';
 
 // A Compressed Data packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([

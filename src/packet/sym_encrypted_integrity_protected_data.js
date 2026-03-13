@@ -17,19 +17,19 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { slice as streamSlice, passiveClone as streamPassiveClone, readToEnd as streamReadToEnd, concat as streamConcat, fromAsync as streamFromAsync, getReader as streamGetReader, getWriter as streamGetWriter, clone as streamClone, pipe as streamPipe, transformPair as streamTransformPair, isArrayStream, parse as streamParse } from '@openpgp/web-stream-tools';
-import { cipherMode, getRandomBytes, getCipherParams, computeDigest } from '../crypto';
-import computeHKDF from '../crypto/hkdf';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
+import { cipherMode, getRandomBytes, getCipherParams, computeDigest } from '../crypto/index.js';
+import computeHKDF from '../crypto/hkdf.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config/index.ts';
 
-import LiteralDataPacket from './literal_data';
-import CompressedDataPacket from './compressed_data';
-import OnePassSignaturePacket from './one_pass_signature';
-import SignaturePacket from './signature';
-import PacketList from './packetlist';
-import { UnsupportedError } from './packet';
-import { MessageGrammarValidator } from './grammar';
+import LiteralDataPacket from './literal_data.js';
+import CompressedDataPacket from './compressed_data.js';
+import OnePassSignaturePacket from './one_pass_signature.js';
+import SignaturePacket from './signature.js';
+import PacketList from './packetlist.js';
+import { UnsupportedError } from './packet.js';
+import { MessageGrammarValidator } from './grammar.ts';
 
 // A SEIP packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([

@@ -5,6 +5,6 @@
  * @access public
  */
 
-import config from './config';
+import config from './config.ts';
 
 export default config;

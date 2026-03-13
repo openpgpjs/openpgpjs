@@ -2,11 +2,11 @@
  * @module type/s2k
  * @access private
  */
-import defaultConfig from '../../config';
-import Argon2S2K, { Argon2OutOfMemoryError } from './argon2';
-import GenericS2K from './generic';
-import enums from '../../enums';
-import { UnsupportedError } from '../../packet/packet';
+import defaultConfig from '../../config/index.ts';
+import Argon2S2K, { Argon2OutOfMemoryError } from './argon2.js';
+import GenericS2K from './generic.js';
+import enums from '../../enums.ts';
+import { UnsupportedError } from '../../packet/packet.js';
 
 const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterated]);
 

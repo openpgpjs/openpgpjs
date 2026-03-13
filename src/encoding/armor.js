@@ -18,10 +18,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { transform as streamTransform, transformPair as streamTransformPair, getReader as streamGetReader, getWriter as streamGetWriter, isArrayStream, readToEnd as streamReadToEnd, passiveClone as streamPassiveClone } from '@openpgp/web-stream-tools';
-import { encode as encodeBase64, decode as decodeBase64 } from './base64';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
+import { encode as encodeBase64, decode as decodeBase64 } from './base64.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config/index.ts';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.

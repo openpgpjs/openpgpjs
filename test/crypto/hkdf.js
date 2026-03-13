@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 
-import computeHKDF from '../../src/crypto/hkdf';
-import enums from '../../src/enums';
-import util from '../../src/util';
+import computeHKDF from '../../src/crypto/hkdf.js';
+import enums from '../../src/enums.ts';
+import util from '../../src/util.js';
 
 export default () => describe('HKDF test vectors', function() {
   // Vectors from https://www.rfc-editor.org/rfc/rfc5869#appendix-A

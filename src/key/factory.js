@@ -29,14 +29,14 @@ import {
   SecretKeyPacket,
   SecretSubkeyPacket,
   UserAttributePacket
-} from '../packet';
-import PrivateKey from './private_key';
-import PublicKey from './public_key';
-import * as helper from './helper';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
-import { unarmor } from '../encoding/armor';
+} from '../packet/index.js';
+import PrivateKey from './private_key.js';
+import PublicKey from './public_key.js';
+import * as helper from './helper.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config/index.ts';
+import { unarmor } from '../encoding/armor.js';
 
 // A Key can contain the following packets
 const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([

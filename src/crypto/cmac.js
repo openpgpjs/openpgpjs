@@ -6,7 +6,7 @@
  */
 
 import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
-import util from '../util';
+import util from '../util.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

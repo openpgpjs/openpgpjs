@@ -16,18 +16,18 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { armor, unarmor } from '../encoding/armor';
+import { armor, unarmor } from '../encoding/armor.js';
 import {
   PacketList,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
-import enums from '../enums';
-import util from '../util';
-import User from './user';
-import Subkey from './subkey';
-import * as helper from './helper';
-import { UnparseablePacket } from '../packet/packet';
+} from '../packet/index.js';
+import defaultConfig from '../config/index.ts';
+import enums from '../enums.ts';
+import util from '../util.js';
+import User from './user.js';
+import Subkey from './subkey.js';
+import * as helper from './helper.js';
+import { UnparseablePacket } from '../packet/packet.js';
 
 // A key revocation certificate can contain the following packets
 const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);

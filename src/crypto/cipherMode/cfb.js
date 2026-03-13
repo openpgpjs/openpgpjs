@@ -25,10 +25,10 @@
 import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';
 
 import { transform as streamTransform, transformAsync as streamTransformAsync } from '@openpgp/web-stream-tools';
-import util from '../../util';
-import enums from '../../enums';
-import { getLegacyCipher, getCipherParams } from '../cipher';
-import { getRandomBytes } from '../random';
+import util from '../../util.js';
+import enums from '../../enums.ts';
+import { getLegacyCipher, getCipherParams } from '../cipher/index.js';
+import { getRandomBytes } from '../random.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

@@ -1,15 +1,15 @@
 /** @access public */
 
-import PublicKey from './public_key';
-import { armor } from '../encoding/armor';
+import PublicKey from './public_key.js';
+import { armor } from '../encoding/armor.js';
 import {
   PacketList,
   PublicKeyPacket,
   PublicSubkeyPacket
-} from '../packet';
-import defaultConfig from '../config';
-import enums from '../enums';
-import * as helper from './helper';
+} from '../packet/index.js';
+import defaultConfig from '../config/index.ts';
+import enums from '../enums.ts';
+import * as helper from './helper.js';
 
 /**
  * Class that represents an OpenPGP Private key

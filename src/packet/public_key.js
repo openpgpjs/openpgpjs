@@ -17,12 +17,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import KeyID from '../type/keyid';
-import defaultConfig from '../config';
-import { computeDigest, parsePublicKeyParams, serializeParams } from '../crypto';
-import enums from '../enums';
-import util from '../util';
-import { UnsupportedError } from './packet';
+import KeyID from '../type/keyid.js';
+import defaultConfig from '../config/index.ts';
+import { computeDigest, parsePublicKeyParams, serializeParams } from '../crypto/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import { UnsupportedError } from './packet.js';
 
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)

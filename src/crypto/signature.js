@@ -4,10 +4,10 @@
  * @access private
  */
 
-import { elliptic, rsa, dsa } from './public_key';
-import enums from '../enums';
-import util from '../util';
-import { UnsupportedError } from '../packet/packet';
+import { elliptic, rsa, dsa } from './public_key/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import { UnsupportedError } from '../packet/packet.js';
 
 /**
  * Parse signature in binary form to get the parameters.

@@ -18,14 +18,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { isArrayStream, cancel as streamCancel, readToEnd as streamReadToEnd, fromAsync as streamFromAsync, transformPair as streamTransformPair, getWriter as streamGetWriter, getReader as streamGetReader } from '@openpgp/web-stream-tools';
-import { armor, unarmor } from './encoding/armor';
-import { Argon2OutOfMemoryError } from './type/s2k';
-import defaultConfig from './config';
-import { generateSessionKey } from './crypto';
-import enums from './enums';
-import util from './util';
-import { Signature } from './signature';
-import { getPreferredCipherSuite, createSignaturePacket } from './key';
+import { armor, unarmor } from './encoding/armor.js';
+import { Argon2OutOfMemoryError } from './type/s2k/index.js';
+import defaultConfig from './config/index.ts';
+import { generateSessionKey } from './crypto/index.js';
+import enums from './enums.ts';
+import util from './util.js';
+import { Signature } from './signature.js';
+import { getPreferredCipherSuite, createSignaturePacket } from './key/index.js';
 import {
   PacketList,
   LiteralDataPacket,
@@ -37,8 +37,8 @@ import {
   SymEncryptedSessionKeyPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from './packet';
-import { MessageGrammarValidator } from './packet/grammar';
+} from './packet/index.js';
+import { MessageGrammarValidator } from './packet/grammar.ts';
 
 // A Message can contain the following packets
 const allowedMessagePackets = /*#__PURE__*/ util.constructAllowedPackets([

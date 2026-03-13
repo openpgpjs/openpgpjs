@@ -6,7 +6,7 @@ chaiUse(chaiAsPromised);
 import openpgp from '../initOpenpgp.js';
 import * as elliptic_curves from '../../src/crypto/public_key/elliptic/index.js';
 import { computeDigest } from '../../src/crypto/hash/index.js';
-import config from '../../src/config/index.js';
+import config from '../../src/config/index.ts';
 import util from '../../src/util.js';
 
 import elliptic_data from './elliptic_data.js';

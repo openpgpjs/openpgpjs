@@ -20,7 +20,7 @@
  * @access public
  */
 
-import enums from '../enums';
+import enums from '../enums.ts';
 
 export default {
   /**

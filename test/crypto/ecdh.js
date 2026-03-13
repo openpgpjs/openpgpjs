@@ -7,7 +7,7 @@ chaiUse(chaiAsPromised);
 import openpgp from '../initOpenpgp.js';
 import OID from '../../src/type/oid.js';
 import KDFParams from '../../src/type/kdf_params.js';
-import * as elliptic_curves from '../../src/crypto/public_key/elliptic';
+import * as elliptic_curves from '../../src/crypto/public_key/elliptic/index.js';
 import util from '../../src/util.js';
 import elliptic_data from './elliptic_data.js';
 import * as random from '../../src/crypto/random.js';

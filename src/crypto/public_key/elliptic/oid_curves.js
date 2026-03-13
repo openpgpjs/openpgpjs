@@ -20,13 +20,13 @@
  * @module crypto/public_key/elliptic/curve
  * @access private
  */
-import enums from '../../../enums';
-import util from '../../../util';
-import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
-import OID from '../../../type/oid';
-import { UnsupportedError } from '../../../packet/packet';
-import { generate as eddsaGenerate } from './eddsa';
-import { generate as ecdhXGenerate, validateParams as ecdhXValidateParams } from './ecdh_x';
+import enums from '../../../enums.ts';
+import util from '../../../util.js';
+import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64.js';
+import OID from '../../../type/oid.js';
+import { UnsupportedError } from '../../../packet/packet.js';
+import { generate as eddsaGenerate } from './eddsa.js';
+import { generate as ecdhXGenerate, validateParams as ecdhXValidateParams } from './ecdh_x.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

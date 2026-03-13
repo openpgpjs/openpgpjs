@@ -2,7 +2,7 @@
  * Global configuration values.
  */
 
-import enums from '../enums';
+import enums from '../enums.ts';
 
 export interface Config {
   preferredHashAlgorithm: enums.hash;

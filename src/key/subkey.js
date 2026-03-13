@@ -3,10 +3,10 @@
  * @access private
  */
 
-import enums from '../enums';
-import * as helper from './helper';
-import { PacketList } from '../packet';
-import defaultConfig from '../config';
+import enums from '../enums.ts';
+import * as helper from './helper.js';
+import { PacketList } from '../packet/index.js';
+import defaultConfig from '../config/index.ts';
 
 /**
  * Class that represents a subkey packet and the relevant signatures.

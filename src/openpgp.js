@@ -17,12 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { fromAsync as streamFromAsync, concat as streamConcat, transformPair as streamTransformPair, pipe as streamPipe, readToEnd as streamReadToEnd, getWriter as streamGetWriter } from '@openpgp/web-stream-tools';
-import { Message } from './message';
-import { CleartextMessage } from './cleartext';
-import { generate, reformat, getPreferredCompressionAlgo } from './key';
-import defaultConfig from './config';
-import util from './util';
-import { checkKeyRequirements } from './key/helper';
+import { Message } from './message.js';
+import { CleartextMessage } from './cleartext.js';
+import { generate, reformat, getPreferredCompressionAlgo } from './key/index.js';
+import defaultConfig from './config/index.ts';
+import util from './util.js';
+import { checkKeyRequirements } from './key/helper.js';
 
 
 //////////////////////

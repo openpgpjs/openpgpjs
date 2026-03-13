@@ -16,14 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import PublicKeyPacket from './public_key';
-import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
-import { computeDigest, getCipherParams, parsePrivateKeyParams, serializeParams, generateParams, validateParams, getRandomBytes, cipherMode } from '../crypto';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
-import { UnsupportedError, writeTag } from './packet';
-import computeHKDF from '../crypto/hkdf';
+import PublicKeyPacket from './public_key.js';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.js';
+import { computeDigest, getCipherParams, parsePrivateKeyParams, serializeParams, generateParams, validateParams, getRandomBytes, cipherMode } from '../crypto/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config/index.ts';
+import { UnsupportedError, writeTag } from './packet.js';
+import computeHKDF from '../crypto/hkdf.js';
 
 /**
  * A Secret-Key packet contains all the information that is found in a

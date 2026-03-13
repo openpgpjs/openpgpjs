@@ -24,9 +24,9 @@
  * @access private
  */
 
-import { getRandomBytes } from './random';
-import { getHashByteLength } from './hash';
-import util from '../util';
+import { getRandomBytes } from './random.js';
+import { getHashByteLength } from './hash/index.js';
+import util from '../util.js';
 
 /**
  * ASN1 object identifiers for hashes
