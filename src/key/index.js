@@ -15,9 +15,10 @@ import {
   createSignaturePacket
 } from './helper';
 
-import PrivateKey from './private_key';
 import PublicKey from './public_key';
+import PrivateKey from './private_key';
 import Subkey from './subkey';
+import PersistentSymmetricKey from './persistent_symmetric_key';
 
 export {
   readKey,
@@ -30,7 +31,8 @@ export {
   getPreferredCompressionAlgo,
   getPreferredCipherSuite,
   createSignaturePacket,
-  PrivateKey,
   PublicKey,
-  Subkey
+  PrivateKey,
+  Subkey,
+  PersistentSymmetricKey
 };

@@ -2237,6 +2237,13 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
 =rWL8
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const persistentSymmetricKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+6HcGaXT0TgAAAAAhCWXcoYn5e9mbCXz0RJmbldb+3noZXSWT0+OhS8RsPUMk
+/RoJAwsDCAULqTD3qZhHABNOf5G9YQymW3Qqn2N9+ilERkQJ0eGwRNOCRLfQ
+zQZHkrrLxfeeoeqyGdC5Aqcu0dbOce1n4NeiVkbaUw==
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2617,6 +2624,24 @@ function versionSpecificTests() {
     }
   });
 
+  it('Generate persistent symmetric key', async function() {
+    const opt = { type: 'symmetric', passphrase: '123', format: 'object' };
+    const { privateKey: key, publicKey, revocationCertificate } = await openpgp.generateKey(opt);
+    expect(publicKey).to.be.undefined;
+    expect(revocationCertificate).to.be.undefined;
+    expect(key instanceof openpgp.PersistentSymmetricKey).to.equal(true);
+    expect(key.getAlgorithmInfo().algorithm).to.equal('aead');
+    expect(key.getAlgorithmInfo().cipherAlgorithm).to.equal('aes256');
+    expect(key.keyPacket.version).to.equal(6);
+    expect(key.users.length).to.equal(0);
+    expect(key.subkeys.length).to.equal(0);
+  });
+
+  it('Generate persistent symmetric key - cannot add User IDs', async function() {
+    const opt = { type: 'symmetric', passphrase: '123', format: 'object', userIDs: [{ name: 'Test' }] };
+    await expect(openpgp.generateKey(opt)).to.be.rejectedWith('Persistent symmetric keys cannot have User IDs');
+  });
+
   it('Generate key - ensure keyExpirationTime works', function() {
     const expect_delta = 365 * 24 * 60 * 60;
     const userID = { name: 'test', email: 'a@b.com' };
@@ -2887,6 +2912,33 @@ function versionSpecificTests() {
       const decryptedKey = await openpgp.decryptKey({ privateKey: refKey, passphrase });
       expect(decryptedKey.isDecrypted()).to.be.true;
     });
+  });
+
+  it('Reformat and encrypt persistent symmetric key', async function() {
+    const original = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+    const privateKey = await openpgp.decryptKey({ privateKey: original, passphrase: '123' });
+
+    const passphrase = 'hello world';
+    const reformatOpt = { privateKey, passphrase, format: 'object' };
+    return openpgp.reformatKey(reformatOpt).then(async ({ privateKey: refKey, publicKey, revocationCertificate }) => {
+      expect(publicKey).to.be.undefined;
+      expect(revocationCertificate).to.be.undefined;
+      expect(refKey instanceof openpgp.PersistentSymmetricKey).to.be.true;
+      expect(refKey.users.length).to.equal(0);
+      expect(refKey.subkeys.length).to.equal(0);
+      expect(refKey.directSignatures.length).to.equal(0);
+      expect(refKey.isDecrypted()).to.be.false;
+      const decryptedKey = await openpgp.decryptKey({ privateKey: refKey, passphrase });
+      expect(decryptedKey.isDecrypted()).to.be.true;
+    });
+  });
+
+  it('Reformat persistent symmetric key - cannot add user IDs', async function() {
+    const original = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+    const privateKey = await openpgp.decryptKey({ privateKey: original, passphrase: '123' });
+
+    const reformatOpt = { privateKey, format: 'object', userIDs: [{ name: 'Test' }] };
+    await expect(openpgp.reformatKey(reformatOpt)).to.be.rejectedWith('Persistent symmetric keys cannot have User IDs');
   });
 
   it('Sign and encrypt with reformatted key', async function() {
@@ -3294,6 +3346,43 @@ ruh8m7Xo2ehSSFyWRSuTSZe5tm/KXgYG
       stubArgon2PrimaryKey.restore();
       stubArgon2Subkey.restore();
     }
+  });
+
+  it('Parsing, decrypting, encrypting and serializing persistent symmetric key', async function() {
+    const passphrase = '123';
+    const encryptedKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+
+    // sanity checks
+    expect(decryptedKey.isPrivate()).to.be.true;
+    await expect(decryptedKey.validate()).to.be.fulfilled;
+    const signingKey = await decryptedKey.getSigningKey();
+    expect(signingKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.aead);
+    expect(signingKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'aead', 'cipherAlgorithm': 'aes256' });
+
+    const encryptionKey = await decryptedKey.getEncryptionKey();
+    expect(encryptionKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.aead);
+    expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'aead', 'cipherAlgorithm': 'aes256' });
+
+    await expect(decryptedKey.revoke()).to.be.rejectedWith('Persistent Symmetric Keys cannot be revoked');
+    await expect(decryptedKey.addSubkey()).to.be.rejectedWith('Persistent Symmetric Keys cannot have subkeys');
+    expect(() => decryptedKey.toPublic()).to.throw('Persistent Symmetric Keys do not have a public key');
   });
 
   it('Parsing EdDSALegacy key with unsupported OID (Curve448Legacy)', async function() {
@@ -4909,6 +4998,14 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       const decrypted = await openpgp.decrypt({ message, decryptionKeys: newPrivateKey });
       expect(decrypted).to.exist;
       expect(decrypted.data).to.be.equal(vData);
+    });
+
+    it('cannot add persistent symmetric subkey', async function() {
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+        passphrase: 'hello world'
+      });
+      await expect(privateKey.addSubkey({ type: 'symmetric' })).to.be.rejectedWith('Cannot add persistent symmetric subkey');
     });
   });
 

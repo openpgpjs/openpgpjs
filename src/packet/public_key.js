@@ -121,6 +121,9 @@ class PublicKeyPacket {
 
       // - A one-octet number denoting the public-key algorithm of this key.
       this.algorithm = bytes[pos++];
+      if (this.algorithm === enums.publicKey.aead && this.constructor.tag !== enums.packet.persistentSymmetricKey) {
+        throw new Error('AEAD may only be used with Persistent Symmetric Key packets');
+      }
 
       if (this.version >= 5) {
         // - A four-octet scalar octet count for the following key material.
@@ -277,6 +280,8 @@ class PublicKeyPacket {
       result.bits = util.uint8ArrayBitLength(modulo);
     } else if (this.publicParams.oid) {
       result.curve = this.publicParams.oid.getName();
+    } else if (this.publicParams.symAlgo) {
+      result.cipherAlgorithm = enums.read(enums.symmetric, this.publicParams.symAlgo);
     }
     return result;
   }

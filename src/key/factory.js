@@ -28,10 +28,12 @@ import {
   PublicSubkeyPacket,
   SecretKeyPacket,
   SecretSubkeyPacket,
+  PersistentSymmetricKeyPacket,
   UserAttributePacket
 } from '../packet';
-import PrivateKey from './private_key';
 import PublicKey from './public_key';
+import PrivateKey from './private_key';
+import PersistentSymmetricKey from './persistent_symmetric_key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
@@ -44,6 +46,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
   PublicSubkeyPacket,
   SecretKeyPacket,
   SecretSubkeyPacket,
+  PersistentSymmetricKeyPacket,
   UserIDPacket,
   UserAttributePacket,
   SignaturePacket
@@ -58,10 +61,12 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
 function createKey(packetlist) {
   for (const packet of packetlist) {
     switch (packet.constructor.tag) {
-      case enums.packet.secretKey:
-        return new PrivateKey(packetlist);
       case enums.packet.publicKey:
         return new PublicKey(packetlist);
+      case enums.packet.secretKey:
+        return new PrivateKey(packetlist);
+      case enums.packet.persistentSymmetricKey:
+        return new PersistentSymmetricKey(packetlist);
     }
   }
   throw new Error('No key packet found');
@@ -71,7 +76,7 @@ function createKey(packetlist) {
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519 keys.
  * By default, primary and subkeys will be of same type.
- * @param {ecc|rsa|curve448|curve25519} options.type                  The primary key algorithm type: ECC, RSA, Curve448 or Curve25519 (new format).
+ * @param {ecc|rsa|curve25519|curve448|aead} options.type                  The primary key algorithm type: ECC, RSA, Curve25519/Curve448 (new format) or AEAD.
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
@@ -93,8 +98,11 @@ export async function generate(options, config) {
   let promises = [helper.generateSecretKey(options, config)];
   promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config)));
   const packets = await Promise.all(promises);
-
   const key = await wrapKeyObject(packets[0], packets.slice(1), options, config);
+  if (key instanceof PersistentSymmetricKey) {
+    // Persistent Symmetric Keys cannot be revoked.
+    return { key };
+  }
   const revocationCertificate = await key.getRevocationCertificate(options.date, config);
   key.revocationSignatures = [];
   return { key, revocationCertificate };
@@ -155,6 +163,10 @@ export async function reformat(options, config) {
   options.subkeys = options.subkeys.map(subkeyOptions => sanitize(subkeyOptions, options));
 
   const key = await wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config);
+  if (key instanceof PersistentSymmetricKey) {
+    // Persistent Symmetric Keys cannot be revoked.
+    return { key };
+  }
   const revocationCertificate = await key.getRevocationCertificate(options.date, config);
   key.revocationSignatures = [];
   return { key, revocationCertificate };
@@ -192,6 +204,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   const packetlist = new PacketList();
   packetlist.push(secretKeyPacket);
+
+  if (secretKeyPacket.algorithm === enums.publicKey.aead) {
+    if (options.passphrase) {
+      secretKeyPacket.clearPrivateParams();
+    }
+    // Persistent Symmetric Keys don't have any other components.
+    return new PersistentSymmetricKey(packetlist);
+  }
 
   function createPreferredAlgos(algos, preferredAlgo) {
     return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
@@ -344,7 +364,7 @@ export async function readKey({ armoredKey, binaryKey, config, ...rest }) {
     input = binaryKey;
   }
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey, enums.packet.persistentSymmetricKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');
   }
@@ -386,13 +406,13 @@ export async function readPrivateKey({ armoredKey, binaryKey, config, ...rest })
     input = binaryKey;
   }
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey, enums.packet.persistentSymmetricKey);
   for (let i = 0; i < keyIndex.length; i++) {
     if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) {
       continue;
     }
     const firstPrivateKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-    return new PrivateKey(firstPrivateKeyList);
+    return createKey(firstPrivateKeyList);
   }
   throw new Error('No secret key packet found');
 }
@@ -430,7 +450,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config, ...rest }) {
   }
   const keys = [];
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey, enums.packet.persistentSymmetricKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');
   }
@@ -473,13 +493,13 @@ export async function readPrivateKeys({ armoredKeys, binaryKeys, config }) {
   }
   const keys = [];
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey, enums.packet.persistentSymmetricKey);
   for (let i = 0; i < keyIndex.length; i++) {
     if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) {
       continue;
     }
     const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-    const newKey = new PrivateKey(oneKeyList);
+    const newKey = createKey(oneKeyList);
     keys.push(newKey);
   }
   if (keys.length === 0) {

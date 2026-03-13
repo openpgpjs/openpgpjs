@@ -260,7 +260,7 @@ class SignaturePacket {
 
     this.signedHashValue = streamSlice(streamClone(hash), 0, 2);
     const signed = async () => signature.sign(
-      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await streamReadToEnd(hash)
+      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await streamReadToEnd(hash), config
     );
     if (util.isStream(hash)) {
       this.params = signed();
@@ -788,7 +788,8 @@ class SignaturePacket {
       this.params = await this.params;
 
       this[verified] = await signature.verify(
-        this.publicKeyAlgorithm, this.hashAlgorithm, this.params, key.publicParams,
+        this.publicKeyAlgorithm, this.hashAlgorithm, this.params,
+        key.publicParams, key.privateParams,
         toHash, hash
       );
 
