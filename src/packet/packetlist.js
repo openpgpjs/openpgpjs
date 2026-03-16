@@ -11,7 +11,7 @@ import {
 } from './packet.js';
 import util from '../util.js';
 import enums from '../enums.ts';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * Instantiate a new packet given its tag

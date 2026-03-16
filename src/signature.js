@@ -20,7 +20,7 @@ import { armor, unarmor } from './encoding/armor.js';
 import { PacketList, SignaturePacket } from './packet/index.js';
 import enums from './enums.ts';
 import util from './util.js';
-import defaultConfig from './config/index.ts';
+import defaultConfig from './config.ts';
 
 // A Signature can contain the following packets
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);

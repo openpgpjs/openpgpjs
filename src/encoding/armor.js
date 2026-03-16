@@ -21,7 +21,7 @@ import { transform as streamTransform, transformPair as streamTransformPair, get
 import { encode as encodeBase64, decode as decodeBase64 } from './base64.js';
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.

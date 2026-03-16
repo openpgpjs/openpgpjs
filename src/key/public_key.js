@@ -15,7 +15,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { armor } from '../encoding/armor.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import enums from '../enums.ts';
 import Key from './key.js';
 

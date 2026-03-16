@@ -23,7 +23,7 @@ import KeyID from '../type/keyid.js';
 import { signature, serializeParams, getRandomBytes, getHashByteLength, computeDigest } from '../crypto/index.js';
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
 const verified = Symbol('verified');

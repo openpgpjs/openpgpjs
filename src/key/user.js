@@ -7,7 +7,7 @@ import enums from '../enums.ts';
 import util from '../util.js';
 import { PacketList } from '../packet/index.js';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * Class that represents an user ID or attribute packet and the relevant signatures.

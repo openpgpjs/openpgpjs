@@ -20,7 +20,7 @@
 import { isArrayStream, cancel as streamCancel, readToEnd as streamReadToEnd, fromAsync as streamFromAsync, transformPair as streamTransformPair, getWriter as streamGetWriter, getReader as streamGetReader } from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor.js';
 import { Argon2OutOfMemoryError } from './type/s2k/index.js';
-import defaultConfig from './config/index.ts';
+import defaultConfig from './config.ts';
 import { generateSessionKey } from './crypto/index.js';
 import enums from './enums.ts';
 import util from './util.js';

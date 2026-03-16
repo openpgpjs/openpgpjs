@@ -6,7 +6,7 @@
 import enums from '../enums.ts';
 import * as helper from './helper.js';
 import { PacketList } from '../packet/index.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * Class that represents a subkey packet and the relevant signatures.

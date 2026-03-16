@@ -21,7 +21,7 @@ import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
 import { isStream, isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 import LiteralDataPacket from './literal_data.js';
 import OnePassSignaturePacket from './one_pass_signature.js';

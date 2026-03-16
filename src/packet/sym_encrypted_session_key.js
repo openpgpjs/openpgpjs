@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import { cipherMode, generateSessionKey, getCipherParams, getRandomBytes } from '../crypto/index.js';
 import computeHKDF from '../crypto/hkdf.js';
 import enums from '../enums.ts';

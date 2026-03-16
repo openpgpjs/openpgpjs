@@ -2,7 +2,7 @@
  * @module type/s2k
  * @access private
  */
-import defaultConfig from '../../config/index.ts';
+import defaultConfig from '../../config.ts';
 import Argon2S2K, { Argon2OutOfMemoryError } from './argon2.js';
 import GenericS2K from './generic.js';
 import enums from '../../enums.ts';

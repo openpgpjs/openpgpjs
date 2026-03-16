@@ -26,4 +26,4 @@ export * from './encoding/armor.js';
 
 export { default as enums } from './enums.ts';
 
-export { default as config } from './config/index.ts';
+export { default as config } from './config.ts';

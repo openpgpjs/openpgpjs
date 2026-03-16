@@ -22,7 +22,7 @@ import util from './util.js';
 import { PacketList, LiteralDataPacket, SignaturePacket } from './packet/index.js';
 import { Signature } from './signature.js';
 import { createVerificationObjects, createSignaturePackets } from './message.js';
-import defaultConfig from './config/index.ts';
+import defaultConfig from './config.ts';
 
 // A Cleartext message can contain the following packets
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);

@@ -21,7 +21,7 @@ import {
   PacketList,
   SignaturePacket
 } from '../packet/index.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import enums from '../enums.ts';
 import util from '../util.js';
 import User from './user.js';

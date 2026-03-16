@@ -1,5 +1,5 @@
 /** @access private */
-import defaultConfig from '../../config/index.ts';
+import defaultConfig from '../../config.ts';
 import enums from '../../enums.ts';
 import util from '../../util.js';
 import { getRandomBytes } from '../../crypto/index.js';

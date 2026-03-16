@@ -35,7 +35,7 @@ import PublicKey from './public_key.js';
 import * as helper from './helper.js';
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import { unarmor } from '../encoding/armor.js';
 
 // A Key can contain the following packets

@@ -21,7 +21,7 @@ import { clone as streamClone, parse as streamParse } from '@openpgp/web-stream-
 import { cipherMode, getRandomBytes } from '../crypto/index.js';
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import { UnsupportedError } from './packet.js';
 import { runAEAD } from './sym_encrypted_integrity_protected_data.js';
 

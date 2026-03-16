@@ -20,7 +20,7 @@ import { fromAsync as streamFromAsync, concat as streamConcat, transformPair as 
 import { Message } from './message.js';
 import { CleartextMessage } from './cleartext.js';
 import { generate, reformat, getPreferredCompressionAlgo } from './key/index.js';
-import defaultConfig from './config/index.ts';
+import defaultConfig from './config.ts';
 import util from './util.js';
 import { checkKeyRequirements } from './key/helper.js';
 

@@ -19,7 +19,7 @@
 
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * Implementation of the User ID Packet (Tag 13)

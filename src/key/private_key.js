@@ -7,7 +7,7 @@ import {
   PublicKeyPacket,
   PublicSubkeyPacket
 } from '../packet/index.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import enums from '../enums.ts';
 import * as helper from './helper.js';
 

@@ -19,7 +19,7 @@
 
 import SecretKeyPacket from './secret_key.js';
 import enums from '../enums.ts';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret

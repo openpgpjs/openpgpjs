@@ -21,7 +21,7 @@ import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.js';
 import { computeDigest, getCipherParams, parsePrivateKeyParams, serializeParams, generateParams, validateParams, getRandomBytes, cipherMode } from '../crypto/index.js';
 import enums from '../enums.ts';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 import { UnsupportedError, writeTag } from './packet.js';
 import computeHKDF from '../crypto/hkdf.js';
 

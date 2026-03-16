@@ -12,7 +12,7 @@ import {
 import enums from '../enums.ts';
 import { getPreferredCurveHashAlgo, getHashByteLength } from '../crypto/index.js';
 import util from '../util.js';
-import defaultConfig from '../config/index.ts';
+import defaultConfig from '../config.ts';
 
 export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
