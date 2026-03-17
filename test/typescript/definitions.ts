@@ -11,12 +11,12 @@ import { Readable as NodeNativeReadableStream } from 'stream';
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey, revokeKey,
+  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, type Key, PublicKey, revokeKey,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
-  WebStream, NodeWebStream
+  type WebStream, type NodeWebStream
 } from 'openpgp';
 
 (async () => {

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "node16",
     "moduleResolution": "node16",
-    "noEmit": true, // tested by tsx
+    "noEmit": true, // type-check only
   },
   "files": ["definitions.ts"]
 }
