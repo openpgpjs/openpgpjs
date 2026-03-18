@@ -94,7 +94,7 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "eckey-utils": "^0.7.14",
-    "eslint": "^9.39.3",
+    "eslint": "^10.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-chai-friendly": "^1.1.0",
     "eslint-plugin-import": "^2.32.0",
