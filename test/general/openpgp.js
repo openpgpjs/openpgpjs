@@ -2412,7 +2412,8 @@ k0mXubZvyl4GBg==
       const key = await openpgp.readKey({ armoredKey: rsaKeyWithNoFeaturesFromRNP });
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: 'test' }),
-        encryptionKeys: key
+        encryptionKeys: key,
+        date: null // the key has expired so we disabled time checks
       });
       const decrypted = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
