@@ -79,6 +79,7 @@ export abstract class Key {
   public getRevocationCertificate(date?: Date, config?: Config): Promise<MaybeStream<string> | undefined>;
   public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
+  public getCertificationKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getKeys(keyID?: KeyID): (this | Subkey)[];
   public getSubkeys(keyID?: KeyID): Subkey[];
   public getFingerprint(): string;
