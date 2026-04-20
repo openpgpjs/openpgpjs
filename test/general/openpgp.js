@@ -3750,6 +3750,208 @@ XfA3pqV4mTzF
         });
       });
 
+      describe('Encrypt/decrypt, sign/verify with persistent symmetric key', function() {
+        const persistentSymmetricKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+6HcGaXT0TgAAAAAhCWXcoYn5e9mbCXz0RJmbldb+3noZXSWT0+OhS8RsPUMk
+/RoJAwsDCAULqTD3qZhHABNOf5G9YQymW3Qqn2N9+ilERkQJ0eGwRNOCRLfQ
+zQZHkrrLxfeeoeqyGdC5Aqcu0dbOce1n4NeiVkbaUw==
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+        it('should encrypt and decrypt', async function () {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const encOpt = {
+            message: await openpgp.createMessage({ text: plaintext }),
+            encryptionKeys: decryptedKey
+          };
+          const decOpt = {
+            decryptionKeys: decryptedKey
+          };
+          return openpgp.encrypt(encOpt).then(async function (encrypted) {
+            decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
+            return openpgp.decrypt(decOpt);
+          }).then(function (decrypted) {
+            expect(decrypted.data).to.equal(plaintext);
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('should encrypt and decrypt (larger message)', async function () {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const largerPlaintext = new Uint8Array(100_000);
+          const encOpt = {
+            message: await openpgp.createMessage({ binary: largerPlaintext }),
+            encryptionKeys: decryptedKey
+          };
+          const decOpt = {
+            decryptionKeys: decryptedKey,
+            format: 'binary'
+          };
+          return openpgp.encrypt(encOpt).then(async function (encrypted) {
+            decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
+            return openpgp.decrypt(decOpt);
+          }).then(function (decrypted) {
+            expect(util.equalsUint8Array(decrypted.data, largerPlaintext)).to.be.true;
+            expect(decrypted.signatures.length).to.equal(0);
+          });
+        });
+
+        it('Streaming encrypt and decrypt small message roundtrip', async function() {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const plaintext = [];
+          let i = 0;
+          const data = new globalThis.ReadableStream({
+            pull(controller) {
+              if (i++ < 4) {
+                const randomBytes = crypto.getRandomBytes(10);
+                controller.enqueue(randomBytes);
+                plaintext.push(randomBytes.slice());
+              } else {
+                controller.close();
+              }
+            }
+          });
+          const encrypted = await openpgp.encrypt({
+            message: await openpgp.createMessage({ binary: data }),
+            encryptionKeys: decryptedKey
+          });
+          expect(stream.isStream(encrypted)).to.equal('web');
+
+          const message = await openpgp.readMessage({ armoredMessage: encrypted });
+          const decrypted = await openpgp.decrypt({
+            decryptionKeys: decryptedKey,
+            message,
+            format: 'binary'
+          });
+          expect(stream.isStream(decrypted.data)).to.equal('web');
+          expect(await stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+        });
+
+        it('should sign and verify', async function () {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const signOpt = {
+            message: await openpgp.createMessage({ text: plaintext }),
+            signingKeys: decryptedKey
+          };
+          const verifyOpt = {
+            verificationKeys: decryptedKey
+          };
+          return openpgp.sign(signOpt).then(async function (signed) {
+            verifyOpt.message = await openpgp.readMessage({ armoredMessage: signed });
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            expect(verified.data).to.equal(plaintext);
+            expect(verified.signatures.length).to.equal(1);
+            expect(await verified.signatures[0].verified).to.be.true;
+          });
+        });
+
+        it('should sign and verify (larger message)', async function () {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const largerPlaintext = new Uint8Array(100_000);
+          const signOpt = {
+            message: await openpgp.createMessage({ binary: largerPlaintext }),
+            signingKeys: decryptedKey
+          };
+          const verifyOpt = {
+            verificationKeys: decryptedKey,
+            format: 'binary'
+          };
+          return openpgp.sign(signOpt).then(async function (signed) {
+            verifyOpt.message = await openpgp.readMessage({ armoredMessage: signed });
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            expect(util.equalsUint8Array(verified.data, largerPlaintext)).to.be.true;
+            expect(verified.signatures.length).to.equal(1);
+            expect(await verified.signatures[0].verified).to.be.true;
+          });
+        });
+
+        it('Streaming sign and verify small message roundtrip', async function() {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const plaintext = [];
+          let i = 0;
+          const data = new globalThis.ReadableStream({
+            pull(controller) {
+              if (i++ < 4) {
+                const randomBytes = crypto.getRandomBytes(10);
+                controller.enqueue(randomBytes);
+                plaintext.push(randomBytes.slice());
+              } else {
+                controller.close();
+              }
+            }
+          });
+          const signed = await openpgp.sign({
+            message: await openpgp.createMessage({ binary: data }),
+            signingKeys: decryptedKey
+          });
+          expect(stream.isStream(signed)).to.equal('web');
+
+          const message = await openpgp.readMessage({ armoredMessage: signed });
+          const verified = await openpgp.verify({
+            verificationKeys: decryptedKey,
+            message,
+            format: 'binary'
+          });
+          expect(stream.isStream(verified.data)).to.equal('web');
+          expect(await stream.readToEnd(verified.data)).to.deep.equal(util.concatUint8Array(plaintext));
+          expect(verified.signatures.length).to.equal(1);
+          expect(await verified.signatures[0].verified).to.be.true;
+        });
+
+        it('should sign and verify detached', async function () {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const signOpt = {
+            message: await openpgp.createMessage({ text: plaintext }),
+            signingKeys: decryptedKey,
+            detached: true
+          };
+          const verifyOpt = {
+            message: await openpgp.createMessage({ text: plaintext }),
+            verificationKeys: decryptedKey
+          };
+          return openpgp.sign(signOpt).then(async function (signed) {
+            verifyOpt.signature = await openpgp.readSignature({ armoredSignature: signed });
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            expect(verified.data).to.equal(plaintext);
+            expect(verified.signatures.length).to.equal(1);
+            expect(await verified.signatures[0].verified).to.be.true;
+          });
+        });
+
+        it('should sign and verify detached (larger message)', async function () {
+          const privateKey = await openpgp.readKey({ armoredKey: persistentSymmetricKey });
+          const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase: '123' });
+          const largerPlaintext = new Uint8Array(100_000);
+          const signOpt = {
+            message: await openpgp.createMessage({ binary: largerPlaintext }),
+            signingKeys: decryptedKey,
+            detached: true
+          };
+          const verifyOpt = {
+            message: await openpgp.createMessage({ binary: largerPlaintext }),
+            verificationKeys: decryptedKey,
+            format: 'binary'
+          };
+          return openpgp.sign(signOpt).then(async function (signed) {
+            verifyOpt.signature = await openpgp.readSignature({ armoredSignature: signed });
+            return openpgp.verify(verifyOpt);
+          }).then(async function (verified) {
+            expect(util.equalsUint8Array(verified.data, largerPlaintext)).to.be.true;
+            expect(verified.signatures.length).to.equal(1);
+            expect(await verified.signatures[0].verified).to.be.true;
+          });
+        });
+      });
     }
 
     describe('AES / RSA encrypt, decrypt, sign, verify', function() {

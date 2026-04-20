@@ -174,11 +174,12 @@ class PublicKeyEncryptedSessionKeyPacket {
 
   /**
    * Encrypt session key packet
-   * @param {PublicKeyPacket} key - Public key
+   * @param {PublicKeyPacket|PersistentSymmetricKeyPacket} key - Public key or persistent symmetric key packet
+   * @param {Object} config
    * @throws {Error} if encryption failed
    * @async
    */
-  async encrypt(key) {
+  async encrypt(key, config) {
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     // No symmetric encryption algorithm identifier is passed to the public-key algorithm for a
     // v6 PKESK packet, as it is included in the v2 SEIPD packet.
@@ -186,12 +187,12 @@ class PublicKeyEncryptedSessionKeyPacket {
     const fingerprint = key.version === 5 ? key.getFingerprintBytes().subarray(0, 20) : key.getFingerprintBytes();
     const encoded = encodeSessionKey(this.version, algo, sessionKeyAlgorithm, this.sessionKey);
     this.encrypted = await publicKeyEncrypt(
-      algo, sessionKeyAlgorithm, key.publicParams, encoded, fingerprint);
+      algo, sessionKeyAlgorithm, key.publicParams, key.privateParams, encoded, fingerprint, config);
   }
 
   /**
    * Decrypts the session key (only for public key encrypted session key packets (tag 1)
-   * @param {SecretKeyPacket} key - decrypted private key
+   * @param {SecretKeyPacket|PersistentSymmetricKeyPacket} key - decrypted private key or persistent symmetric key packet
    * @param {Object} [randomSessionKey] - Bogus session key to use in case of sensitive decryption error, or if the decrypted session key is of a different type/size.
    *                                      This is needed for constant-time processing. Expected object of the form: { sessionKey: Uint8Array, sessionKeyAlgorithm: enums.symmetric }
    * @throws {Error} if decryption failed, unless `randomSessionKey` is given
@@ -229,6 +230,11 @@ export default PublicKeyEncryptedSessionKeyPacket;
 
 function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
   switch (keyAlgo) {
+    case enums.publicKey.aead:
+      return util.concatUint8Array([
+        new Uint8Array(version === 6 ? [] : [cipherAlgo]),
+        sessionKeyData
+      ]);
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.elgamal:
@@ -250,6 +256,10 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
 
 function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
   switch (keyAlgo) {
+    case enums.publicKey.aead:
+      return version === 6 ?
+        { sessionKeyAlgorithm: null, sessionKey: decryptedData } :
+        { sessionKeyAlgorithm: decryptedData[0], sessionKey: decryptedData.subarray(1) };
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.elgamal:

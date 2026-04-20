@@ -12,7 +12,7 @@ export {
   generateSessionKey, encryptSessionKey, decryptSessionKeys
 } from './openpgp';
 
-export { PrivateKey, PublicKey, Subkey, readKey, readKeys, readPrivateKey, readPrivateKeys } from './key';
+export { PublicKey, PrivateKey, Subkey, PersistentSymmetricKey, readKey, readKeys, readPrivateKey, readPrivateKeys } from './key';
 
 export { Signature, readSignature } from './signature';
 
