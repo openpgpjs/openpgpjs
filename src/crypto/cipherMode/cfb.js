@@ -149,7 +149,8 @@ class WebCryptoEncryptor {
   constructor(algo, key, iv) {
     const { blockSize } = getCipherParams(algo);
     this.key = key;
-    this.prevBlock = iv;
+    this.iv = iv;
+    this.prevBlock = iv.slice();
     this.nextBlock = new Uint8Array(blockSize);
     this.i = 0; // pointer inside next block
     this.blockSize = blockSize;
