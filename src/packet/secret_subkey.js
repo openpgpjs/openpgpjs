@@ -17,9 +17,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import SecretKeyPacket from './secret_key';
-import enums from '../enums';
-import defaultConfig from '../config';
+import SecretKeyPacket from './secret_key.js';
+import enums from '../enums.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret

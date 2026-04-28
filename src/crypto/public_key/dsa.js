@@ -20,10 +20,10 @@
  * @module crypto/public_key/dsa
  * @access private
  */
-import { getRandomBigInteger } from '../random';
-import util from '../../util';
-import { isProbablePrime } from './prime';
-import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger';
+import { getRandomBigInteger } from '../random.js';
+import util from '../../util.js';
+import { isProbablePrime } from './prime.ts';
+import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
 
 /*
   TODO regarding the hash function, read:

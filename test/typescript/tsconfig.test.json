@@ -1,7 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "noEmit": true, // tested by tsx
+    "module": "node16",
+    "moduleResolution": "node16",
+    "noEmit": true, // type-check only
   },
   "files": ["definitions.ts"]
 }

@@ -4,11 +4,11 @@
  * @access private
  */
 
-export * as cfb from './cfb';
-import eax from './eax';
-import ocb from './ocb';
-import gcm from './gcm';
-import enums from '../../enums';
+export * as cfb from './cfb.js';
+import eax from './eax.js';
+import ocb from './ocb.js';
+import gcm from './gcm.js';
+import enums from '../../enums.ts';
 
 /**
 * Get implementation of the given AEAD mode

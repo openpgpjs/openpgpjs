@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 
-import { computeDigest } from '../../../src/crypto/hash';
+import { computeDigest } from '../../../src/crypto/hash/index.js';
 import util from '../../../src/util.js';
-import enums from '../../../src/enums.js';
+import enums from '../../../src/enums.ts';
 
 export default () => it('RIPE-MD 160 bits with test vectors from https://homes.esat.kuleuven.be/~bosselae/ripemd160.html', async function() {
   expect(util.uint8ArrayToHex(await computeDigest(enums.hash.ripemd, util.stringToUint8Array('')), 'RMDstring("") = 9c1185a5c5e9fc54612808977ee8f548b2258d31')).to.equal('9c1185a5c5e9fc54612808977ee8f548b2258d31');

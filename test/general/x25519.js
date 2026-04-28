@@ -5,12 +5,12 @@ chaiUse(chaiAsPromised);
 import nacl from '@openpgp/tweetnacl';
 import openpgp from '../initOpenpgp.js';
 
-import * as elliptic from '../../src/crypto/public_key/elliptic';
-import * as signature from '../../src/crypto/signature';
-import OID from '../../src/type/oid';
-import util from '../../src/util';
+import * as elliptic from '../../src/crypto/public_key/elliptic/index.js';
+import * as signature from '../../src/crypto/signature.js';
+import OID from '../../src/type/oid.js';
+import util from '../../src/util.js';
 
-import * as input from './testInputs';
+import * as input from './testInputs.js';
 
 const isSafariOrHeadlessWebKit = () => typeof window !== 'undefined' && window.navigator.userAgent.match(/WebKit/) && !window.navigator.userAgent.match(/Chrome/);
 

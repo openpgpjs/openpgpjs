@@ -33,8 +33,8 @@
  * @access private
  */
 
-import util from '../util';
-import enums from '../enums';
+import util from '../util.js';
+import enums from '../enums.ts';
 
 const knownOIDs = {
   '2a8648ce3d030107': enums.curve.nistP256,

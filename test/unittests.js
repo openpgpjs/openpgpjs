@@ -26,10 +26,10 @@ globalThis.tryTests = function(name, tests, options) {
   }
 };
 
-import runWorkerTests from './worker';
-import runCryptoTests from './crypto';
-import runGeneralTests from './general';
-import runSecurityTests from './security';
+import runWorkerTests from './worker/index.js';
+import runCryptoTests from './crypto/index.js';
+import runGeneralTests from './general/index.js';
+import runSecurityTests from './security/index.js';
 
 describe('Unit Tests', function () {
   if (typeof window !== 'undefined') {

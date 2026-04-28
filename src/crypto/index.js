@@ -10,10 +10,10 @@
  * @access private
  */
 
-export * from './crypto';
-export { getCipherParams } from './cipher';
-export * from './hash';
-export * as cipherMode from './cipherMode';
-export * as publicKey from './public_key';
-export * as signature from './signature';
-export { getRandomBytes } from './random';
+export * from './crypto.js';
+export { getCipherParams } from './cipher/index.js';
+export * from './hash/index.js';
+export * as cipherMode from './cipherMode/index.js';
+export * as publicKey from './public_key/index.js';
+export * as signature from './signature.js';
+export { getRandomBytes } from './random.js';

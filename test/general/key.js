@@ -7,7 +7,7 @@ chaiUse(chaiAsPromised);
 import sinon from 'sinon';
 import openpgp from '../initOpenpgp.js';
 import util from '../../src/util.js';
-import { getPreferredCipherSuite, getPreferredHashAlgo } from '../../src/key';
+import { getPreferredCipherSuite, getPreferredHashAlgo } from '../../src/key/index.js';
 import KeyID from '../../src/type/keyid.js';
 
 const priv_key_arm2 =

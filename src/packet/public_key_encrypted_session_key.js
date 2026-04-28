@@ -17,11 +17,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import KeyID from '../type/keyid';
-import { parseEncSessionKeyParams, publicKeyEncrypt, publicKeyDecrypt, getCipherParams, serializeParams } from '../crypto';
-import enums from '../enums';
-import util from '../util';
-import { UnsupportedError } from './packet';
+import KeyID from '../type/keyid.js';
+import { parseEncSessionKeyParams, publicKeyEncrypt, publicKeyDecrypt, getCipherParams, serializeParams } from '../crypto/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import { UnsupportedError } from './packet.js';
 
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)

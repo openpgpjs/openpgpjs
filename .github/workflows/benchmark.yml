@@ -23,7 +23,7 @@ jobs:
           path: main
       - uses: actions/setup-node@v6
         with:
-          node-version: '>=20.6.0'
+          node-version-file: package.json
 
       - name: Run pull request time benchmark
         run: cd pr && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt

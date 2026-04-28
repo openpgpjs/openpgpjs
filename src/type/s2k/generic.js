@@ -16,11 +16,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import defaultConfig from '../../config';
-import { getRandomBytes, computeDigest } from '../../crypto';
-import enums from '../../enums';
-import { UnsupportedError } from '../../packet/packet';
-import util from '../../util';
+import defaultConfig from '../../config.ts';
+import { getRandomBytes, computeDigest } from '../../crypto/index.js';
+import enums from '../../enums.ts';
+import { UnsupportedError } from '../../packet/packet.js';
+import util from '../../util.js';
 
 /**
  * Implementation of the String-to-key specifier

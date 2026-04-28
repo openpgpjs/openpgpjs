@@ -25,12 +25,12 @@
  * @access private
  */
 
-import { CurveWithOID, generate, getPreferredHashAlgo } from './oid_curves';
-import * as ecdsa from './ecdsa';
-import * as eddsaLegacy from './eddsa_legacy';
-import * as eddsa from './eddsa';
-import * as ecdh from './ecdh';
-import * as ecdhX from './ecdh_x';
+import { CurveWithOID, generate, getPreferredHashAlgo } from './oid_curves.js';
+import * as ecdsa from './ecdsa.js';
+import * as eddsaLegacy from './eddsa_legacy.js';
+import * as eddsa from './eddsa.js';
+import * as ecdh from './ecdh.js';
+import * as ecdhX from './ecdh_x.js';
 
 export {
   CurveWithOID, ecdh, ecdhX, ecdsa, eddsaLegacy, eddsa, generate, getPreferredHashAlgo

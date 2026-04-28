@@ -16,13 +16,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { armor, unarmor } from './encoding/armor';
-import enums from './enums';
-import util from './util';
-import { PacketList, LiteralDataPacket, SignaturePacket } from './packet';
-import { Signature } from './signature';
-import { createVerificationObjects, createSignaturePackets } from './message';
-import defaultConfig from './config';
+import { armor, unarmor } from './encoding/armor.js';
+import enums from './enums.ts';
+import util from './util.js';
+import { PacketList, LiteralDataPacket, SignaturePacket } from './packet/index.js';
+import { Signature } from './signature.js';
+import { createVerificationObjects, createSignaturePackets } from './message.js';
+import defaultConfig from './config.ts';
 
 // A Cleartext message can contain the following packets
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);

@@ -2,7 +2,7 @@
  * @module crypto/cipher
  * @access private
  */
-import enums from '../../enums';
+import enums from '../../enums.ts';
 
 export async function getLegacyCipher(algo) {
   switch (algo) {
@@ -14,7 +14,7 @@ export async function getLegacyCipher(algo) {
     case enums.symmetric.blowfish:
     case enums.symmetric.twofish:
     case enums.symmetric.tripledes: {
-      const { legacyCiphers } = await import('./legacy_ciphers');
+      const { legacyCiphers } = await import('./legacy_ciphers.js');
       const algoName = enums.read(enums.symmetric, algo);
       const cipher = legacyCiphers.get(algoName);
       if (!cipher) {

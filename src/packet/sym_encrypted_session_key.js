@@ -17,13 +17,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
-import defaultConfig from '../config';
-import { cipherMode, generateSessionKey, getCipherParams, getRandomBytes } from '../crypto';
-import computeHKDF from '../crypto/hkdf';
-import enums from '../enums';
-import util from '../util';
-import { UnsupportedError } from './packet';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.js';
+import defaultConfig from '../config.ts';
+import { cipherMode, generateSessionKey, getCipherParams, getRandomBytes } from '../crypto/index.js';
+import computeHKDF from '../crypto/hkdf.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import { UnsupportedError } from './packet.js';
 
 /**
  * Symmetric-Key Encrypted Session Key Packets (Tag 3)

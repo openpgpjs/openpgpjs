@@ -18,11 +18,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { fromAsync as streamFromAsync } from '@openpgp/web-stream-tools';
-import SignaturePacket from './signature';
-import KeyID from '../type/keyid';
-import enums from '../enums';
-import util from '../util';
-import { UnsupportedError } from './packet';
+import SignaturePacket from './signature.js';
+import KeyID from '../type/keyid.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import { UnsupportedError } from './packet.js';
 
 /**
  * Implementation of the One-Pass Signature Packets (Tag 4)

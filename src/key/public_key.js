@@ -14,10 +14,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { armor } from '../encoding/armor';
-import defaultConfig from '../config';
-import enums from '../enums';
-import Key from './key';
+import { armor } from '../encoding/armor.js';
+import defaultConfig from '../config.ts';
+import enums from '../enums.ts';
+import Key from './key.js';
 
 /**
  * Class that represents an OpenPGP Public Key

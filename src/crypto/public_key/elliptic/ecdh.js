@@ -21,15 +21,15 @@
  * @access private
  */
 
-import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves';
-import * as aesKW from '../../aes_kw';
-import { computeDigest } from '../../hash';
-import enums from '../../../enums';
-import util from '../../../util';
-import { b64ToUint8Array } from '../../../encoding/base64';
-import * as pkcs5 from '../../pkcs5';
-import { getCipherParams } from '../../cipher';
-import { generateEphemeralEncryptionMaterial as ecdhXGenerateEphemeralEncryptionMaterial, recomputeSharedSecret as ecdhXRecomputeSharedSecret } from './ecdh_x';
+import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves.js';
+import * as aesKW from '../../aes_kw.js';
+import { computeDigest } from '../../hash/index.js';
+import enums from '../../../enums.ts';
+import util from '../../../util.js';
+import { b64ToUint8Array } from '../../../encoding/base64.js';
+import * as pkcs5 from '../../pkcs5.js';
+import { getCipherParams } from '../../cipher/index.js';
+import { generateEphemeralEncryptionMaterial as ecdhXGenerateEphemeralEncryptionMaterial, recomputeSharedSecret as ecdhXRecomputeSharedSecret } from './ecdh_x.js';
 
 /**
  * Validate ECDH parameters

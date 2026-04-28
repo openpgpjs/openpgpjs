@@ -17,12 +17,55 @@
 
 /**
  * Global configuration values
+ * @module config
  * @access public
  */
 
-import enums from '../enums';
+import enums from './enums.ts';
 
-export default {
+export interface Config {
+  preferredHashAlgorithm: enums.hash;
+  preferredSymmetricAlgorithm: enums.symmetric;
+  preferredCompressionAlgorithm: enums.compression;
+  showVersion: boolean;
+  showComment: boolean;
+  aeadProtect: boolean;
+  parseAEADEncryptedV4KeysAsLegacy: boolean;
+  allowUnauthenticatedMessages: boolean;
+  allowUnauthenticatedStream: boolean;
+  minRSABits: number;
+  passwordCollisionCheck: boolean;
+  ignoreUnsupportedPackets: boolean;
+  ignoreMalformedPackets: boolean;
+  enforceGrammar: boolean;
+  additionalAllowedPackets: Array<{ new(): any, tag: enums.packet }>;
+  versionString: string;
+  commentString: string;
+  allowInsecureDecryptionWithSigningKeys: boolean;
+  allowInsecureVerificationWithReformattedKeys: boolean;
+  allowMissingKeyFlags: boolean;
+  constantTimePKCS1Decryption: boolean;
+  constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
+  v6Keys: boolean;
+  enableParsingV5Entities: boolean;
+  preferredAEADAlgorithm: enums.aead;
+  aeadChunkSizeByte: number;
+  s2kType: enums.s2k.iterated | enums.s2k.argon2;
+  s2kIterationCountByte: number;
+  s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
+  maxArgon2MemoryExponent: number;
+  maxUserIDLength: number;
+  maxDecompressedMessageSize: number;
+  knownNotations: string[];
+  nonDeterministicSignaturesViaNotation: boolean;
+  useEllipticFallback: boolean;
+  rejectHashAlgorithms: Set<enums.hash>;
+  rejectMessageHashAlgorithms: Set<enums.hash>;
+  rejectPublicKeyAlgorithms: Set<enums.publicKey>;
+  rejectCurves: Set<enums.curve>;
+}
+
+const config: Config = {
   /**
    * @memberof module:config
    * @property {Integer} preferredHashAlgorithm Default hash algorithm {@link module:enums.hash}
@@ -325,3 +368,8 @@ export default {
    */
   rejectCurves: new Set([enums.curve.secp256k1])
 };
+
+// PartialConfig has the same properties as Config, but declared as optional.
+// This interface is relevant for top-level functions, which accept a subset of configuration options
+export interface PartialConfig extends Partial<Config> {}
+export default config;

@@ -8,10 +8,10 @@ import {
   UnsupportedError,
   UnknownPacketError,
   MalformedPacketError
-} from './packet';
-import util from '../util';
-import enums from '../enums';
-import defaultConfig from '../config';
+} from './packet.js';
+import util from '../util.js';
+import enums from '../enums.ts';
+import defaultConfig from '../config.ts';
 
 /**
  * Instantiate a new packet given its tag

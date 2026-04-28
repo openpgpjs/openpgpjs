@@ -14,6 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
       - name: Check for cached folders
         id: cache-full
         uses: actions/cache@v5
@@ -72,7 +74,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
-
+        with:
+          node-version-file: package.json
       - name: Retrieve cached built folders
         uses: actions/cache/restore@v5
         id: cache-full
@@ -134,7 +137,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
-
+        with:
+          node-version-file: package.json
       - name: Generate self-signed HTTPS certificates for web-test-runner server
         uses: kofemann/action-create-certificate@v0.0.4
         with:
@@ -182,6 +186,8 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - uses: actions/setup-node@v6
+      with:
+        node-version-file: package.json
     - run: npm ci --ignore-scripts # TS
     - name: Retrieve cached folders
       uses: actions/cache/restore@v5
@@ -191,7 +197,9 @@ jobs:
           dist
           test/lib
         key: cache-${{ github.sha }}
-    - run: npm run test-type-definitions
+    - run: |
+        npm run build-types
+        npm run test-type-definitions
 
   lint:
     name: ESLint
@@ -203,6 +211,8 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - uses: actions/setup-node@v6
+      with:
+        node-version-file: package.json
     - run: npm ci --ignore-scripts # linter
     - name: Retrieve cached folders
       uses: actions/cache/restore@v5

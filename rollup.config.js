@@ -69,7 +69,8 @@ const nodeBuild = {
       exportConditions: ['node'] // needed for resolution of noble-curves import of '@noble/crypto' in Node 18
     }),
     typescript({
-      compilerOptions: { outDir: './dist/node' } // temporary output location, needed to avoid js files being overwritten under `src`
+      compilerOptions: { outDir: './dist/node' }, // temporary output location, needed to avoid js files being overwritten under `src`
+      rootDir: 'src' // ignore .ts files outside of src folder
     }),
     commonjs(),
     replace({
@@ -93,7 +94,8 @@ const fullBrowserBuild = {
       browser: true
     }),
     typescript({
-      compilerOptions: { outDir: './dist' } // temporary output location, needed to avoid js files being overwritten under `src`
+      compilerOptions: { outDir: './dist' }, // temporary output location, needed to avoid js files being overwritten under `src`
+      rootDir: 'src' // ignore .ts files outside of src folder
     }),
     commonjs({
       ignore: nodeBuiltinModules.concat(nodeDependencies)
@@ -120,7 +122,8 @@ const lightweightBrowserBuild = {
       browser: true
     }),
     typescript({
-      compilerOptions: { outDir: './dist/lightweight' }
+      compilerOptions: { outDir: './dist/lightweight' },
+      rootDir: 'src' // ignore .ts files outside of src folder
     }),
     commonjs({
       ignore: nodeBuiltinModules.concat(nodeDependencies)

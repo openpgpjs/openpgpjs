@@ -22,8 +22,8 @@
  */
 
 import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
-import { getCipherParams } from '../cipher';
-import util from '../../util';
+import { getCipherParams } from '../cipher/index.js';
+import util from '../../util.js';
 
 const blockLength = 16;
 const ivLength = 15;

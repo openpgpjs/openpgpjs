@@ -4,6 +4,7 @@
     "target": "es2021",
     "module": "esnext",
     "moduleResolution": "Bundler",
+    "rewriteRelativeImportExtensions": true,
     "allowJs": true,
     "paths": {
       "openpgp": [ "." ]

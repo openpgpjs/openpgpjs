@@ -22,8 +22,8 @@
  * @module crypto/random
  * @access private
  */
-import { byteLength, mod, uint8ArrayToBigInt } from './biginteger';
-import util from '../util';
+import { byteLength, mod, uint8ArrayToBigInt } from './biginteger.ts';
+import util from '../util.js';
 
 const nodeCrypto = util.getNodeCrypto();
 
