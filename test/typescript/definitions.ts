@@ -15,7 +15,7 @@ import {
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
-  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
+  LiteralDataPacket, PacketList, CompressedDataPacket, SymEncryptedIntegrityProtectedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
   WebStream, NodeWebStream
 } from 'openpgp';
 
@@ -104,6 +104,8 @@ import {
   expect(encryptedBinaryObject).to.be.instanceOf(Message);
   const encryptedTextObject: Message<string> = await encrypt({ encryptionKeys: publicKeys, message: textMessage, format: 'object' });
   expect(encryptedTextObject).to.be.instanceOf(Message);
+  const seipdPacket = encryptedTextObject.packets.findPacket(enums.packet.symEncryptedIntegrityProtectedData) as SymEncryptedIntegrityProtectedDataPacket;
+  expect(seipdPacket).to.be.instanceOf(SymEncryptedIntegrityProtectedDataPacket);
 
   // Session key functions
   // Get session keys from encrypted message
