@@ -136,7 +136,7 @@ const util = {
    * @throws if the input array is too short.
    */
   readExactSubarray: function (input, start, end) {
-    if (input.length < (end - start)) {
+    if (input.length < end) {
       throw new Error('Input array too short');
     }
     return input.subarray(start, end);
