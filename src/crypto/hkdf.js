@@ -4,8 +4,8 @@
  * @access private
  */
 
-import enums from '../enums';
-import util from '../util';
+import enums from '../enums.ts';
+import util from '../util.js';
 
 export default async function computeHKDF(hashAlgo, inputKey, salt, info, outLen) {
   const webCrypto = util.getWebCrypto();

@@ -21,7 +21,7 @@
  * @access private
  */
 
-import util from '../util';
+import util from '../util.js';
 
 /**
  * Add pkcs5 padding to a message

@@ -6,14 +6,14 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import * as crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto/index.js';
 import util from '../../src/util.js';
-import * as packet from '../../src/packet';
-import * as random from '../../src/crypto/random';
+import * as packet from '../../src/packet/index.js';
+import * as random from '../../src/crypto/random.js';
 
 import * as input from './testInputs.js';
 import { mockCryptoRandomGenerator, restoreCryptoRandomGenerator } from '../mockRandom.ts';
-import { MessageGrammarValidator } from '../../src/packet/grammar.js';
+import { MessageGrammarValidator } from '../../src/packet/grammar.ts';
 
 function stringify(array) {
   if (stream.isStream(array)) {

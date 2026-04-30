@@ -2,7 +2,7 @@ import { expect } from 'chai';
 
 import * as aesKW from '../../src/crypto/aes_kw.js';
 import util from '../../src/util.js';
-import enums from '../../src/enums.js';
+import enums from '../../src/enums.ts';
 
 export default () => describe('AES Key Wrap and Unwrap', function () {
   const test_vectors = [

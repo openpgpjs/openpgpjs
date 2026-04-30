@@ -21,12 +21,12 @@
  * @access private
  */
 
-import enums from '../../../enums';
-import util from '../../../util';
-import { getRandomBytes } from '../../random';
-import { computeDigest } from '../../hash';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves';
-import { bigIntToUint8Array } from '../../biginteger';
+import enums from '../../../enums.ts';
+import util from '../../../util.js';
+import { getRandomBytes } from '../../random.js';
+import { computeDigest } from '../../hash/index.js';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves.js';
+import { bigIntToUint8Array } from '../../biginteger.ts';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

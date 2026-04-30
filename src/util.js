@@ -25,8 +25,8 @@
 
 import { concat as streamConcat, transform as streamTransform, concatUint8Array, isStream, isUint8Array } from '@openpgp/web-stream-tools';
 import { createRequire } from 'module'; // Must be stripped in browser built
-import enums from './enums';
-import defaultConfig from './config';
+import enums from './enums.ts';
+import defaultConfig from './config.ts';
 
 const debugMode = (() => {
   try {
@@ -62,7 +62,7 @@ const util = {
       throw new Error('This curve is only supported in the full build of OpenPGP.js');
     }
 
-    const { nobleCurves } = await import('./crypto/public_key/elliptic/noble_curves');
+    const { nobleCurves } = await import('./crypto/public_key/elliptic/noble_curves.js');
     switch (publicKeyAlgo) {
       case enums.publicKey.ecdh:
       case enums.publicKey.ecdsa: {

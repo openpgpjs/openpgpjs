@@ -18,12 +18,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { fromAsync as streamFromAsync, slice as streamSlice, readToEnd as streamReadToEnd, clone as streamClone, transform as streamTransform } from '@openpgp/web-stream-tools';
-import { readSimpleLength, UnsupportedError, writeSimpleLength } from './packet';
-import KeyID from '../type/keyid';
-import { signature, serializeParams, getRandomBytes, getHashByteLength, computeDigest } from '../crypto';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
+import { readSimpleLength, UnsupportedError, writeSimpleLength } from './packet.js';
+import KeyID from '../type/keyid.js';
+import { signature, serializeParams, getRandomBytes, getHashByteLength, computeDigest } from '../crypto/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config.ts';
 
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
 const verified = Symbol('verified');

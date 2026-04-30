@@ -1,6 +1,6 @@
 import * as stream from '@openpgp/web-stream-tools';
 import unbzip2Stream from '@openpgp/unbzip2-stream';
-import * as base64 from '../../src/encoding/base64';
+import * as base64 from '../../src/encoding/base64.js';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);

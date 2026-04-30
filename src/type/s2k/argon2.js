@@ -1,8 +1,8 @@
 /** @access private */
-import defaultConfig from '../../config';
-import enums from '../../enums';
-import util from '../../util';
-import { getRandomBytes } from '../../crypto';
+import defaultConfig from '../../config.ts';
+import enums from '../../enums.ts';
+import util from '../../util.js';
+import { getRandomBytes } from '../../crypto/index.js';
 
 const ARGON2_TYPE = 0x02; // id
 const ARGON2_VERSION = 0x13;

@@ -23,8 +23,8 @@
  */
 
 import { gcm as nobleAesGcm } from '@noble/ciphers/aes';
-import util from '../../util';
-import enums from '../../enums';
+import util from '../../util.js';
+import enums from '../../enums.ts';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

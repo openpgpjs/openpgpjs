@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
-import { brainpoolP256r1 } from '../../src/crypto/public_key/elliptic/brainpool/brainpoolP256r1';
-import { brainpoolP384r1 } from '../../src/crypto/public_key/elliptic/brainpool/brainpoolP384r1';
-import { brainpoolP512r1 } from '../../src/crypto/public_key/elliptic/brainpool/brainpoolP512r1';
-import util from '../../src/util';
+import { brainpoolP256r1 } from '../../src/crypto/public_key/elliptic/brainpool/brainpoolP256r1.ts';
+import { brainpoolP384r1 } from '../../src/crypto/public_key/elliptic/brainpool/brainpoolP384r1.ts';
+import { brainpoolP512r1 } from '../../src/crypto/public_key/elliptic/brainpool/brainpoolP512r1.ts';
+import util from '../../src/util.js';
 
 const rfc7027 = [
   {

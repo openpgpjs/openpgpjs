@@ -7,10 +7,10 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import * as crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto/index.js';
 import util from '../../src/util.js';
 import keyIDType from '../../src/type/keyid.js';
-import { getPreferredCipherSuite } from '../../src/key';
+import { getPreferredCipherSuite } from '../../src/key/index.js';
 
 import * as input from './testInputs.js';
 
@@ -2412,7 +2412,8 @@ k0mXubZvyl4GBg==
       const key = await openpgp.readKey({ armoredKey: rsaKeyWithNoFeaturesFromRNP });
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: 'test' }),
-        encryptionKeys: key
+        encryptionKeys: key,
+        date: null // the key has expired so we disabled time checks
       });
       const decrypted = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),

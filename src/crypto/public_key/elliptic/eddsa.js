@@ -21,11 +21,11 @@
  * @access private
  */
 
-import util from '../../../util';
-import enums from '../../../enums';
-import { getHashByteLength } from '../../hash';
-import { getRandomBytes } from '../../random';
-import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
+import util from '../../../util.js';
+import enums from '../../../enums.ts';
+import { getHashByteLength } from '../../hash/index.js';
+import { getRandomBytes } from '../../random.js';
+import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64.js';
 
 
 /**

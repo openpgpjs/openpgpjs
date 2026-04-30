@@ -18,8 +18,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { isArrayStream, passiveClone as streamPassiveClone, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
-import enums from '../enums';
-import util from '../util';
+import enums from '../enums.ts';
+import util from '../util.js';
 
 /**
  * Implementation of the Literal Data Packet (Tag 11)

@@ -1,0 +1,12 @@
+// tsconfig taking care of generating declaration files to be released
+// under 'dist/types'
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "./dist/types",
+    "rootDir": "src"
+  },
+  "files": ["src/index.d.ts"]
+}

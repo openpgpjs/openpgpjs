@@ -4,13 +4,13 @@
  * @access private
  */
 
-import * as aesKW from '../../aes_kw';
+import * as aesKW from '../../aes_kw.js';
 
-import enums from '../../../enums';
-import util from '../../../util';
-import computeHKDF from '../../hkdf';
-import { getCipherParams } from '../../cipher';
-import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
+import enums from '../../../enums.ts';
+import util from '../../../util.js';
+import computeHKDF from '../../hkdf.js';
+import { getCipherParams } from '../../cipher/index.js';
+import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64.js';
 
 const HKDF_INFO = {
   x25519: util.encodeUTF8('OpenPGP X25519'),

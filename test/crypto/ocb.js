@@ -6,7 +6,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import { cipherMode } from '../../src/crypto';
+import { cipherMode } from '../../src/crypto/index.js';
 import util from '../../src/util.js';
 
 export default () => describe('Symmetric AES-OCB', function() {

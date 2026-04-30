@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 
 import BN from 'bn.js';
-import { bigIntToUint8Array, bitLength, byteLength, gcd, getBit, modExp, modInv } from '../../src/crypto/biginteger';
-import { getRandomBytes } from '../../src/crypto/random';
+import { bigIntToUint8Array, bitLength, byteLength, gcd, getBit, modExp, modInv } from '../../src/crypto/biginteger.ts';
+import { getRandomBytes } from '../../src/crypto/random.js';
 
 function getRandomBN(min, max) {
   if (max.cmp(min) <= 0) {

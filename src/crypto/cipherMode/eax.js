@@ -23,9 +23,9 @@
  */
 
 import { ctr as nobleAesCtr } from '@noble/ciphers/aes';
-import CMAC from '../cmac';
-import util from '../../util';
-import enums from '../../enums';
+import CMAC from '../cmac.js';
+import util from '../../util.js';
+import enums from '../../enums.ts';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

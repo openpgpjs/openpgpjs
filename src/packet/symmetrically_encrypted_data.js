@@ -18,16 +18,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { readToEnd as streamReadToEnd, clone as streamClone } from '@openpgp/web-stream-tools';
-import { cipherMode, getCipherParams } from '../crypto';
-import enums from '../enums';
-import util from '../util';
-import defaultConfig from '../config';
+import { cipherMode, getCipherParams } from '../crypto/index.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import defaultConfig from '../config.ts';
 
-import LiteralDataPacket from './literal_data';
-import CompressedDataPacket from './compressed_data';
-import OnePassSignaturePacket from './one_pass_signature';
-import SignaturePacket from './signature';
-import PacketList from './packetlist';
+import LiteralDataPacket from './literal_data.js';
+import CompressedDataPacket from './compressed_data.js';
+import OnePassSignaturePacket from './one_pass_signature.js';
+import SignaturePacket from './signature.js';
+import PacketList from './packetlist.js';
 
 // A SE packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([

@@ -1,5 +1,5 @@
 import type { SinonStub } from 'sinon';
-import util from '../src/util';
+import util from '../src/util.js';
 
 const webcrypto = typeof crypto !== 'undefined' ? crypto : util.nodeRequire('crypto')?.webcrypto;
 

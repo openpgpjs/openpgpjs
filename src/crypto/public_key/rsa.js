@@ -20,14 +20,14 @@
  * @module crypto/public_key/rsa
  * @access private
  */
-import { randomProbablePrime } from './prime';
-import { getRandomBigInteger } from '../random';
-import util from '../../util';
-import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
-import { emsaEncode, emeEncode, emeDecode } from '../pkcs1';
-import enums from '../../enums';
-import { bigIntToNumber, bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger';
-import { getHashByteLength } from '../hash';
+import { randomProbablePrime } from './prime.ts';
+import { getRandomBigInteger } from '../random.js';
+import util from '../../util.js';
+import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64.js';
+import { emsaEncode, emeEncode, emeDecode } from '../pkcs1.js';
+import enums from '../../enums.ts';
+import { bigIntToNumber, bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
+import { getHashByteLength } from '../hash/index.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

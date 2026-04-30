@@ -1,5 +1,5 @@
 /** @access private */
-import enums from '../enums';
+import enums from '../enums.ts';
 
 export class GrammarError extends Error {
   constructor(...params: any[]) {

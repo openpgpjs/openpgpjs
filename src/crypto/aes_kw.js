@@ -23,8 +23,8 @@
  */
 
 import { aeskw as nobleAesKW } from '@noble/ciphers/aes';
-import { getCipherParams } from './cipher';
-import util from '../util';
+import { getCipherParams } from './cipher/index.js';
+import util from '../util.js';
 
 const webCrypto = util.getWebCrypto();
 /**

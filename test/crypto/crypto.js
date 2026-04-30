@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import * as crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto/index.js';
 import util from '../../src/util.js';
 
 export default () => describe('API functional testing', function() {

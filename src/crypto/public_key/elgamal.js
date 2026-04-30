@@ -20,9 +20,9 @@
  * @module crypto/public_key/elgamal
  * @access private
  */
-import { getRandomBigInteger } from '../random';
-import { emeEncode, emeDecode } from '../pkcs1';
-import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger';
+import { getRandomBigInteger } from '../random.js';
+import { emeEncode, emeDecode } from '../pkcs1.js';
+import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
 
 const _1n = BigInt(1);
 

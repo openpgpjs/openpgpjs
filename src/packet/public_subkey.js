@@ -17,8 +17,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import PublicKeyPacket from './public_key';
-import enums from '../enums';
+import PublicKeyPacket from './public_key.js';
+import enums from '../enums.ts';
 
 /**
  * A Public-Subkey packet (tag 14) has exactly the same format as a

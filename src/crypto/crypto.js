@@ -24,16 +24,16 @@
  * @access private
  */
 
-import { rsa, elliptic, elgamal, dsa } from './public_key';
-import { getRandomBytes } from './random';
-import { getCipherParams } from './cipher';
-import ECDHSymkey from '../type/ecdh_symkey';
-import KDFParams from '../type/kdf_params';
-import enums from '../enums';
-import util from '../util';
-import OID from '../type/oid';
-import { UnsupportedError } from '../packet/packet';
-import ECDHXSymmetricKey from '../type/ecdh_x_symkey';
+import { rsa, elliptic, elgamal, dsa } from './public_key/index.js';
+import { getRandomBytes } from './random.js';
+import { getCipherParams } from './cipher/index.js';
+import ECDHSymkey from '../type/ecdh_symkey.js';
+import KDFParams from '../type/kdf_params.js';
+import enums from '../enums.ts';
+import util from '../util.js';
+import OID from '../type/oid.js';
+import { UnsupportedError } from '../packet/packet.js';
+import ECDHXSymmetricKey from '../type/ecdh_x_symkey.js';
 
 /**
  * Encrypts data using specified algorithm and public key parameters.

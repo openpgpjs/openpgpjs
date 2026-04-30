@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { UnsupportedError } from '../packet/packet';
+import { UnsupportedError } from '../packet/packet.js';
 
 /**
  * Implementation of type KDF parameters

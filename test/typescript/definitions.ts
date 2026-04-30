@@ -11,12 +11,12 @@ import { Readable as NodeNativeReadableStream } from 'stream';
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey, revokeKey,
+  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, type Key, PublicKey, revokeKey,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
-  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
-  WebStream, NodeWebStream
+  LiteralDataPacket, PacketList, CompressedDataPacket, SymEncryptedIntegrityProtectedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
+  type WebStream, type NodeWebStream
 } from 'openpgp';
 
 (async () => {
@@ -104,6 +104,8 @@ import {
   expect(encryptedBinaryObject).to.be.instanceOf(Message);
   const encryptedTextObject: Message<string> = await encrypt({ encryptionKeys: publicKeys, message: textMessage, format: 'object' });
   expect(encryptedTextObject).to.be.instanceOf(Message);
+  const seipdPacket = encryptedTextObject.packets.findPacket(enums.packet.symEncryptedIntegrityProtectedData) as SymEncryptedIntegrityProtectedDataPacket;
+  expect(seipdPacket).to.be.instanceOf(SymEncryptedIntegrityProtectedDataPacket);
 
   // Session key functions
   // Get session keys from encrypted message

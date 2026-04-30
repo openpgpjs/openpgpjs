@@ -7,8 +7,8 @@
  */
 
 import { transform as streamTransform, isArrayStream, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
-import util from '../../util';
-import enums from '../../enums';
+import util from '../../util.js';
+import enums from '../../enums.ts';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -29,7 +29,7 @@ function nodeHash(type) {
 
 function nobleHash(nobleHashName, webCryptoHashName) {
   const getNobleHash = async () => {
-    const { nobleHashes } = await import('./noble_hashes');
+    const { nobleHashes } = await import('./noble_hashes.js');
     const hash = nobleHashes.get(nobleHashName);
     if (!hash) throw new Error('Unsupported hash');
     return hash;

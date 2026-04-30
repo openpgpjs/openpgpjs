@@ -1,7 +1,7 @@
 /** @access public */
 
-import enums from '../enums';
-import { UnsupportedError } from './packet';
+import enums from '../enums.ts';
+import { UnsupportedError } from './packet.js';
 
 /**
  * Implementation of the Trust Packet (Tag 12)

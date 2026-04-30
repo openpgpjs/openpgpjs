@@ -3,11 +3,11 @@
  * @access private
  */
 
-import enums from '../enums';
-import util from '../util';
-import { PacketList } from '../packet';
-import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
-import defaultConfig from '../config';
+import enums from '../enums.ts';
+import util from '../util.js';
+import { PacketList } from '../packet/index.js';
+import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper.js';
+import defaultConfig from '../config.ts';
 
 /**
  * Class that represents an user ID or attribute packet and the relevant signatures.
