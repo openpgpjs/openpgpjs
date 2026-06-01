@@ -106,7 +106,7 @@
     "eslint-plugin-chai-friendly": "^1.1.1",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsdoc": "^62.8.1",
-    "eslint-plugin-unicorn": "^62.0.0",
+    "eslint-plugin-unicorn": "^64.0.0",
     "fflate": "^0.8.3",
     "globals": "^17.4.0",
     "mocha": "^11.7.5",
