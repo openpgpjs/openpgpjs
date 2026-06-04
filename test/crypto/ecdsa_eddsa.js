@@ -291,7 +291,7 @@ export default () => describe('ECC signatures', function () {
 
       const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
-      const expectNativeWeb = new Set(['nistP256', 'nistP384']); // older versions of safari do not implement nistP521
+      const expectNativeWeb = new Set(['nistP256', 'nistP384', 'nistP521']);
 
       const nativeKey = await elliptic_curves.generate(curveName);
       await testRountripWithAndWithoutNative(

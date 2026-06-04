@@ -376,7 +376,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
 
     allCurves.forEach(curveName => {
       it(`${curveName}`, async function () {
-        const expectNativeWeb = new Set(['nistP256', 'nistP384']); // older versions of safari do not implement nistP521
+        const expectNativeWeb = new Set(['nistP256', 'nistP384', 'nistP521']);
 
         const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
@@ -387,7 +387,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
         await testRountripWithAndWithoutNative(
           data => ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1),
           encryptResult => ecdh.decrypt(oid, kdfParams, encryptResult.publicKey, encryptResult.wrappedKey, Q, d, fingerprint1),
-          expectNativeWeb.has(curveName) // all major browsers implement x25519
+          expectNativeWeb.has(curveName)
         );
       });
     });

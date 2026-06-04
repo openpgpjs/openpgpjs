@@ -30,11 +30,11 @@ export default {
     browserstackLauncher({
       capabilities: {
         ...sharedBrowserstackCapabilities,
-        browserName: '[Browserstack] Safari iOS 14',
-        device: 'iPhone 12',
+        browserName: '[Browserstack] Safari iOS 15',
+        device: 'iPhone 13',
         real_mobile: true,
         os: 'ios',
-        os_version: '14' // min supported version (iOS/Safari < 14 does not support native BigInts)
+        os_version: '15' // min supported version
       }
     }),
     browserstackLauncher({

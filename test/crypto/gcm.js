@@ -72,6 +72,8 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
 
   describe('Symmetric AES-GCM (native)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', true, true);
+    // empty messages gave issues in eg older Safari versions; ensure support
+    testAESGCM('', true, true);
   });
 
   describe('Symmetric AES-GCM (non-native)', function() {

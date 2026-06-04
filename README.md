@@ -34,7 +34,7 @@ OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)
 
 ### Platform Support
 
-* The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 14+.
+* The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 15+.
 
 * The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v22+: it is used by default when you `import ... from 'openpgp'` (or `require('openpgp')`, respectively).
 

@@ -71,22 +71,13 @@ async function GCM(cipher, key) {
   if (util.getWebCrypto()) {
     try {
       const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
-      // Safari 13 and Safari iOS 14 does not support GCM-en/decrypting empty messages
-      const webcryptoEmptyMessagesUnsupported = navigator.userAgent.match(/Version\/13\.\d(\.\d)* Safari/) ||
-        navigator.userAgent.match(/Version\/(13|14)\.\d(\.\d)* Mobile\/\S* Safari/);
       return {
         encrypt: async function(pt, iv, adata = new Uint8Array()) {
-          if (webcryptoEmptyMessagesUnsupported && !pt.length) {
-            return nobleAesGcm(key, iv, adata).encrypt(pt);
-          }
           const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, pt);
           return new Uint8Array(ct);
         },
 
         decrypt: async function(ct, iv, adata = new Uint8Array()) {
-          if (webcryptoEmptyMessagesUnsupported && ct.length === tagLength) {
-            return nobleAesGcm(key, iv, adata).decrypt(ct);
-          }
           try {
             const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
             return new Uint8Array(pt);

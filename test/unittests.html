@@ -18,19 +18,11 @@
           timeout: 60000
         });
 
-        // Safari 14 does not support top-level await
-        import('./lib/unittests-bundle.js')
-          .then(() => {
-            // run the tests, and notify the test runner after finishing
-            mocha.run(() => {
-              sessionFinished();
-            });
-          })
-          .catch(err => {
-            console.error(err);
-            // notify the test runner about errors
-            sessionFailed(err);
-          });
+        await import('./lib/unittests-bundle.js')
+        // run the tests, and notify the test runner after finishing
+        mocha.run(() => {
+          sessionFinished();
+        });
       } catch (error) {
         console.error(error);
         // notify the test runner about errors
