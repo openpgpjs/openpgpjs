@@ -173,7 +173,7 @@ const config: Config = {
   },
   /**
    * Max memory exponent allowed for Argon2 memory allocation (e.g. `maxArgon2MemoryExponent: 20` corresponds
-   * to a memory limit of 2**20 = 1GiB).
+   * to a memory limit of 2**20 KiB = 1GiB).
    * This limit is applied both on encryption (if `config.s2kType` is set to `enums.s2k.argon2`)
    * and decryption.
    * If the input memory exponent exceeds this value, the library will not attempt the argon2 key derivation
@@ -181,7 +181,7 @@ const config: Config = {
    * NB: on encryption, if `s2kArgon2Params.memoryExponent` is larger than `maxArgon2MemoryExponent`,
    * the operation will fail.
    */
-  maxArgon2MemoryExponent: Infinity,
+  maxArgon2MemoryExponent: 30,
   /**
    * Allow decryption of messages without integrity protection.
    * This is an **insecure** setting:

@@ -7,6 +7,12 @@ import { getRandomBytes } from '../../crypto/index.js';
 const ARGON2_TYPE = 0x02; // id
 const ARGON2_VERSION = 0x13;
 const ARGON2_SALT_SIZE = 16;
+/**
+ * Max exponent supported, that applies regardless of `config.maxArgon2MemoryExponent`;
+ * the argon2 lib in principle supports a larger value, but this is already unrealistically large,
+ * and it enables us to use bitwise operations.
+ */
+const ARGON2_MAX_ENCODEDM = 30;
 
 export class Argon2OutOfMemoryError extends Error {
   constructor(...params) {
@@ -104,10 +110,13 @@ class Argon2S2K {
   * @async
   */
   async produceKey(passphrase, keySize, config) {
+    if (config.maxArgon2MemoryExponent > ARGON2_MAX_ENCODEDM) {
+      throw new Argon2OutOfMemoryError(`'config.maxArgon2MemoryExponent' exceeds the max allowed value of ${ARGON2_MAX_ENCODEDM}`);
+    }
     if (this.encodedM > config.maxArgon2MemoryExponent) {
       throw new Argon2OutOfMemoryError('Argon2 required memory exceeds `config.maxArgon2MemoryExponent`');
     }
-    const decodedM = 2 << (this.encodedM - 1);
+    const decodedM = 1 << this.encodedM;
 
     try {
       // on first load, the argon2 lib is imported and the WASM module is initialized.
