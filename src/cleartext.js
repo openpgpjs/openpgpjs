@@ -37,8 +37,8 @@ export class CleartextMessage {
    * @param {Signature} signature - The detached signature or an empty signature for unsigned messages
    */
   constructor(text, signature) {
-    // remove trailing whitespace and normalize EOL to canonical form <CR><LF>
-    this.text = util.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
+    // remove trailing whitespace from each line and normalize line endings to LF
+    this.text = util.removeTrailingSpaces(text);
     if (signature && !(signature instanceof Signature)) {
       throw new Error('Invalid signature input');
     }
@@ -74,7 +74,8 @@ export class CleartextMessage {
    */
   async sign(signingKeys, recipientKeys = [], signature = null, signingKeyIDs = [], date = new Date(), signingUserIDs = [], recipientUserIDs = [], notations = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
-    literalDataPacket.setText(this.text);
+    // normalize EOL to canonical form <CR><LF>
+    literalDataPacket.setText(this.text.replace(/\n/g, '\r\n'));
     const newSignature = new Signature(await createSignaturePackets(literalDataPacket, signingKeys, recipientKeys, signature, signingKeyIDs, date, signingUserIDs, recipientUserIDs, notations, true, config));
     return new CleartextMessage(this.text, newSignature);
   }
@@ -94,8 +95,8 @@ export class CleartextMessage {
   verify(keys, date = new Date(), config = defaultConfig) {
     const signatureList = this.signature.packets.filterByTag(enums.packet.signature); // drop UnparsablePackets
     const literalDataPacket = new LiteralDataPacket();
-    // we assume that cleartext signature is generated based on UTF8 cleartext
-    literalDataPacket.setText(this.text);
+    // cleartext signatures should be generated over UTF8 cleartext with canonical newlines
+    literalDataPacket.setText(this.text.replace(/\n/g, '\r\n'));
     return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true, config);
   }
 
@@ -104,8 +105,7 @@ export class CleartextMessage {
    * @returns {String} Cleartext of message.
    */
   getText() {
-    // normalize end of line to \n
-    return this.text.replace(/\r\n/g, '\n');
+    return this.text;
   }
 
   /**
