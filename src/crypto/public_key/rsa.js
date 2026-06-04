@@ -128,7 +128,7 @@ export async function encrypt(data, n, e) {
  */
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
-  // Node v18.19.1, 20.11.1 and 21.6.2 have disabled support for PKCS#1 decryption,
+  // Node v18.19.1, 20.11.1 and 21.6.2 (and above) have disabled support for PKCS#1 decryption,
   // and we want to avoid checking the error type to decide if the random payload
   // should indeed be returned.
   if (util.getNodeCrypto() && !randomPayload) {

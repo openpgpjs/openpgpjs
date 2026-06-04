@@ -441,9 +441,7 @@ const util = {
    * @throws if the API is not available
    */
   getWebCrypto: function() {
-    const globalWebCrypto = typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
-    // Fallback for Node 16, which does not expose WebCrypto as a global
-    const webCrypto = globalWebCrypto || this.getNodeCrypto()?.webcrypto.subtle;
+    const webCrypto = typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
     if (!webCrypto) {
       throw new Error('The WebCrypto API is not available');
     }

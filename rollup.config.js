@@ -65,9 +65,7 @@ const nodeBuild = {
     { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
   ].map(options => ({ ...options, inlineDynamicImports: true })),
   plugins: [
-    resolve({
-      exportConditions: ['node'] // needed for resolution of noble-curves import of '@noble/crypto' in Node 18
-    }),
+    resolve(),
     typescript({
       compilerOptions: { outDir: './dist/node' }, // temporary output location, needed to avoid js files being overwritten under `src`
       rootDir: 'src' // ignore .ts files outside of src folder

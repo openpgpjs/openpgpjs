@@ -36,7 +36,7 @@ OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)
 
 * The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 14+.
 
-* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v18+: it is used by default when you `import ... from 'openpgp'` (or `require('openpgp')`, respectively).
+* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v22+: it is used by default when you `import ... from 'openpgp'` (or `require('openpgp')`, respectively).
 
 * Support for the [Web Cryptography API](https://w3c.github.io/webcrypto/)'s `SubtleCrypto` is required.
   * In browsers, `SubtleCrypto` is only available in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).

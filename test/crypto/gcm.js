@@ -40,9 +40,6 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
       it(algoName, async function() {
         const nodeCrypto = util.getNodeCrypto();
         const webCrypto = util.getWebCrypto();
-        if (!nodeCrypto && !webCrypto) {
-          this.skip(); // eslint-disable-line no-invalid-this
-        }
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const key = crypto.generateSessionKey(algo);
         const gcmMode = crypto.cipherMode.getAEADMode(openpgp.enums.aead.gcm);

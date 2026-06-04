@@ -376,12 +376,6 @@ export default () => describe('ECDH key exchange @lightweight', function () {
 
     allCurves.forEach(curveName => {
       it(`${curveName}`, async function () {
-        const nodeCrypto = util.getNodeCrypto();
-        const webCrypto = util.getWebCrypto();
-        if (!nodeCrypto && !webCrypto) {
-          this.skip();
-        }
-
         const expectNativeWeb = new Set(['nistP256', 'nistP384']); // older versions of safari do not implement nistP521
 
         const curve = new elliptic_curves.CurveWithOID(curveName);
