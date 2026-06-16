@@ -110,7 +110,7 @@
     "fflate": "^0.8.3",
     "globals": "^17.6.0",
     "mocha": "^11.7.6",
-    "playwright": "^1.60.0",
+    "playwright": "^1.61.0",
     "rollup": "^4.60.4",
     "sinon": "^21.0.1",
     "ts-node": "^10.9.2",
