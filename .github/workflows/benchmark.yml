@@ -13,11 +13,11 @@ jobs:
 
     steps:
       # check out pull request branch
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           path: pr
       # check out main branch (to compare performance)
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
           path: main
