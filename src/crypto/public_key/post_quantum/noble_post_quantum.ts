@@ -6,6 +6,6 @@
  * @access private
  */
 
-export { ml_kem768 } from '@noble/post-quantum/ml-kem';
-export { ml_dsa65 } from '@noble/post-quantum/ml-dsa';
+export { ml_kem768 } from '@noble/post-quantum/ml-kem.js';
+export { ml_dsa65 } from '@noble/post-quantum/ml-dsa.js';
 
