@@ -22,6 +22,7 @@ export async function generate(algo) {
  * @param {module:enums.publicKey} algo - Public key algorithm
  * @param {Uint8Array} seed - secret seed to expand
  * @returns {Promise<{ mlkemPublicKey: Uint8Array, mlkemSecretKey: Uint8Array }>}
+ * @private
  */
 export async function expandSecretSeed(algo, seed) {
   switch (algo) {

@@ -32,6 +32,7 @@ export async function decrypt(algo, eccCipherText, mlkemCipherText, eccSecretKey
 
 /**
  * KEM key combiner
+ * @private
  */
 async function multiKeyCombine(algo, mlkemKeyShare, ecdhKeyShare, ecdhCipherText, ecdhPublicKey) {
   const domSep = util.encodeUTF8('OpenPGPCompositeKDFv1');
