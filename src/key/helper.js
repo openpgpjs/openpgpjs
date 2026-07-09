@@ -164,7 +164,7 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
   ]);
 
   const pqcAlgos = new Set([
-    enums.publicKey.pqc_mldsa_ed25519
+    enums.publicKey.mldsa65Ed25519
   ]);
 
   if (eccAlgos.has(signingKeyPacket.algorithm)) {
@@ -417,9 +417,9 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   switch (options.type) {
     case 'pqc':
       if (options.sign) {
-        options.algorithm = enums.publicKey.pqc_mldsa_ed25519;
+        options.algorithm = enums.publicKey.mldsa65Ed25519;
       } else {
-        options.algorithm = enums.publicKey.pqc_mlkem_x25519;
+        options.algorithm = enums.publicKey.mlkem768X25519;
       }
       break;
     case 'ecc': // NB: this case also handles legacy eddsa and x25519 keys, based on `options.curve`
@@ -462,7 +462,7 @@ export function validateSigningKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
-    case enums.publicKey.pqc_mldsa_ed25519:
+    case enums.publicKey.mldsa65Ed25519:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }
@@ -481,7 +481,7 @@ export function validateEncryptionKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ecdh:
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
-    case enums.publicKey.pqc_mlkem_x25519:
+    case enums.publicKey.mlkem768X25519:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }
@@ -505,7 +505,7 @@ export function validateDecryptionKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ecdh:
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const isValidSigningKeyPacket = !signature.keyFlags || (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
       if (isValidSigningKeyPacket && config.allowInsecureDecryptionWithSigningKeys) {
         // This is only relevant for RSA keys, all other signing algorithms cannot decrypt

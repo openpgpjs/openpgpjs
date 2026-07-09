@@ -67,7 +67,7 @@ export function parseSignatureParams(algo, signature) {
       const RS = util.readExactSubarray(signature, read, read + rsSize); read += RS.length;
       return { read, signatureParams: { RS } };
     }
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const eccSignatureSize = 2 * elliptic.eddsa.getPayloadSize(enums.publicKey.ed25519);
       const eccSignature = util.readExactSubarray(signature, read, read + eccSignatureSize); read += eccSignature.length;
       const mldsaSignature = util.readExactSubarray(signature, read, read + 3309); read += mldsaSignature.length;
@@ -141,7 +141,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       const { A } = publicParams;
       return elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       if (!postQuantum.signature.isCompatibleHashAlgo(algo, hashAlgo)) {
         // The signature hash algo MUST have digest larger than 256 bits
         // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
@@ -217,7 +217,7 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { seed } = privateKeyParams;
       return elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);
     }
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       if (!postQuantum.signature.isCompatibleHashAlgo(algo, hashAlgo)) {
         // The signature hash algo MUST have digest larger than 256 bits
         // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4

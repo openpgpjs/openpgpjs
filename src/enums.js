@@ -97,10 +97,10 @@ export default {
     ed25519: 27,
     /** Ed448 (Sign only) */
     ed448: 28,
-    /** Post-quantum ML-DSA-64 + Ed25519 (Sign only) */
-    pqc_mldsa_ed25519: 30,
-    /** Post-quantum ML-KEM-768 + X25519 (Encrypt only) */
-    pqc_mlkem_x25519: 35
+    /** ML-DSA-65 + Ed25519 (Sign only) */
+    mldsa65Ed25519: 30,
+    /** ML-KEM-768 + X25519 (Encrypt only) */
+    mlkem768X25519: 35
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

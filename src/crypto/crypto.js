@@ -76,7 +76,7 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
       return { ephemeralPublicKey, C };
     }
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const { eccPublicKey, mlkemPublicKey } = publicParams;
       const { eccCipherText, mlkemCipherText, wrappedKey } = await postQuantum.kem.encrypt(keyAlgo, eccPublicKey, mlkemPublicKey, data);
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
@@ -134,7 +134,7 @@ export async function publicKeyDecrypt(keyAlgo, publicKeyParams, privateKeyParam
       return elliptic.ecdhX.decrypt(
         keyAlgo, ephemeralPublicKey, C.wrappedKey, A, k);
     }
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const { eccSecretKey, mlkemSecretKey } = privateKeyParams;
       const { eccPublicKey, mlkemPublicKey } = publicKeyParams;
       const { eccCipherText, mlkemCipherText, C } = sessionKeyParams;
@@ -204,12 +204,12 @@ export function parsePublicKeyParams(algo, bytes) {
       const A = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(algo)); read += A.length;
       return { read, publicParams: { A } };
     }
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const eccPublicKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccPublicKey.length;
       const mlkemPublicKey = util.readExactSubarray(bytes, read, read + 1184); read += mlkemPublicKey.length;
       return { read, publicParams: { eccPublicKey, mlkemPublicKey } };
     }
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const eccPublicKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.ed25519)); read += eccPublicKey.length;
       const mldsaPublicKey = util.readExactSubarray(bytes, read, read + 1952); read += mldsaPublicKey.length;
       return { read, publicParams: { eccPublicKey, mldsaPublicKey } };
@@ -271,13 +271,13 @@ export async function parsePrivateKeyParams(algo, bytes, publicParams) {
       const k = util.readExactSubarray(bytes, read, read + payloadSize); read += k.length;
       return { read, privateParams: { k } };
     }
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const eccSecretKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccSecretKey.length;
       const mlkemSeed = util.readExactSubarray(bytes, read, read + 64); read += mlkemSeed.length;
       const { mlkemSecretKey } = await postQuantum.kem.mlkemExpandSecretSeed(algo, mlkemSeed);
       return { read, privateParams: { eccSecretKey, mlkemSecretKey, mlkemSeed } };
     }
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const eccSecretKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.ed25519)); read += eccSecretKey.length;
       const mldsaSeed = util.readExactSubarray(bytes, read, read + 32); read += mldsaSeed.length;
       const { mldsaSecretKey } = await postQuantum.signature.mldsaExpandSecretSeed(algo, mldsaSeed);
@@ -332,7 +332,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
       const C = new ECDHXSymmetricKey(); C.read(bytes.subarray(read));
       return { ephemeralPublicKey, C };
     }
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const eccCipherText = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccCipherText.length;
       const mlkemCipherText = util.readExactSubarray(bytes, read, read + 1088); read += mlkemCipherText.length;
       const C = new ECDHXSymmetricKey(); C.read(bytes.subarray(read));
@@ -356,13 +356,13 @@ export function serializeParams(algo, params) {
     enums.publicKey.x25519,
     enums.publicKey.ed448,
     enums.publicKey.x448,
-    enums.publicKey.pqc_mlkem_x25519,
-    enums.publicKey.pqc_mldsa_ed25519
+    enums.publicKey.mlkem768X25519,
+    enums.publicKey.mldsa65Ed25519
   ]);
 
   const excludedFields = {
-    [enums.publicKey.pqc_mlkem_x25519]: new Set(['mlkemSecretKey']), // only `mlkemSeed` is serialized
-    [enums.publicKey.pqc_mldsa_ed25519]: new Set(['mldsaSecretKey']) // only `mldsaSeed` is serialized
+    [enums.publicKey.mlkem768X25519]: new Set(['mlkemSecretKey']), // only `mlkemSeed` is serialized
+    [enums.publicKey.mldsa65Ed25519]: new Set(['mldsaSecretKey']) // only `mldsaSeed` is serialized
   };
 
   const orderedParams = Object.keys(params).map(name => {
@@ -425,12 +425,12 @@ export function generateParams(algo, bits, oid) {
         privateParams: { k },
         publicParams: { A }
       }));
-    case enums.publicKey.pqc_mlkem_x25519:
+    case enums.publicKey.mlkem768X25519:
       return postQuantum.kem.generate(algo).then(({ eccSecretKey, eccPublicKey, mlkemSeed, mlkemSecretKey, mlkemPublicKey }) => ({
         privateParams: { eccSecretKey, mlkemSeed, mlkemSecretKey },
         publicParams: { eccPublicKey, mlkemPublicKey }
       }));
-    case enums.publicKey.pqc_mldsa_ed25519:
+    case enums.publicKey.mldsa65Ed25519:
       return postQuantum.signature.generate(algo).then(({ eccSecretKey, eccPublicKey, mldsaSeed, mldsaSecretKey, mldsaPublicKey }) => ({
         privateParams: { eccSecretKey, mldsaSeed, mldsaSecretKey },
         publicParams: { eccPublicKey, mldsaPublicKey }
@@ -497,12 +497,12 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { k } = privateParams;
       return elliptic.ecdhX.validateParams(algo, A, k);
     }
-    case enums.publicKey.pqc_mlkem_x25519: {
+    case enums.publicKey.mlkem768X25519: {
       const { eccSecretKey, mlkemSeed } = privateParams;
       const { eccPublicKey, mlkemPublicKey } = publicParams;
       return postQuantum.kem.validateParams(algo, eccPublicKey, eccSecretKey, mlkemPublicKey, mlkemSeed);
     }
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const { eccSecretKey, mldsaSeed } = privateParams;
       const { eccPublicKey, mldsaPublicKey } = publicParams;
       return postQuantum.signature.validateParams(algo, eccPublicKey, eccSecretKey, mldsaPublicKey, mldsaSeed);

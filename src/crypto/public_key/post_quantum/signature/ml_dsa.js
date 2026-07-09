@@ -6,7 +6,7 @@ import { getRandomBytes } from '../../../random.js';
 
 export async function generate(algo) {
   switch (algo) {
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const mldsaSeed = getRandomBytes(32);
       const { mldsaSecretKey, mldsaPublicKey } = await expandSecretSeed(algo, mldsaSeed);
 
@@ -26,7 +26,7 @@ export async function generate(algo) {
  */
 export async function expandSecretSeed(algo, seed) {
   switch (algo) {
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const { ml_dsa65 } = await import('../noble_post_quantum.ts');
       const { secretKey: mldsaSecretKey, publicKey: mldsaPublicKey } = ml_dsa65.keygen(seed);
 
@@ -39,7 +39,7 @@ export async function expandSecretSeed(algo, seed) {
 
 export async function sign(algo, mldsaSecretKey, dataDigest) {
   switch (algo) {
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const { ml_dsa65 } = await import('../noble_post_quantum.ts');
       const mldsaSignature = ml_dsa65.sign(dataDigest, mldsaSecretKey);
       return { mldsaSignature };
@@ -51,7 +51,7 @@ export async function sign(algo, mldsaSecretKey, dataDigest) {
 
 export async function verify(algo, mldsaPublicKey, dataDigest, mldsaSignature) {
   switch (algo) {
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const { ml_dsa65 } = await import('../noble_post_quantum.ts');
       return ml_dsa65.verify(mldsaSignature, dataDigest, mldsaPublicKey);
     }
@@ -62,7 +62,7 @@ export async function verify(algo, mldsaPublicKey, dataDigest, mldsaSignature) {
 
 export async function validateParams(algo, mldsaPublicKey, mldsaSeed) {
   switch (algo) {
-    case enums.publicKey.pqc_mldsa_ed25519: {
+    case enums.publicKey.mldsa65Ed25519: {
       const { mldsaPublicKey: expectedPublicKey } = await expandSecretSeed(algo, mldsaSeed);
       return util.equalsUint8Array(mldsaPublicKey, expectedPublicKey);
     }

@@ -74,7 +74,7 @@ declare namespace enums {
     padding = 21
   }
 
-  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448' | 'pqc_mlkem_x25519' | 'pqc_mldsa_ed25519';
+  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448' | 'mlkem768X25519' | 'mldsa65Ed25519';
   export enum publicKey {
     rsaEncryptSign = 1,
     rsaEncrypt = 2,
@@ -90,8 +90,8 @@ declare namespace enums {
     x448 = 26,
     ed25519 = 27,
     ed448 = 28,
-    pqc_mldsa_ed25519 = 30,
-    pqc_mlkem_x25519 = 35
+    mldsa65Ed25519 = 30,
+    mlkem768X25519 = 35
   }
 
   export enum curve {

@@ -681,9 +681,9 @@ export default () => describe('PQC', function () {
   it('ML-KEM + X25519 - Generate/encrypt/decrypt', async function () {
     const sessionKey = { data: new Uint8Array(16).fill(1), algorithm: 'aes128' };
 
-    const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.pqc_mlkem_x25519);
-    const encryptedSessionKeyParams = await publicKeyEncrypt(openpgp.enums.publicKey.pqc_mlkem_x25519, undefined, publicParams, sessionKey.data);
-    const decryptedSessionKey = await publicKeyDecrypt(openpgp.enums.publicKey.pqc_mlkem_x25519, publicParams, privateParams, encryptedSessionKeyParams);
+    const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.mlkem768X25519);
+    const encryptedSessionKeyParams = await publicKeyEncrypt(openpgp.enums.publicKey.mlkem768X25519, undefined, publicParams, sessionKey.data);
+    const decryptedSessionKey = await publicKeyDecrypt(openpgp.enums.publicKey.mlkem768X25519, publicParams, privateParams, encryptedSessionKeyParams);
     expect(decryptedSessionKey).to.deep.equal(sessionKey.data);
   });
 
@@ -834,9 +834,9 @@ Fy70NCeqH2b6JeETZ1xFQEiEInk6B9WE558S9Mi6yjeSXdV65yNK2km5
     const digest = new Uint8Array(32).fill(1);
     const hashAlgo = openpgp.enums.hash.sha3_256;
 
-    const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.pqc_mldsa_ed25519);
-    const signature = await sign(openpgp.enums.publicKey.pqc_mldsa_ed25519, hashAlgo, publicParams, privateParams, null, digest);
-    const verified = await verify(openpgp.enums.publicKey.pqc_mldsa_ed25519, hashAlgo, signature, publicParams, null, digest);
+    const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.mldsa65Ed25519);
+    const signature = await sign(openpgp.enums.publicKey.mldsa65Ed25519, hashAlgo, publicParams, privateParams, null, digest);
+    const verified = await verify(openpgp.enums.publicKey.mldsa65Ed25519, hashAlgo, signature, publicParams, null, digest);
     expect(verified).to.be.true;
   });
 

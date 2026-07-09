@@ -141,7 +141,7 @@ class PublicKeyPacket {
         throw new Error('Legacy curve25519 cannot be used with v6 keys');
       }
       // The composite ML-DSA + EdDSA schemes MUST be used only with v6 keys.
-      if (this.version !== 6 && this.algorithm === enums.publicKey.pqc_mldsa_ed25519) {
+      if (this.version !== 6 && this.algorithm === enums.publicKey.mldsa65Ed25519) {
         throw new Error('Unexpected key version: ML-DSA algorithms can only be used with v6 keys');
       }
       this.publicParams = publicParams;
