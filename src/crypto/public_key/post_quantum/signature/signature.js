@@ -45,7 +45,7 @@ export async function verify(signatureAlgo, hashAlgo, eccPublicKey, mldsaPublicK
 
 export function isCompatibleHashAlgo(signatureAlgo, hashAlgo) {
   // The signature hash algo MUST have digest larger than 256 bits
-  // https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-10.html#section-9.4
+  // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
   switch (signatureAlgo) {
     case enums.publicKey.pqc_mldsa_ed25519:
       return getHashByteLength(hashAlgo) >= 32;

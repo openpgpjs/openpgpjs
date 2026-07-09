@@ -7,7 +7,7 @@ import openpgp from '../initOpenpgp.js';
 import { generateParams, publicKeyEncrypt, publicKeyDecrypt } from '../../src/crypto/crypto.js';
 import { sign, verify } from '../../src/crypto/signature.js';
 
-// Test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-09.html#appendix-A.4.1
+// Test vector from https://www.rfc-editor.org/rfc/rfc9980.html#appendix-A.4.1
 const mldsaEd25519AndMlkemX25519PrivateKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xcdLBmd0hYAeAAAHwIgoGEBiAbt7rv8r/76EjORZbGScxv3ZXOBMKhZTrhqxuLcI
@@ -589,7 +589,7 @@ Rfc1b8naACMxOTpba5e60dwhfJvgLURSmLrpGSAkV2JopLrNFBhMf52jpgAAAAAA
 AAAAAAAAAAAABA8TGSIp
 -----END PGP PUBLIC KEY BLOCK-----`;
 
-// Test vector from: https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-09.html#appendix-A.1.1
+// Test vector from: https://www.rfc-editor.org/rfc/rfc9980.html#appendix-A.1.1
 const ed25519AndMlkemX25519PrivateKeyV6 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xUsGZ3SFgBsAAAAg3LSTXMTIYPje/3KOQ480cxsp1t0/1w2687B8uqUTCvwArfra
@@ -634,7 +634,7 @@ kabwnOQbeR9GdZt2dJZF0YO8qGRmLO+T7GIaYj9TlzHonA3y01AAlYdfvolBM2gL
 pujFf59V4t3iZxgQfgvs0+vrcSsE
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-// Test vector from: https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-09.html#appendix-A.2.1
+// Test vector from: https://www.rfc-editor.org/rfc/rfc9980.html#appendix-A.2.1
 const ed25519AndMlkemX25519PrivateKeyV4 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xUkEZ3SFgBuhDibMGc69QTyzKYr3R7MMaQOZuU0Bwg82JVcL+NGHswA4zWTCi+mw
@@ -699,7 +699,7 @@ export default () => describe('PQC', function () {
   });
 
   it('ML-KEM + X25519 - Test vector', async function () {
-    // Test vector from: https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-09.html#appendix-A.1
+    // Test vector from: https://www.rfc-editor.org/rfc/rfc9980.html#appendix-A.1
     const armoredMessage = `-----BEGIN PGP MESSAGE-----
 
 wcPtBiEG2v4O67JnXs/Nwgoj/onKXRLoP1J9+jVLbc9mITGki50jheL+TOBHsjFH
@@ -746,7 +746,7 @@ ngqFrEkdOzaOHiIZarV74y3G3wZyzXobjp+dpA==
   });
 
   it('ML-KEM + X25519 - Test vector (v4 key)', async function () {
-    // Test vectors from: https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-09.html#appendix-A.2
+    // Test vectors from: https://www.rfc-editor.org/rfc/rfc9980.html#appendix-A.2
     const armoredMessageSEIPDv1 = `-----BEGIN PGP MESSAGE-----
 
 wcPUA6T5X5he1hpRI8oKxrVQiCkB27ePKVHeA4pTYMKZA6u1l8syrP2+sEULDgvB
@@ -862,7 +862,7 @@ Fy70NCeqH2b6JeETZ1xFQEiEInk6B9WE558S9Mi6yjeSXdV65yNK2km5
 
   it('ML-DSA + Ed25519 - throws on unexpected signature algorithm', async () => {
     // The signature hash algo MUST have digest larger than 256 bits
-    // https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-10.html#section-9.4
+    // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
     const messageWithInvalidSignature = await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
 
 xDYGAQseECid884kLeNBI6G5jVZW91Kj4uFLakk/+TD7JzIfEl6aaIAzi+n7
@@ -951,7 +951,7 @@ BQsQGR4j
   });
 
   it('ML-DSA + ML-KEM - Test vector: decrypt/verify', async function () {
-    // Test vector from: https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-09.html#appendix-A.3
+    // Test vector from: https://www.rfc-editor.org/rfc/rfc9980.html#appendix-A.3
     const privateKey = await openpgp.readKey({ armoredKey: mldsaEd25519AndMlkemX25519PrivateKey });
 
     const publicKey = privateKey.toPublic();

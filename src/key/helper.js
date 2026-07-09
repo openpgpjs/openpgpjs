@@ -191,7 +191,7 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
     }
   } else if (pqcAlgos.has(signingKeyPacket.algorithm)) {
     // For PQC, the returned hash algo MUST be at least 256 bit long, see:
-    // https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-10.html#section-9.4 .
+    // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4 .
     // Hence, we return the `preferredHashAlgo` as long as it's supported and long enough;
     // Otherwise, we look at the strongest supported algo, and ultimately fallback the default algo (SHA-256).
     const preferredSenderAlgoIsSupported = isSupportedHashAlgo(preferredSenderAlgo) && publicKey.postQuantum.signature.isCompatibleHashAlgo(signingKeyPacket.algorithm, preferredSenderAlgo);

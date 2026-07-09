@@ -144,7 +144,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     case enums.publicKey.pqc_mldsa_ed25519: {
       if (!postQuantum.signature.isCompatibleHashAlgo(algo, hashAlgo)) {
         // The signature hash algo MUST have digest larger than 256 bits
-        // https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-10.html#section-9.4
+        // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
         throw new Error('Unexpected hash algorithm for PQC signature: digest size too short');
       }
       const { eccPublicKey, mldsaPublicKey } = publicParams;
@@ -220,7 +220,7 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
     case enums.publicKey.pqc_mldsa_ed25519: {
       if (!postQuantum.signature.isCompatibleHashAlgo(algo, hashAlgo)) {
         // The signature hash algo MUST have digest larger than 256 bits
-        // https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-10.html#section-9.4
+        // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
         throw new Error('Unexpected hash algorithm for PQC signature: digest size too short');
       }
       const { eccPublicKey } = publicKeyParams;
