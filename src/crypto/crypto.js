@@ -24,7 +24,7 @@
  * @access private
  */
 
-import { rsa, elliptic, elgamal, dsa } from './public_key/index.js';
+import { rsa, elliptic, elgamal, dsa, postQuantum } from './public_key/index.js';
 import { getRandomBytes } from './random.js';
 import { getCipherParams } from './cipher/index.js';
 import ECDHSymkey from '../type/ecdh_symkey.js';
@@ -76,6 +76,12 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
       return { ephemeralPublicKey, C };
     }
+    case enums.publicKey.mlkem768X25519: {
+      const { eccPublicKey, mlkemPublicKey } = publicParams;
+      const { eccCipherText, mlkemCipherText, wrappedKey } = await postQuantum.kem.encrypt(keyAlgo, eccPublicKey, mlkemPublicKey, data);
+      const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
+      return { eccCipherText, mlkemCipherText, C };
+    }
     default:
       return [];
   }
@@ -95,8 +101,8 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
  * @throws {Error} on sensitive decryption error, unless `randomPayload` is given
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload) {
-  switch (algo) {
+export async function publicKeyDecrypt(keyAlgo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload) {
+  switch (keyAlgo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {
       const { c } = sessionKeyParams;
@@ -126,7 +132,13 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
         throw new Error('AES session key expected');
       }
       return elliptic.ecdhX.decrypt(
-        algo, ephemeralPublicKey, C.wrappedKey, A, k);
+        keyAlgo, ephemeralPublicKey, C.wrappedKey, A, k);
+    }
+    case enums.publicKey.mlkem768X25519: {
+      const { eccSecretKey, mlkemSecretKey } = privateKeyParams;
+      const { eccPublicKey, mlkemPublicKey } = publicKeyParams;
+      const { eccCipherText, mlkemCipherText, C } = sessionKeyParams;
+      return postQuantum.kem.decrypt(keyAlgo, eccCipherText, mlkemCipherText, eccSecretKey, eccPublicKey, mlkemSecretKey, mlkemPublicKey, C.wrappedKey);
     }
     default:
       throw new Error('Unknown public key encryption algorithm.');
@@ -192,6 +204,16 @@ export function parsePublicKeyParams(algo, bytes) {
       const A = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(algo)); read += A.length;
       return { read, publicParams: { A } };
     }
+    case enums.publicKey.mlkem768X25519: {
+      const eccPublicKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccPublicKey.length;
+      const mlkemPublicKey = util.readExactSubarray(bytes, read, read + 1184); read += mlkemPublicKey.length;
+      return { read, publicParams: { eccPublicKey, mlkemPublicKey } };
+    }
+    case enums.publicKey.mldsa65Ed25519: {
+      const eccPublicKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.ed25519)); read += eccPublicKey.length;
+      const mldsaPublicKey = util.readExactSubarray(bytes, read, read + 1952); read += mldsaPublicKey.length;
+      return { read, publicParams: { eccPublicKey, mldsaPublicKey } };
+    }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
@@ -202,9 +224,9 @@ export function parsePublicKeyParams(algo, bytes) {
  * @param {module:enums.publicKey} algo - The key algorithm
  * @param {Uint8Array} bytes - The key material to parse
  * @param {Object} publicParams - (ECC only) public params, needed to format some private params
- * @returns {{ read: Number, privateParams: Object }} Number of read bytes plus the key parameters referenced by name.
+ * @returns {Promise<{ read: Number, privateParams: Object }>} Number of read bytes plus the key parameters referenced by name.
  */
-export function parsePrivateKeyParams(algo, bytes, publicParams) {
+export async function parsePrivateKeyParams(algo, bytes, publicParams) {
   let read = 0;
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
@@ -248,6 +270,18 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       const payloadSize = getCurvePayloadSize(algo);
       const k = util.readExactSubarray(bytes, read, read + payloadSize); read += k.length;
       return { read, privateParams: { k } };
+    }
+    case enums.publicKey.mlkem768X25519: {
+      const eccSecretKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccSecretKey.length;
+      const mlkemSeed = util.readExactSubarray(bytes, read, read + 64); read += mlkemSeed.length;
+      const { mlkemSecretKey } = await postQuantum.kem.mlkemExpandSecretSeed(algo, mlkemSeed);
+      return { read, privateParams: { eccSecretKey, mlkemSecretKey, mlkemSeed } };
+    }
+    case enums.publicKey.mldsa65Ed25519: {
+      const eccSecretKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.ed25519)); read += eccSecretKey.length;
+      const mldsaSeed = util.readExactSubarray(bytes, read, read + 32); read += mldsaSeed.length;
+      const { mldsaSecretKey } = await postQuantum.signature.mldsaExpandSecretSeed(algo, mldsaSeed);
+      return { read, privateParams: { eccSecretKey, mldsaSecretKey, mldsaSeed } };
     }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
@@ -298,6 +332,12 @@ export function parseEncSessionKeyParams(algo, bytes) {
       const C = new ECDHXSymmetricKey(); C.read(bytes.subarray(read));
       return { ephemeralPublicKey, C };
     }
+    case enums.publicKey.mlkem768X25519: {
+      const eccCipherText = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccCipherText.length;
+      const mlkemCipherText = util.readExactSubarray(bytes, read, read + 1088); read += mlkemCipherText.length;
+      const C = new ECDHXSymmetricKey(); C.read(bytes.subarray(read));
+      return { eccCipherText, mlkemCipherText, C }; // eccCipherText || mlkemCipherText || len(C) || C
+    }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
@@ -315,9 +355,21 @@ export function serializeParams(algo, params) {
     enums.publicKey.ed25519,
     enums.publicKey.x25519,
     enums.publicKey.ed448,
-    enums.publicKey.x448
+    enums.publicKey.x448,
+    enums.publicKey.mlkem768X25519,
+    enums.publicKey.mldsa65Ed25519
   ]);
+
+  const excludedFields = {
+    [enums.publicKey.mlkem768X25519]: new Set(['mlkemSecretKey']), // only `mlkemSeed` is serialized
+    [enums.publicKey.mldsa65Ed25519]: new Set(['mldsaSecretKey']) // only `mldsaSeed` is serialized
+  };
+
   const orderedParams = Object.keys(params).map(name => {
+    if (excludedFields[algo]?.has(name)) {
+      return new Uint8Array();
+    }
+
     const param = params[name];
     if (!util.isUint8Array(param)) return param.write();
     return algosWithNativeRepresentation.has(algo) ? param : util.uint8ArrayToMPI(param);
@@ -372,6 +424,16 @@ export function generateParams(algo, bits, oid) {
       return elliptic.ecdhX.generate(algo).then(({ A, k }) => ({
         privateParams: { k },
         publicParams: { A }
+      }));
+    case enums.publicKey.mlkem768X25519:
+      return postQuantum.kem.generate(algo).then(({ eccSecretKey, eccPublicKey, mlkemSeed, mlkemSecretKey, mlkemPublicKey }) => ({
+        privateParams: { eccSecretKey, mlkemSeed, mlkemSecretKey },
+        publicParams: { eccPublicKey, mlkemPublicKey }
+      }));
+    case enums.publicKey.mldsa65Ed25519:
+      return postQuantum.signature.generate(algo).then(({ eccSecretKey, eccPublicKey, mldsaSeed, mldsaSecretKey, mldsaPublicKey }) => ({
+        privateParams: { eccSecretKey, mldsaSeed, mldsaSecretKey },
+        publicParams: { eccPublicKey, mldsaPublicKey }
       }));
     case enums.publicKey.dsa:
     case enums.publicKey.elgamal:
@@ -434,6 +496,16 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { A } = publicParams;
       const { k } = privateParams;
       return elliptic.ecdhX.validateParams(algo, A, k);
+    }
+    case enums.publicKey.mlkem768X25519: {
+      const { eccSecretKey, mlkemSeed } = privateParams;
+      const { eccPublicKey, mlkemPublicKey } = publicParams;
+      return postQuantum.kem.validateParams(algo, eccPublicKey, eccSecretKey, mlkemPublicKey, mlkemSeed);
+    }
+    case enums.publicKey.mldsa65Ed25519: {
+      const { eccSecretKey, mldsaSeed } = privateParams;
+      const { eccPublicKey, mldsaPublicKey } = publicParams;
+      return postQuantum.signature.validateParams(algo, eccPublicKey, eccSecretKey, mldsaPublicKey, mldsaSeed);
     }
     default:
       throw new Error('Unknown public key algorithm.');

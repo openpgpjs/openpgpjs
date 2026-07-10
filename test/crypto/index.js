@@ -13,6 +13,7 @@ import testEAX from './eax.js';
 import testOCB from './ocb.js';
 import testRSA from './rsa.js';
 import testValidate from './validate.js';
+import testPQC from './postQuantum.js';
 
 export default () => describe('Crypto', function () {
   testBigInteger();
@@ -30,4 +31,5 @@ export default () => describe('Crypto', function () {
   testOCB();
   testRSA();
   testValidate();
+  testPQC();
 });

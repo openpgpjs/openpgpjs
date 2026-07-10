@@ -1,0 +1,62 @@
+/** @access private */
+
+import enums from '../../../../enums.ts';
+import * as mldsa from './ml_dsa.js';
+import * as eccdsa from './ecc_dsa.js';
+import { getHashByteLength } from '../../../hash/index.js';
+
+export async function generate(algo) {
+  switch (algo) {
+    case enums.publicKey.mldsa65Ed25519: {
+      const { eccSecretKey, eccPublicKey } = await eccdsa.generate(algo);
+      const { mldsaSeed, mldsaSecretKey, mldsaPublicKey } = await mldsa.generate(algo);
+      return { eccSecretKey, eccPublicKey, mldsaSeed, mldsaSecretKey, mldsaPublicKey };
+    }
+    default:
+      throw new Error('Unsupported signature algorithm');
+  }
+}
+
+export async function sign(signatureAlgo, hashAlgo, eccSecretKey, eccPublicKey, mldsaSecretKey, dataDigest) {
+  switch (signatureAlgo) {
+    case enums.publicKey.mldsa65Ed25519: {
+      const { eccSignature } = await eccdsa.sign(signatureAlgo, hashAlgo, eccSecretKey, eccPublicKey, dataDigest);
+      const { mldsaSignature } = await mldsa.sign(signatureAlgo, mldsaSecretKey, dataDigest);
+
+      return { eccSignature, mldsaSignature };
+    }
+    default:
+      throw new Error('Unsupported signature algorithm');
+  }
+}
+
+export async function verify(signatureAlgo, hashAlgo, eccPublicKey, mldsaPublicKey, dataDigest, { eccSignature, mldsaSignature }) {
+  switch (signatureAlgo) {
+    case enums.publicKey.mldsa65Ed25519: {
+      const eccVerifiedPromise = eccdsa.verify(signatureAlgo, hashAlgo, eccPublicKey, dataDigest, eccSignature);
+      const mldsaVerifiedPromise = mldsa.verify(signatureAlgo, mldsaPublicKey, dataDigest, mldsaSignature);
+      const verified = await eccVerifiedPromise && await mldsaVerifiedPromise;
+      return verified;
+    }
+    default:
+      throw new Error('Unsupported signature algorithm');
+  }
+}
+
+export function isCompatibleHashAlgo(signatureAlgo, hashAlgo) {
+  // The signature hash algo MUST have digest larger than 256 bits
+  // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
+  switch (signatureAlgo) {
+    case enums.publicKey.mldsa65Ed25519:
+      return getHashByteLength(hashAlgo) >= 32;
+    default:
+      throw new Error('Unsupported signature algorithm');
+  }
+}
+
+export async function validateParams(algo, eccPublicKey, eccSecretKey, mldsaPublicKey, mldsaSeed) {
+  const eccValidationPromise = eccdsa.validateParams(algo, eccPublicKey, eccSecretKey);
+  const mldsaValidationPromise = mldsa.validateParams(algo, mldsaPublicKey, mldsaSeed);
+  const valid = await eccValidationPromise && await mldsaValidationPromise;
+  return valid;
+}
