@@ -203,6 +203,10 @@ import {
   // @ts-expect-error for incompatible packet type
   new PacketList<SecretKeyPacket>().push(new SecretSubkeyPacket());
 
+  // clearPrivateParams is available on secret key packets
+  new SecretKeyPacket().clearPrivateParams();
+  new SecretSubkeyPacket().clearPrivateParams();
+
   expect(LiteralDataPacket.tag).to.equal(enums.packet.literalData);
 
   // // Detached - sign text message (armored)

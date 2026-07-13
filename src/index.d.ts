@@ -387,6 +387,7 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public isDummy(): boolean;
   public isMissingSecretKeyMaterial(): boolean;
   public makeDummy(config?: Config): void;
+  public clearPrivateParams(): void;
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
