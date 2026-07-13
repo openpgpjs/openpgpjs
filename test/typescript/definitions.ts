@@ -62,6 +62,11 @@ import {
   // @ts-expect-error isDecrypted is not defined for public keys
   try { (await privateKey.toPublic().update(privateKey.toPublic())).isDecrypted(); } catch {}
 
+  // Clear decrypted private key material
+  privateKey.clearPrivateParams();
+  // @ts-expect-error clearPrivateParams is not defined for public keys
+  try { privateKey.toPublic().clearPrivateParams(); } catch {}
+
   // Revoke keys
   await revokeKey({ key: privateKey });
   // @ts-expect-error for missing revocation certificate
