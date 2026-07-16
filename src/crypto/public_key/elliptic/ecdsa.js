@@ -56,8 +56,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
           // Need to await to make sure browser succeeds
           return await webSign(curve, hashAlgo, message, keyPair);
         } catch (err) {
-          // We do not fallback if the error is related to key integrity
-          if (err.name === 'DataError' || err.name === 'OperationError') {
+          if (err.name !== 'NotSupportedError') {
             throw err;
           }
           util.printDebugError('Browser did not support signing: ' + err.message);
@@ -112,8 +111,7 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
           const verified = await webVerify(curve, hashAlgo, signature, message, publicKey);
           return verified || tryFallbackVerificationForOldBug();
         } catch (err) {
-          // We do not fallback if the error is related to key integrity
-          if (err.name === 'DataError' || err.name === 'OperationError') {
+          if (err.name !== 'NotSupportedError') {
             throw err;
           }
           util.printDebugError('Browser did not support verifying: ' + err.message);

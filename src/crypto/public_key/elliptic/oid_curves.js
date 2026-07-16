@@ -176,6 +176,9 @@ class CurveWithOID {
         try {
           return await webGenKeyPair(this.name, this.wireFormatLeadingByte, this.payloadSize);
         } catch (err) {
+          if (err.name !== 'NotSupportedError') {
+            throw err;
+          }
           util.printDebugError('Browser did not support generating ec key ' + err.message);
           return jsGenKeyPair(this.name);
         }
