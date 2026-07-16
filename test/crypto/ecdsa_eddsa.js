@@ -240,23 +240,23 @@ export default () => describe('ECC signatures', function () {
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
       await expect(verify_signature(
-        'secp256k1', 8, [], [], [], []
+        'secp256k1', 8, new Uint8Array(32), new Uint8Array(32), [], []
       )).to.be.rejectedWith(/Invalid point encoding/);
       await expect(verify_signature(
-        'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
+        'secp256k1', 8, new Uint8Array(32), new Uint8Array(32), [], secp256k1_invalid_point_format
       )).to.be.rejectedWith(/Invalid point encoding/);
       await expect(verify_signature(
-        'secp256k1', 8, [], [], [], secp256k1_invalid_point
+        'secp256k1', 8, new Uint8Array(32), new Uint8Array(32), [], secp256k1_invalid_point
       )).to.eventually.be.false;
     });
-    it('secp256k1 - Invalid signature', function (done) {
+    it('secp256k1 - Invalid signature', async function () {
       if (!config.useEllipticFallback && !util.getNodeCrypto()) {
         // eslint-disable-next-line no-invalid-this
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
-      expect(verify_signature(
-        'secp256k1', 8, [], [], [], secp256k1_point
-      )).to.eventually.be.false.notify(done);
+      await expect(verify_signature(
+        'secp256k1', 8, new Uint8Array(32), new Uint8Array(32), [], secp256k1_point
+      )).to.eventually.be.false;
     });
 
     it('P-384 - Valid signature', async function () {

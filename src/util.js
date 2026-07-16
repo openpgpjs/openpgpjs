@@ -152,6 +152,9 @@ const util = {
     if (bytes.length > length) {
       throw new Error('Input array too long');
     }
+    if (bytes.length === length) {
+      return bytes;
+    }
     const padded = new Uint8Array(length);
     const offset = length - bytes.length;
     padded.set(bytes, offset);

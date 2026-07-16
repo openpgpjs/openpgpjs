@@ -22,7 +22,7 @@
  * @access private
  */
 
-import { aeskw as nobleAesKW } from '@noble/ciphers/aes';
+import { aeskw as nobleAesKW } from '@noble/ciphers/aes.js';
 import { getCipherParams } from './cipher/index.js';
 import util from '../util.js';
 

@@ -21,7 +21,7 @@
  * @access private
  */
 
-import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes.js';
 import { getCipherParams } from '../cipher/index.js';
 import util from '../../util.js';
 
