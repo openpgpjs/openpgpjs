@@ -1,13 +1,14 @@
-name: SOP interoperability test suite
+# temporary workflow to test the v7 development branch
+name: SOP interoperability test suite (v7)
 
 on:
   pull_request:
-    branches: [main]
+    branches: [v7]
 
 jobs:
 
   test-suite:
-    name: Run interoperability test suite
+    name: Run interoperability test suite (v7)
     runs-on: ubuntu-latest
     permissions: {}
     container: 
@@ -33,21 +34,21 @@ jobs:
         run: $SOP_OPENPGPJS_V2 version --extended
         env: 
           OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-branch
-      # check out main branch
-      - name: Checkout openpgpjs-main
+      # check out v7 branch
+      - name: Checkout openpgpjs-v7
         uses: actions/checkout@v6
         with:
-          ref: main
-          path: openpgpjs-main
-      - name: Install openpgpjs-main
-        run: cd openpgpjs-main && npm install
-      - name: Print openpgpjs-main version
+          ref: v7
+          path: openpgpjs-v7
+      - name: Install openpgpjs-v7
+        run: cd openpgpjs-v7 && npm install
+      - name: Print openpgpjs-v7 version
         run: $SOP_OPENPGPJS_V2 version --extended
         env: 
-          OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-main
+          OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-v7
       # Run test suite
       - name: Prepare test configuration
-        run: ./.github/test-suite/prepare_config.sh $CONFIG_TEMPLATE $CONFIG_OUTPUT $GITHUB_WORKSPACE/openpgpjs-branch $GITHUB_WORKSPACE/openpgpjs-main
+        run: ./.github/test-suite/prepare_config.sh $CONFIG_TEMPLATE $CONFIG_OUTPUT $GITHUB_WORKSPACE/openpgpjs-branch $GITHUB_WORKSPACE/openpgpjs-v7
         env:
          CONFIG_TEMPLATE: .github/test-suite/config.json.template
          CONFIG_OUTPUT: .github/test-suite/config.json
@@ -71,8 +72,8 @@ jobs:
           name: test-suite-results.html
           path: .github/test-suite/test-suite-results.html
 
-  compare-with-main:
-    name: Compare with main
+  compare-with-v7:
+    name: Compare with v7
     runs-on: ubuntu-latest
     needs: test-suite
     permissions: {}
@@ -89,5 +90,5 @@ jobs:
         with: 
           results: ${{ steps.download-test-results.outputs.download-path }}/test-suite-results.json
           output: baseline-comparison.json
-          baseline: sop-openpgpjs-main
+          baseline: sop-openpgpjs-v7
           target: sop-openpgpjs-branch
