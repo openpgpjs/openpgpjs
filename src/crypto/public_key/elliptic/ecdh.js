@@ -98,6 +98,9 @@ async function genPublicEphemeralKey(curve, Q) {
         try {
           return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
+          if (err.name !== 'NotSupportedError') {
+            throw err;
+          }
           util.printDebugError(err);
           return jsPublicEphemeralKey(curve, Q);
         }
@@ -162,6 +165,9 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
         try {
           return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
+          if (err.name !== 'NotSupportedError') {
+            throw err;
+          }
           util.printDebugError(err);
           return jsPrivateEphemeralKey(curve, V, d);
         }
