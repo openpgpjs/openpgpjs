@@ -174,13 +174,13 @@ class CurveWithOID {
     switch (this.type) {
       case 'web':
         try {
-          return await webGenKeyPair(this.name, this.wireFormatLeadingByte);
+          return await webGenKeyPair(this.name, this.wireFormatLeadingByte, this.payloadSize);
         } catch (err) {
           util.printDebugError('Browser did not support generating ec key ' + err.message);
           return jsGenKeyPair(this.name);
         }
       case 'node':
-        return nodeGenKeyPair(this.name);
+        return nodeGenKeyPair(this.name, this.payloadSize);
       case 'curve25519Legacy': {
         // the private key must be stored in big endian and already clamped: https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#section-5.5.5.6.1.1-3
         const { k, A } = await ecdhXGenerate(enums.publicKey.x25519);
@@ -208,7 +208,7 @@ async function generate(curveName) {
   return {
     oid,
     Q: keyPair.publicKey,
-    secret: util.leftPad(keyPair.privateKey, curve.payloadSize),
+    secret: keyPair.privateKey,
     hash,
     cipher
   };
@@ -303,26 +303,31 @@ async function jsGenKeyPair(name) {
   return { publicKey, privateKey };
 }
 
-async function webGenKeyPair(name, wireFormatLeadingByte) {
+async function webGenKeyPair(name, wireFormatLeadingByte, expectedPayloadSize) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent
   const webCryptoKey = await webCrypto.generateKey({ name: 'ECDSA', namedCurve: webCurves[name] }, true, ['sign', 'verify']);
 
   const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
   const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
 
+  const rawPublicKey = jwkToRawPublic(publicKey, wireFormatLeadingByte);
+  const rawPrivateKey = b64ToUint8Array(privateKey.d, true);
+
   return {
-    publicKey: jwkToRawPublic(publicKey, wireFormatLeadingByte),
-    privateKey: b64ToUint8Array(privateKey.d, true)
+    publicKey: rawPublicKey,
+    privateKey: util.leftPad(rawPrivateKey, expectedPayloadSize)
   };
 }
 
-function nodeGenKeyPair(name) {
+function nodeGenKeyPair(name, expectedPayloadSize) {
   // Note: ECDSA and ECDH key generation is structurally equivalent
   const ecdh = nodeCrypto.createECDH(nodeCurves[name]);
   ecdh.generateKeys();
   return {
     publicKey: new Uint8Array(ecdh.getPublicKey()),
-    privateKey: new Uint8Array(ecdh.getPrivateKey())
+    // Node does not pad the privateKey; BrainpoolP384 keys are the most likely to be 1 byte short
+    // (rare, less than 1% of the time)
+    privateKey: util.leftPad(new Uint8Array(ecdh.getPrivateKey()), expectedPayloadSize)
   };
 }
 
