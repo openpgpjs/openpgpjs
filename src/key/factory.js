@@ -392,7 +392,7 @@ export async function readPrivateKey({ armoredKey, binaryKey, config, ...rest })
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   for (let i = 0; i < keyIndex.length; i++) {
     const firstPrivateKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey && !firstPrivateKeyList.findPacket(enums.packet.secretSubkey)) {
+    if (firstPrivateKeyList[0].constructor.tag === enums.packet.publicKey && !firstPrivateKeyList.findPacket(enums.packet.secretSubkey)) {
       continue;
     }
     return new PrivateKey(firstPrivateKeyList);
@@ -479,7 +479,7 @@ export async function readPrivateKeys({ armoredKeys, binaryKeys, config }) {
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   for (let i = 0; i < keyIndex.length; i++) {
     const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey && !oneKeyList.findPacket(enums.packet.secretSubkey)) {
+    if (oneKeyList[0].constructor.tag === enums.packet.publicKey && !oneKeyList.findPacket(enums.packet.secretSubkey)) {
       continue;
     }
     const newKey = new PrivateKey(oneKeyList);
