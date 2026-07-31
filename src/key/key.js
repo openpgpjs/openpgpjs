@@ -274,11 +274,9 @@ class Key {
     } catch (err) {
       throw util.wrapError('Could not verify primary key', err);
     }
-    // Prefer the most recently created valid (and non-dummy) secret subkey,
-    // or the subkey with the highest algorithm ID in case of equal creation
-    // timestamps.
+    // Prefer the most recently created valid subkey, or the subkey with
+    // the highest algorithm ID in case of equal creation timestamps.
     const subkeys = this.subkeys.slice().sort((a, b) => (
-      !helper.isPublicOrDummyKeyPacket(b.keyPacket) - !helper.isPublicOrDummyKeyPacket(a.keyPacket) ||
       b.keyPacket.created - a.keyPacket.created ||
       b.keyPacket.algorithm - a.keyPacket.algorithm
     ));
@@ -286,6 +284,9 @@ class Key {
     for (const subkey of subkeys) {
       if (!keyID || subkey.getKeyID().equals(keyID)) {
         try {
+          if (!keyID && helper.isPublicOrDummyKeyPacket(subkey.keyPacket)) {
+            throw new Error('Cannot sign with a public or dummy key');
+          }
           await subkey.verify(date, config);
           const dataToVerify = { key: primaryKey, bind: subkey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(
@@ -313,6 +314,9 @@ class Key {
       const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
           helper.validateSigningKeyPacket(primaryKey, selfCertification, config)) {
+        if (!keyID && helper.isPublicOrDummyKeyPacket(primaryKey)) {
+          throw new Error('Cannot sign with a public or dummy key');
+        }
         helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
