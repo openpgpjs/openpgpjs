@@ -1701,7 +1701,7 @@ aOU=
         // secret key operations involving the primary key should fail
         await expect(openpgp.sign({
           message: await openpgp.createMessage({ text: 'test' }), signingKeys: decryptedDummyKey, config: { rejectPublicKeyAlgorithms: new Set() }
-        })).to.eventually.be.rejectedWith(/Cannot sign with a gnu-dummy key/);
+        })).to.eventually.be.rejectedWith(/Cannot sign with a public or dummy key/);
         await expect(
           openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: decryptedDummyKey })
         ).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
