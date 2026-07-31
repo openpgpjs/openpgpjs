@@ -261,7 +261,7 @@ class Key {
    * @param  {Boolean} [needPrivateKeyMaterial] - whether the key will be used for signing
    * @param  {Function} [validateKeyPacket] - function to verify the signing/certification key packet
    * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
-   * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
+   * @param  {Date} [date] - use the given date to check key validity instead of the current date
    * @param  {Object} [userID] - filter keys for the given user ID
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Key|Subkey>} signing key
