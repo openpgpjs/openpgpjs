@@ -69,6 +69,20 @@ class PrivateKey extends PublicKey {
   }
 
   /**
+   * Returns last created key or key by given keyID that is available for signing
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
+   * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
+   * @param  {Object} [userID] - filter keys for the given user ID
+   * @param  {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Key|Subkey>} signing key
+   * @throws if no valid signing key was found
+   * @async
+   */
+  async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+    return this.getSigningOrVerificationKey(true, keyID, date, userID, config);
+  }
+
+  /**
    * Returns all keys that are available for decryption, matching the keyID when given
    * This is useful to retrieve keys for session key decryption
    * @param  {module:type/keyid~KeyID} keyID, optional
@@ -143,6 +157,12 @@ class PrivateKey extends PublicKey {
       throw new Error('Cannot validate a public key');
     }
 
+    const keys = this.getKeys();
+    const allPublicOrDummies = keys.map(key => helper.isPublicOrDummyKeyPacket(key.keyPacket)).every(Boolean);
+    if (allPublicOrDummies) {
+      throw new Error('Cannot validate key without secret key material');
+    }
+
     let signingKeyPacket;
     if (!helper.isPublicOrDummyKeyPacket(this.keyPacket)) {
       signingKeyPacket = this.keyPacket;
@@ -151,9 +171,8 @@ class PrivateKey extends PublicKey {
        * It is enough to validate any signing keys
        * since its binding signatures are also checked
        */
-      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 });
-      // This could again be a dummy key
-      if (signingKey && !helper.isPublicOrDummyKeyPacket(signingKey.keyPacket)) {
+      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
+      if (signingKey) {
         signingKeyPacket = signingKey.keyPacket;
       }
     }
@@ -161,12 +180,6 @@ class PrivateKey extends PublicKey {
     if (signingKeyPacket) {
       return signingKeyPacket.validate();
     } else {
-      const keys = this.getKeys();
-      const allPublicOrDummies = keys.map(key => helper.isPublicOrDummyKeyPacket(key.keyPacket)).every(Boolean);
-      if (allPublicOrDummies) {
-        throw new Error('Cannot validate key without secret key material');
-      }
-
       return Promise.all(keys.map(key => helper.isPublicOrDummyKeyPacket(key.keyPacket) || key.keyPacket.validate()));
     }
   }

@@ -257,16 +257,18 @@ class Key {
   }
 
   /**
-   * Returns last created key or key by given keyID that is available for signing and verification
+   * Returns last created key or key by given keyID that is available for signing or verification
+   * @param  {Boolean} [needPrivateKeyMaterial] - whether the key will be used for signing
    * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
    * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
    * @param  {Object} [userID] - filter keys for the given user ID
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Key|Subkey>} signing key
-   * @throws if no valid signing key was found
+   * @throws if no valid signing/verification key was found
    * @async
+   * @private
    */
-  async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+  async getSigningOrVerificationKey(needPrivateKeyMaterial = false, keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
     try {
@@ -284,7 +286,7 @@ class Key {
     for (const subkey of subkeys) {
       if (!keyID || subkey.getKeyID().equals(keyID)) {
         try {
-          if (!keyID && helper.isPublicOrDummyKeyPacket(subkey.keyPacket)) {
+          if (needPrivateKeyMaterial && helper.isPublicOrDummyKeyPacket(subkey.keyPacket)) {
             throw new Error('Cannot sign with a public or dummy key');
           }
           await subkey.verify(date, config);
@@ -314,7 +316,7 @@ class Key {
       const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
           helper.validateSigningKeyPacket(primaryKey, selfCertification, config)) {
-        if (!keyID && helper.isPublicOrDummyKeyPacket(primaryKey)) {
+        if (needPrivateKeyMaterial && helper.isPublicOrDummyKeyPacket(primaryKey)) {
           throw new Error('Cannot sign with a public or dummy key');
         }
         helper.checkKeyRequirements(primaryKey, config);
@@ -324,6 +326,20 @@ class Key {
       exception = e;
     }
     throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyID().toHex(), exception);
+  }
+
+  /**
+   * Returns last created key or key by given keyID that is available for verification
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
+   * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
+   * @param  {Object} [userID] - filter keys for the given user ID
+   * @param  {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Key|Subkey>} verification key
+   * @throws if no valid verification key was found
+   * @async
+   */
+  async getVerificationKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+    return this.getSigningOrVerificationKey(false, keyID, date, userID, config);
   }
 
   /**
