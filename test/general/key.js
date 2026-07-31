@@ -4995,21 +4995,21 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(decrypted.data).to.be.equal(vData);
     });
 
-    it("Certifies keys with a certify-only primary key", async function () {
+    it('Certifies keys with a certify-only primary key', async function () {
       const { privateKey: certifyingKey } = await openpgp.generateKey({
-        userIDs: { name: "Certifying Key" },
-        format: "object",
-        subkeys: [{ sign: true }],
+        userIDs: { name: 'Certifying Key' },
+        format: 'object',
+        subkeys: [{ sign: true }]
       });
       const { privateKey: keyToCertify } = await openpgp.generateKey({
-        userIDs: { name: "Key To Certify" },
-        format: "object",
+        userIDs: { name: 'Key To Certify' },
+        format: 'object'
       });
 
       // Set certify-only flag
       const primaryUser = await certifyingKey.getPrimaryUser();
       primaryUser.selfCertification.keyFlags = [
-        openpgp.enums.keyFlags.certifyKeys,
+        openpgp.enums.keyFlags.certifyKeys
       ];
 
       const signingSubkey = await certifyingKey.getSigningKey();
@@ -5024,14 +5024,14 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
         .toPublic()
         .signPrimaryUser([certifyingKey]);
       const certifications = await certifiedKey.verifyPrimaryUser([
-        certifyingKey.toPublic(),
+        certifyingKey.toPublic()
       ]);
       expect(certifications.length).to.equal(2);
       expect(certifications[1].keyID.toHex()).to.equal(
-        certifyingKey.getKeyID().toHex(),
+        certifyingKey.getKeyID().toHex()
       );
       expect(certifications[1].keyID.toHex()).to.not.equal(
-        signingSubkey.getKeyID().toHex(),
+        signingSubkey.getKeyID().toHex()
       );
       expect(certifications[1].valid).to.be.true;
     });
