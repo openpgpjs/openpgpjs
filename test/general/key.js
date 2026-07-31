@@ -4544,7 +4544,7 @@ VYGdb3eNlV8CfoEC
     const key = await openpgp.readKey({ armoredKey: privateKeyWithPublicKeyPackets });
     const encryptedKey = await openpgp.encryptKey({ privateKey: key, passphrase });
     const decryptedKey = await openpgp.decryptKey({ privateKey: encryptedKey, passphrase });
-    await expect(decryptedKey.write()).to.deep.equal(key.write());
+    expect(decryptedKey.write()).to.deep.equal(key.write());
   });
 
   describe('addSubkey functionality testing', function() {
