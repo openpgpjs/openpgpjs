@@ -2695,8 +2695,8 @@ function versionSpecificTests() {
     try {
       publicKey = await publicKey.signPrimaryUser([privateKey]);
       const signatures = await publicKey.verifyPrimaryUser([privateKey]);
-      const publicSigningKey = await publicKey.getVerificationKey();
-      const privateSigningKey = await privateKey.getSigningKey();
+      const publicSigningKey = await publicKey.getCertVerificationKey();
+      const privateSigningKey = await privateKey.getCertSigningKey();
       expect(signatures.length).to.equal(2);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[0].valid).to.be.null;
@@ -2720,8 +2720,8 @@ function versionSpecificTests() {
     try {
       publicKey = await publicKey.signPrimaryUser([privateKey]);
       const signatures = await publicKey.verifyPrimaryUser([wrongKey]);
-      const publicSigningKey = await publicKey.getVerificationKey();
-      const privateSigningKey = await privateKey.getSigningKey();
+      const publicSigningKey = await publicKey.getCertVerificationKey();
+      const privateSigningKey = await privateKey.getCertSigningKey();
       expect(signatures.length).to.equal(2);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[0].valid).to.be.null;
@@ -2744,8 +2744,8 @@ function versionSpecificTests() {
     try {
       publicKey = await publicKey.signAllUsers([privateKey]);
       const signatures = await publicKey.verifyAllUsers([privateKey]);
-      const publicSigningKey = await publicKey.getVerificationKey();
-      const privateSigningKey = await privateKey.getSigningKey();
+      const publicSigningKey = await publicKey.getCertVerificationKey();
+      const privateSigningKey = await privateKey.getCertSigningKey();
       expect(signatures.length).to.equal(4);
       expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
@@ -2777,8 +2777,8 @@ function versionSpecificTests() {
     try {
       publicKey = await publicKey.signAllUsers([privateKey]);
       const signatures = await publicKey.verifyAllUsers([wrongKey]);
-      const publicSigningKey = await publicKey.getVerificationKey();
-      const privateSigningKey = await privateKey.getSigningKey();
+      const publicSigningKey = await publicKey.getCertVerificationKey();
+      const privateSigningKey = await privateKey.getCertSigningKey();
       expect(signatures.length).to.equal(4);
       expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
@@ -2809,8 +2809,8 @@ function versionSpecificTests() {
     try {
       publicKey = await publicKey.signAllUsers([privateKey]);
       const signatures = await publicKey.verifyAllUsers([privateKey]);
-      const publicSigningKey = await publicKey.getVerificationKey();
-      const privateSigningKey = await privateKey.getSigningKey();
+      const publicSigningKey = await publicKey.getCertVerificationKey();
+      const privateSigningKey = await privateKey.getCertSigningKey();
       expect(signatures.length).to.equal(4);
       expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[0].userAttribute).to.be.null;
@@ -2846,8 +2846,8 @@ function versionSpecificTests() {
     try {
       publicKey = await publicKey.signAllUsers([privateKey]);
       const signatures = await publicKey.verifyAllUsers([wrongKey]);
-      const publicSigningKey = await publicKey.getVerificationKey();
-      const privateSigningKey = await privateKey.getSigningKey();
+      const publicSigningKey = await publicKey.getCertVerificationKey();
+      const privateSigningKey = await privateKey.getCertSigningKey();
       expect(signatures.length).to.equal(4);
       expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[0].userAttribute).to.be.null;
@@ -5015,7 +5015,7 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       const signingSubkey = await certifyingKey.getSigningKey();
       expect(signingSubkey.getKeyID().equals(certifyingKey.getKeyID())).to.be
         .false;
-      const certificationKey = await certifyingKey.getCertificationKey();
+      const certificationKey = await certifyingKey.getCertSigningKey();
       expect(certificationKey.getKeyID().equals(certifyingKey.getKeyID())).to.be
         .true;
 
