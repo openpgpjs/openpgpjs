@@ -554,4 +554,4 @@ export function checkKeyRequirements(keyPacket, config) {
   }
 }
 
-export const isPublicOrDummyKeyPacket = keyPacket => keyPacket.isDecrypted() === null || keyPacket.isDummy();
+export const isPublicOrDummyKeyPacket = keyPacket => !keyPacket.isPrivate() || keyPacket.isDummy();

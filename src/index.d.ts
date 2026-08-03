@@ -361,6 +361,7 @@ declare abstract class BasePublicKeyPacket extends BasePacket<true> {
   public hasSameFingerprintAs(other: BasePublicKeyPacket): boolean;
   public getCreationTime(): Date;
   public getKeyID(): KeyID;
+  public isPrivate(): this is BaseSecretKeyPacket;
   public isDecrypted(): boolean | null;
   public publicParams: object;
   // `isSubkey` is a dummy method to ensure that Subkey packets are not accepted as Key one, and vice versa.
