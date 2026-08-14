@@ -5,6 +5,17 @@ const sharedPlaywrightCIOptions = {
   headless: true
 };
 
+const commonBrowsers = [
+  playwrightLauncher({
+    ...sharedPlaywrightCIOptions,
+    product: 'chromium'
+  }),
+  playwrightLauncher({
+    ...sharedPlaywrightCIOptions,
+    product: 'firefox'
+  })
+];
+
 export default {
   nodeResolve: true, // to resolve npm module imports in `unittests.html`
   files: './test/unittests.html',
@@ -21,19 +32,17 @@ export default {
     {
       name: 'headless:ci',
       browsers: [
-        playwrightLauncher({
-          ...sharedPlaywrightCIOptions,
-          product: 'chromium'
-        }),
-        playwrightLauncher({
-          ...sharedPlaywrightCIOptions,
-          product: 'firefox'
-        }),
+        ...commonBrowsers,
         playwrightLauncher({
           ...sharedPlaywrightCIOptions,
           product: 'webkit'
         })
       ]
+    },
+    {
+      // WebKit is skipped on Windows (see .github/workflows/tests.yml)
+      name: 'headless:ci:no-webkit',
+      browsers: commonBrowsers
     }
   ]
 };
