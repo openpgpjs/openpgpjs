@@ -95,7 +95,7 @@ jobs:
 
       - name: Get Playwright version and cache location
         id: playwright-version
-        if: ${{ matrix.runner != 'windows-latest' }} # setting env vars does not work in windows, it'd require custom handling
+        if: ${{ matrix.runner  != 'windows-latest' }} # setting env vars does not work in windows, it'd require custom handling
         run: |
           PLAYWRIGHT_VERSION=$(npx playwright --version | sed 's/^Version //')
           echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
@@ -118,21 +118,13 @@ jobs:
         if: ${{ matrix.runner != 'windows-latest' }}
         run: npx playwright install --with-deps webkit
 
-      - name: Set browsers
-        if: ${{ matrix.runner != 'windows-latest' }}
-        run: echo "browsers=chromium firefox webkit" >> "$GITHUB_ENV"
-
-      - name: Set browsers
-        if: ${{ matrix.runner == 'windows-latest' }}
-        run: echo "browsers=chromium firefox" >> "$env:GITHUB_ENV"
-
       - name: Run browser tests
-        run: npm run test-browser:ci -- --browsers ${{ env.browsers }} --static-logging
+        run: npm run ${{ matrix.runner == 'windows-latest' && 'test-browser:no-webkit' || 'test-browser' }} -- --static-logging
 
       - name: Run browser tests (lightweight) # overwrite test/lib
         run: |
           npm run build-test -- --config-test-lightweight-build
-          npm run test-browser:ci -- --browsers ${{ env.browsers }} --static-logging
+          npm run ${{ matrix.runner == 'windows-latest' && 'test-browser:no-webkit' || 'test-browser' }} -- --static-logging
 
   test-browsers-compatibility:
     name: Browsers (older, on Browserstack)
