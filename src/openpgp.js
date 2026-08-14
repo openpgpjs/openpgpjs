@@ -38,23 +38,28 @@ import { checkKeyRequirements } from './key/helper.js';
  * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {'rsa'|'ecc'|'curve25519'|'curve448'|'pqc'} [options.type='ecc'] - The key algorithm type: RSA, ECC (default for v4 keys), Curve25519 (new format, default for v6 keys), Curve448 or PQC.
- *                                                                           When PQC is selected, an ML-DSA-65+Ed25519 & ML-KEM-768+X25519 key is generated.
- *                                                                           Note: Curve25519 (new format), Curve448 and PQC are not widely supported yet.
+ * @param {'rsa'|'ecc'|'curve25519'|'curve448'|'pqc'|'symmetric'} [options.type='ecc']
+ *   The key algorithm type: RSA, ECC (default for v4 keys), Curve25519 (new format, default for v6 keys), Curve448 or PQC.
+ *   When PQC is selected, an ML-DSA-65+Ed25519 & ML-KEM-768+X25519 key is generated.
+ *   Note: Curve25519 (new format), Curve448, PQC and persistent symmetric keys are not widely supported yet.
+ *   Note: Persistent symmetric keys can't have subkeys. The `options.subkeys` parameter is ignored when `type` is `'symmetric'`.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
- * @param {String} [options.curve='curve25519Legacy'] - Elliptic curve for ECC keys:
- *                                             curve25519Legacy (default), nistP256, nistP384, nistP521, secp256k1,
- *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
+ * @param {String} [options.curve='curve25519Legacy']
+ *   Elliptic curve for ECC keys:
+ *   curve25519Legacy (default), nistP256, nistP384, nistP521, secp256k1,
+ *   brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
- * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
- *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {Array<Object>} [options.subkeys=a single encryption subkey]
+ *   Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
+ *   default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
  * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the primary self-signature, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} The generated key object in the form:
- *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
+ * @returns {Promise<Object>}
+ *   The generated key object in the form:
+ *   { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
@@ -70,8 +75,11 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
   userIDs = toArray(userIDs); signatureNotations = toArray(signatureNotations);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if (userIDs.length === 0 && !config.v6Keys) {
+  if (userIDs.length === 0 && !config.v6Keys && type !== 'symmetric') {
     throw new Error('UserIDs are required for V4 keys');
+  }
+  if (userIDs.length !== 0 && type === 'symmetric') {
+    throw new Error('Persistent symmetric keys cannot have User IDs');
   }
   if (type === 'rsa' && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
@@ -85,7 +93,7 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
 
     return {
       privateKey: formatObject(key, format, config),
-      publicKey: formatObject(key.toPublic(), format, config),
+      publicKey: type !== 'symmetric' ? formatObject(key.toPublic(), format, config) : undefined,
       revocationCertificate
     };
   } catch (err) {
@@ -118,6 +126,9 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExp
   if (userIDs.length === 0 && privateKey.keyPacket.version !== 6) {
     throw new Error('UserIDs are required for V4 keys');
   }
+  if (userIDs.length !== 0 && privateKey.keyPacket.algorithm === 0) {
+    throw new Error('Persistent symmetric keys cannot have User IDs');
+  }
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date, signatureNotations };
 
   try {
@@ -125,7 +136,7 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExp
 
     return {
       privateKey: formatObject(reformattedKey, format, config),
-      publicKey: formatObject(reformattedKey.toPublic(), format, config),
+      publicKey: privateKey.keyPacket.algorithm !== 0 ? formatObject(reformattedKey.toPublic(), format, config) : undefined,
       revocationCertificate
     };
   } catch (err) {

@@ -104,6 +104,10 @@ export class PrivateKey extends PublicKey {
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
 }
 
+export class PersistentSymmetricKey extends PrivateKey {
+  constructor(packetlist: PacketList<AnyPacket>);
+}
+
 export class Subkey {
   constructor(subkeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
   public readonly keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
@@ -398,6 +402,11 @@ export class SecretSubkeyPacket extends BaseSecretKeyPacket {
   protected isSubkey(): true;
 }
 
+export class PersistentSymmetricKeyPacket extends BaseSecretKeyPacket {
+  static readonly tag: enums.packet.persistentSymmetricKey;
+  protected isSubkey(): false;
+}
+
 export class CompressedDataPacket extends BasePacket<true> {
   static readonly tag: enums.packet.compressedData;
   private compress(): void;
@@ -543,7 +552,7 @@ export class UnparseablePacket {
 }
 
 export type AnyPacket = BasePacket<boolean> | UnparseablePacket;
-export type AnySecretKeyPacket = SecretKeyPacket | SecretSubkeyPacket;
+export type AnySecretKeyPacket = BaseSecretKeyPacket;
 export type AnyKeyPacket = BasePublicKeyPacket;
 
 type AllowedPackets = Map<enums.packet, object>; // mapping to Packet classes (i.e. typeof LiteralDataPacket etc.)
@@ -679,7 +688,7 @@ export type EllipticCurveName = 'ed25519Legacy' | 'curve25519Legacy' | 'nistP256
 interface GenerateKeyOptions {
   userIDs: MaybeArray<UserID>;
   passphrase?: string;
-  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448' | 'pqc';
+  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448' | 'pqc' | 'symmetric';
   curve?: EllipticCurveName;
   rsaBits?: number;
   keyExpirationTime?: number;

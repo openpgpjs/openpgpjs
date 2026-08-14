@@ -451,7 +451,7 @@ export class Message {
           sessionKeyAlgorithm: symmetricAlgorithm
         });
 
-        await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
+        await pkESKeyPacket.encrypt(encryptionKey.keyPacket, config);
         delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
         return pkESKeyPacket;
       }));

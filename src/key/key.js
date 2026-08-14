@@ -85,6 +85,7 @@ class Key {
       switch (tag) {
         case enums.packet.publicKey:
         case enums.packet.secretKey:
+        case enums.packet.persistentSymmetricKey:
           if (this.keyPacket) {
             throw new Error('Key block contains multiple keys');
           }
