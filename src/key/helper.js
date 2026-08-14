@@ -291,8 +291,8 @@ export async function getPreferredCipherSuite(keys = [], date = new Date(), user
  * @returns {Promise<SignaturePacket>} Signature packet.
  */
 export async function createSignaturePacket(dataToSign, recipientKeys, signingKeyPacket, signatureProperties, date, recipientUserIDs, notations = [], detached = false, config) {
-  if (signingKeyPacket.isDummy()) {
-    throw new Error('Cannot sign with a gnu-dummy key.');
+  if (isPublicOrDummyKeyPacket(signingKeyPacket)) {
+    throw new Error('Cannot sign with a public or dummy key.');
   }
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Signing key is not decrypted.');
@@ -553,3 +553,5 @@ export function checkKeyRequirements(keyPacket, config) {
       break;
   }
 }
+
+export const isPublicOrDummyKeyPacket = keyPacket => !keyPacket.isPrivate() || keyPacket.isDummy();

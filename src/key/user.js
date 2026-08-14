@@ -128,7 +128,7 @@ class User {
       return null;
     }
     await Promise.all(issuerKeys.map(async key => {
-      const signingKey = await key.getSigningKey(issuerKeyID, certificate.created, undefined, config);
+      const signingKey = await key.getVerificationKey(issuerKeyID, certificate.created, undefined, config);
       if (certificate.revoked || await that.isRevoked(certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
