@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version-file: package.json
@@ -42,7 +42,7 @@ jobs:
     needs: build
     permissions: {}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
@@ -72,7 +72,7 @@ jobs:
     permissions: {}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version-file: package.json
@@ -136,7 +136,7 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: VjgBVRMxNVBj7SjJFiau
     
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version-file: package.json
@@ -185,7 +185,7 @@ jobs:
     permissions: {}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - uses: actions/setup-node@v6
       with:
         node-version-file: package.json
@@ -210,7 +210,7 @@ jobs:
       pull-requests: write # allow comments
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - uses: actions/setup-node@v6
       with:
         node-version-file: package.json
