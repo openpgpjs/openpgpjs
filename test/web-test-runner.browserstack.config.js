@@ -31,7 +31,7 @@ export default {
       capabilities: {
         ...sharedBrowserstackCapabilities,
         browserName: '[Browserstack] Safari iOS 15',
-        device: 'iPhone 13',
+        device: 'iPhone 13 Pro',
         real_mobile: true,
         os: 'ios',
         os_version: '15' // min supported version
