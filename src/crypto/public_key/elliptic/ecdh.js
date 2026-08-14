@@ -152,11 +152,6 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
  * @async
  */
 async function genPrivateEphemeralKey(curve, V, Q, d) {
-  if (d.length !== curve.payloadSize) {
-    const privateKey = new Uint8Array(curve.payloadSize);
-    privateKey.set(d, curve.payloadSize - d.length);
-    d = privateKey;
-  }
   switch (curve.type) {
     case 'curve25519Legacy': {
       const secretKey = d.slice().reverse();
