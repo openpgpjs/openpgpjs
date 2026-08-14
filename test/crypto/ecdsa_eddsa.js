@@ -12,6 +12,7 @@ import util from '../../src/util.js';
 import elliptic_data from './elliptic_data.js';
 import OID from '../../src/type/oid.js';
 import { getRandomBytes } from '../../src/crypto/random.js';
+import { isSafari15or16 } from '../browserChecks.ts';
 
 /**
  * Test that the result of `signFunction` can be verified by `verifyFunction`
@@ -56,6 +57,7 @@ const testRountripWithAndWithoutNative = async (
 };
 
 const key_data = elliptic_data.key_data;
+const expectNativeWebCurveWithOID = new Set(['nistP256', 'nistP384', 'nistP521', !isSafari15or16() && 'ed25519Legacy'].filter(Boolean));
 export default () => describe('ECC signatures', function () {
   const signature_data = {
     priv: new Uint8Array([
@@ -101,29 +103,62 @@ export default () => describe('ECC signatures', function () {
     }
   };
   describe('Basic Operations', function () {
-    it('Creating curve from name or oid', function (done) {
+    let sinonSandbox;
+    let getWebCryptoStub;
+    let getNodeCryptoStub;
+
+    beforeEach(function () {
+      sinonSandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sinonSandbox.restore();
+    });
+
+    const disableNative = () => {
+      enableNative();
+      // stubbed functions return undefined
+      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto').returns({
+        generateKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; },
+        importKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; }
+      });
+      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    };
+    const enableNative = () => {
+      getWebCryptoStub && getWebCryptoStub.restore();
+      getNodeCryptoStub && getNodeCryptoStub.restore();
+    };
+
+    it('Creating curve from name or oid', function () {
       Object.keys(openpgp.enums.curve).forEach(function(name_or_oid) {
         expect(new elliptic_curves.CurveWithOID(name_or_oid)).to.exist;
       });
       Object.values(openpgp.enums.curve).forEach(function(name_or_oid) {
         expect(new elliptic_curves.CurveWithOID(name_or_oid)).to.exist;
       });
-      done();
     });
-    it('Creating KeyPair', function () {
-      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
-        // eslint-disable-next-line no-invalid-this
-        this.skip();
+    const curves = ['nistP256', 'nistP384', 'nistP521', 'secp256k1', 'ed25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+    curves.forEach(curveName => it(`${curveName} - Creating key pair via genKeyPair`, async function () {
+      const nodeCrypto = util.getNodeCrypto();
+      const webCrypto = util.getWebCrypto();
+
+      const curve = new elliptic_curves.CurveWithOID(curveName);
+
+      const nativeSpyGenerate = webCrypto ? sinonSandbox.spy(webCrypto, 'exportKey') : sinonSandbox.spy(nodeCrypto, 'createECDH');
+      const nativeKey = await curve.genKeyPair();
+      expect(nativeKey.privateKey.length).to.equal(curve.payloadSize);
+      const expectedNativeCallCount = nativeSpyGenerate.callCount;
+
+      sinonSandbox.restore(); // reset spies
+      disableNative();
+      const nonNativeKey = await curve.genKeyPair();
+      expect(nonNativeKey.privateKey.length).to.equal(curve.payloadSize);
+      expect(nativeSpyGenerate.callCount).to.equal(expectedNativeCallCount); // assert that fallback implementation was called
+      if (expectNativeWebCurveWithOID.has(curveName)) {
+        expect(nativeSpyGenerate.callCount).to.equal(2); // export privateKey and publicKey
       }
-      const names = config.useEllipticFallback ? ['nistP256', 'nistP384', 'nistP521', 'secp256k1', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
-        ['nistP256', 'nistP384', 'nistP521', 'curve25519Legacy'];
-      return Promise.all(names.map(function (name) {
-        const curve = new elliptic_curves.CurveWithOID(name);
-        return curve.genKeyPair().then(keyPair => {
-          expect(keyPair).to.exist;
-        });
-      }));
-    });
+    }));
+
     it('Signature verification', async function () {
       const curve = new elliptic_curves.CurveWithOID('nistP256');
       await expect(
@@ -285,20 +320,19 @@ export default () => describe('ECC signatures', function () {
         () => expect(verify_signature('nistP384', 8, p384_r, p384_s, p384_message, key_data.nistP384.pub)).to.eventually.be.true
       );
     });
-    const curves = ['secp256k1' , 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
-    curves.forEach(curveName => it(`${curveName} - Sign and verify message with generated key`, async function () {
+    const ecdsaCurves = ['secp256k1' , 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+    ecdsaCurves.forEach(curveName => it(`${curveName} - Sign and verify message with generated key`, async function () {
       const sinonState = { sinonSandbox, enableNative, disableNative };
 
       const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
-      const expectNativeWeb = new Set(['nistP256', 'nistP384', 'nistP521']);
 
       const nativeKey = await elliptic_curves.generate(curveName);
       await testRountripWithAndWithoutNative(
         sinonState,
         (data, dataDigest) => elliptic_curves.ecdsa.sign(oid, openpgp.enums.hash.sha512, data, nativeKey.Q, nativeKey.secret, dataDigest),
         (signature, data, dataDigest) => elliptic_curves.ecdsa.verify(oid, openpgp.enums.hash.sha512, signature, data, nativeKey.Q, dataDigest),
-        expectNativeWeb.has(curveName)
+        expectNativeWebCurveWithOID.has(curveName)
       );
 
       sinonSandbox.restore(); // reset spies
@@ -309,7 +343,7 @@ export default () => describe('ECC signatures', function () {
         sinonState,
         (data, dataDigest) => elliptic_curves.ecdsa.sign(oid, openpgp.enums.hash.sha512, data, nonNativeKey.Q, nonNativeKey.secret, dataDigest),
         (signature, data, dataDigest) => elliptic_curves.ecdsa.verify(oid, openpgp.enums.hash.sha512, signature, data, nonNativeKey.Q, dataDigest),
-        expectNativeWeb.has(curveName)
+        expectNativeWebCurveWithOID.has(curveName)
       );
     }));
   });
@@ -345,12 +379,14 @@ export default () => describe('ECC signatures', function () {
       const sinonState = { sinonSandbox, enableNative, disableNative };
       const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.ed25519Legacy);
       const oid = new OID(curve.oid);
+      const expectNative = expectNativeWebCurveWithOID.has(openpgp.enums.curve.ed25519Legacy)
 
       const nativeKey = await elliptic_curves.generate(openpgp.enums.curve.ed25519Legacy);
       await testRountripWithAndWithoutNative(
         sinonState,
         (data, dataDigest) => elliptic_curves.eddsaLegacy.sign(oid, openpgp.enums.hash.sha512, data, nativeKey.Q, nativeKey.secret, dataDigest),
-        (signature, data, dataDigest) => elliptic_curves.eddsaLegacy.verify(oid, openpgp.enums.hash.sha512, signature, data, nativeKey.Q, dataDigest)
+        (signature, data, dataDigest) => elliptic_curves.eddsaLegacy.verify(oid, openpgp.enums.hash.sha512, signature, data, nativeKey.Q, dataDigest),
+        expectNative
       );
 
       sinonSandbox.restore(); // reset spies
@@ -360,18 +396,21 @@ export default () => describe('ECC signatures', function () {
       await testRountripWithAndWithoutNative(
         sinonState,
         (data, dataDigest) => elliptic_curves.eddsaLegacy.sign(oid, openpgp.enums.hash.sha512, data, nonNativeKey.Q, nonNativeKey.secret, dataDigest),
-        (signature, data, dataDigest) => elliptic_curves.eddsaLegacy.verify(oid, openpgp.enums.hash.sha512, signature, data, nonNativeKey.Q, dataDigest)
+        (signature, data, dataDigest) => elliptic_curves.eddsaLegacy.verify(oid, openpgp.enums.hash.sha512, signature, data, nonNativeKey.Q, dataDigest),
+        expectNative
       );
     });
 
     ['ed25519', 'ed448'].forEach(algoName => it(`${algoName} - Sign and verify message with native generated key`, async function () {
       const sinonState = { sinonSandbox, enableNative, disableNative };
       const algo = openpgp.enums.publicKey[algoName];
+      const expectNative = algoName === 'ed25519' && !isSafari15or16();
       const nativeKey = await elliptic_curves.eddsa.generate(algo);
       await testRountripWithAndWithoutNative(
         sinonState,
         (data, dataDigest) => elliptic_curves.eddsa.sign(algo, openpgp.enums.hash.sha512, data, nativeKey.A, nativeKey.seed, dataDigest),
-        (signature, data, dataDigest) => elliptic_curves.eddsa.verify(algo, openpgp.enums.hash.sha512, signature, data, nativeKey.A, dataDigest)
+        (signature, data, dataDigest) => elliptic_curves.eddsa.verify(algo, openpgp.enums.hash.sha512, signature, data, nativeKey.A, dataDigest),
+        expectNative
       );
 
       sinonSandbox.restore(); // reset spies
@@ -381,7 +420,8 @@ export default () => describe('ECC signatures', function () {
       await testRountripWithAndWithoutNative(
         sinonState,
         (data, dataDigest) => elliptic_curves.eddsa.sign(algo, openpgp.enums.hash.sha512, data, nonNativeKey.A, nonNativeKey.seed, dataDigest),
-        (signature, data, dataDigest) => elliptic_curves.eddsa.verify(algo, openpgp.enums.hash.sha512, signature, data, nonNativeKey.A, dataDigest)
+        (signature, data, dataDigest) => elliptic_curves.eddsa.verify(algo, openpgp.enums.hash.sha512, signature, data, nonNativeKey.A, dataDigest),
+        expectNative
       );
     }));
   });

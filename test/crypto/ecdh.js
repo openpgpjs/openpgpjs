@@ -11,6 +11,7 @@ import * as elliptic_curves from '../../src/crypto/public_key/elliptic/index.js'
 import util from '../../src/util.js';
 import elliptic_data from './elliptic_data.js';
 import * as random from '../../src/crypto/random.js';
+import { isSafari15or16 } from '../browserChecks.ts';
 
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
@@ -273,6 +274,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     }
   });
 
+  const expectNativeWebCurveWithOID = new Set(['nistP256', 'nistP384', 'nistP521', !isSafari15or16() && 'curve25519Legacy'].filter(Boolean));
   const allCurves = ['secp256k1', 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
   allCurves.forEach(curveName => {
     it(`${curveName} - Successful exchange`, async function () {
@@ -376,8 +378,6 @@ export default () => describe('ECDH key exchange @lightweight', function () {
 
     allCurves.forEach(curveName => {
       it(`${curveName}`, async function () {
-        const expectNativeWeb = new Set(['nistP256', 'nistP384', 'nistP521']);
-
         const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
         const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
@@ -387,7 +387,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
         await testRountripWithAndWithoutNative(
           data => ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1),
           encryptResult => ecdh.decrypt(oid, kdfParams, encryptResult.publicKey, encryptResult.wrappedKey, Q, d, fingerprint1),
-          expectNativeWeb.has(curveName)
+          expectNativeWebCurveWithOID.has(curveName)
         );
       });
     });
@@ -400,7 +400,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       await testRountripWithAndWithoutNative(
         data => ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1),
         encryptResult => ecdh.decrypt(oid, kdfParams, encryptResult.publicKey, encryptResult.wrappedKey, Q1, d1, fingerprint1),
-        false // all major browsers implement x25519, but webkit linux falls back due to bugs
+        expectNativeWebCurveWithOID.has(openpgp.enums.curve.curve25519Legacy)
       );
     });
   });
