@@ -42,7 +42,14 @@ const banner =
   `${new Date().toISOString().split('T')[0]} - ` +
   `this is LGPL licensed code, see LICENSE/our website ${pkg.homepage} for more information. */`;
 
-const intro = "const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};";
+// Need to ponyfill Object.hasOwn for Safari 15.0-15.3 (used by @noble libs)
+const hasOwnPonyfill = `const hasOwnPonyfill =
+  typeof Object.hasOwn === 'function'
+    ? Object.hasOwn
+    : (obj, key) => Object.prototype.hasOwnProperty.call(Object(obj), key);`
+
+const intro = `const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+${hasOwnPonyfill}`;
 
 const terserOptions = {
   ecma: 2017,
@@ -101,6 +108,7 @@ const fullBrowserBuild = {
     replace({
       'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
       "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
+      'Object.hasOwn(': 'hasOwnPonyfill(',
       delimiters: ['', '']
     }),
     wasm(wasmOptions.browser)
@@ -129,6 +137,7 @@ const lightweightBrowserBuild = {
     replace({
       'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
       "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
+      'Object.hasOwn(': 'hasOwnPonyfill(',
       delimiters: ['', '']
     }),
     wasm(wasmOptions.browser)
@@ -158,6 +167,7 @@ const getBrowserTestBuild = useLightweightBuild => ({
     }),
     replace({
       "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
+      'Object.hasOwn(': 'hasOwnPonyfill(',
       delimiters: ['', '']
     }),
     wasm(wasmOptions.browser)
