@@ -5,14 +5,15 @@ const sharedPlaywrightCIOptions = {
   headless: true
 };
 
-const commonBrowsers = [
+const getCommonBrowsers = ({ firefoxBeta = false }) => [
   playwrightLauncher({
     ...sharedPlaywrightCIOptions,
     product: 'chromium'
   }),
   playwrightLauncher({
     ...sharedPlaywrightCIOptions,
-    product: 'firefox'
+    product: 'firefox',
+    launchOptions: firefoxBeta ? { channel: 'firefox-beta' } : {}
   })
 ];
 
@@ -30,9 +31,19 @@ export default {
   groups: [
     { name: 'local' }, // group meant to be used with either --browser or --manual options via CLI
     {
+      name: 'headless',
+      browsers: [
+        ...getCommonBrowsers({ firefoxBeta: false }),
+        playwrightLauncher({
+          ...sharedPlaywrightCIOptions,
+          product: 'webkit'
+        })
+      ]
+    },
+    {
       name: 'headless:ci',
       browsers: [
-        ...commonBrowsers,
+        ...getCommonBrowsers({ firefoxBeta: true }),
         playwrightLauncher({
           ...sharedPlaywrightCIOptions,
           product: 'webkit'
@@ -42,7 +53,7 @@ export default {
     {
       // WebKit is skipped on Windows (see .github/workflows/tests.yml)
       name: 'headless:ci:no-webkit',
-      browsers: commonBrowsers
+      browsers: getCommonBrowsers({ firefoxBeta: true })
     }
   ]
 };
