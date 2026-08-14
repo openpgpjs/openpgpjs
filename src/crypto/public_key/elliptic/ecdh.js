@@ -110,7 +110,6 @@ async function genPublicEphemeralKey(curve, Q) {
       return nodePublicEphemeralKey(curve, Q);
     default:
       return jsPublicEphemeralKey(curve, Q);
-
   }
 }
 
@@ -131,6 +130,10 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, Q);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
+  if (sharedKey.length !== curve.payloadSize) {
+    // sanity check to avoid generating undecryptable data, in case the shared secret is not padded
+    throw new Error('Unexpected shared secret size')
+  }
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const { keySize } = getCipherParams(kdfParams.cipher);
   const Z = await kdf(kdfParams.hash, sharedKey, keySize, param);
@@ -348,7 +351,8 @@ function nodePrivateEphemeralKey(curve, V, d) {
   const recipient = nodeCrypto.createECDH(curve.node);
   recipient.setPrivateKey(d);
   const sharedKey = new Uint8Array(recipient.computeSecret(V));
-  const secretKey = new Uint8Array(recipient.getPrivateKey());
+  // If `d` was padded, `setPrivateKey` drops the zeros, hence we need to re-pad
+  const secretKey = util.leftPad(new Uint8Array(recipient.getPrivateKey()), curve.payloadSize);
   return { secretKey, sharedKey };
 }
 
@@ -364,6 +368,7 @@ function nodePublicEphemeralKey(curve, Q) {
   const nodeCrypto = util.getNodeCrypto();
   const sender = nodeCrypto.createECDH(curve.node);
   sender.generateKeys();
+  // `computeSecret()` always pads to size, unlike `getPrivateKey()`
   const sharedKey = new Uint8Array(sender.computeSecret(Q));
   const publicKey = new Uint8Array(sender.getPublicKey());
   return { publicKey, sharedKey };
