@@ -18,7 +18,7 @@ jobs:
           node-version-file: package.json
       - name: Check for cached folders
         id: cache-full
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             dist
@@ -48,7 +48,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci --ignore-scripts # for mocha
     - name: Retrieve cached folders
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       id: cache-full
       with:
         # test/lib is not needed, but the path must be specified fully for a cache-hit
@@ -77,7 +77,7 @@ jobs:
         with:
           node-version-file: package.json
       - name: Retrieve cached built folders
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         id: cache-full
         with:
           path: |
@@ -104,7 +104,7 @@ jobs:
       - name: Check for cached browsers
         id: cache-playwright-browsers
         if: ${{ matrix.runner  != 'windows-latest' }}
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.playwright-version.outputs.playwright_cache }}
           key: playwright-browsers-${{ matrix.runner }}-${{ steps.playwright-version.outputs.version }}
@@ -153,7 +153,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Retrieve cached dist folder
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         id: cache-full
         with:
           path: |
@@ -191,7 +191,7 @@ jobs:
         node-version-file: package.json
     - run: npm ci --ignore-scripts # TS
     - name: Retrieve cached folders
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       id: cache-full
       with:
         path: |
@@ -216,7 +216,7 @@ jobs:
         node-version-file: package.json
     - run: npm ci --ignore-scripts # linter
     - name: Retrieve cached folders
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       id: cache-full
       with:
         path: |
