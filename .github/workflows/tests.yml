@@ -111,20 +111,20 @@ jobs:
       - name: Install browsers
         if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
         run: |
-          npx playwright install --with-deps chromium
-          npx playwright install --with-deps firefox
+          npx playwright install --with-deps chromium --only-shell
+          npx playwright install --with-deps firefox-beta
 
       - name: Install WebKit # caching not possible, external shared libraries required
         if: ${{ matrix.runner != 'windows-latest' }}
         run: npx playwright install --with-deps webkit
 
       - name: Run browser tests
-        run: npm run ${{ matrix.runner == 'windows-latest' && 'test-browser:no-webkit' || 'test-browser' }} -- --static-logging
+        run: npm run ${{ matrix.runner == 'windows-latest' && 'test-browser:ci:no-webkit' || 'test-browser:ci' }} -- --static-logging
 
       - name: Run browser tests (lightweight) # overwrite test/lib
         run: |
           npm run build-test -- --config-test-lightweight-build
-          npm run ${{ matrix.runner == 'windows-latest' && 'test-browser:no-webkit' || 'test-browser' }} -- --static-logging
+          npm run ${{ matrix.runner == 'windows-latest' && 'test-browser:ci:no-webkit' || 'test-browser:ci' }} -- --static-logging
 
   test-browsers-compatibility:
     name: Browsers (older, on Browserstack)
