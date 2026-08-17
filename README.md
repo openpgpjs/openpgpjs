@@ -30,6 +30,7 @@ OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)
     - [Security recommendations](#security-recommendations)
     - [Development](#development)
     - [How do I get involved?](#how-do-i-get-involved)
+    - [Code of conduct](#code-of-conduct)
     - [License](#license)
 
 ### Platform Support
@@ -681,7 +682,11 @@ For debugging browser errors, run the following command:
 
 ### How do I get involved?
 
-You want to help, great! It's probably best to send us a message on [Gitter](https://gitter.im/openpgpjs/openpgpjs) before you start your undertaking, to make sure nobody else is working on it, and so we can discuss the best course of action. Other than that, just go ahead and fork our repo, make your changes and send us a pull request! :)
+You want to help, great! We have two guides for you to read: [our guide for new contributors](https://github.com/openpgpjs/openpgpjs/blob/main/NEW-CONTRIBUTORS.md), and afterwards you can take a look at our general [contributing](https://github.com/openpgpjs/openpgpjs/blob/main/CONTRIBUTING.md) guide. If you have questions, don't hesitate to write us on [Gitter](https://gitter.im/openpgpjs/openpgpjs) :)
+
+### Code of conduct
+
+The contributions are governed by our [Code of Conduct](https://github.com/openpgpjs/openpgpjs/blob/main/CODE_OF_CONDUCT.md).
 
 ### License
 
