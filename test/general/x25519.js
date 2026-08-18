@@ -11,8 +11,7 @@ import OID from '../../src/type/oid.js';
 import util from '../../src/util.js';
 
 import * as input from './testInputs.js';
-
-const isSafariOrHeadlessWebKit = () => typeof window !== 'undefined' && window.navigator.userAgent.match(/WebKit/) && !window.navigator.userAgent.match(/Chrome/);
+import { isSafariOrHeadlessWebKit } from '../browserChecks.ts';
 
 export default () => describe('X25519 Cryptography (legacy format)', function () {
   const data = {

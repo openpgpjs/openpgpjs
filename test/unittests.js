@@ -1,4 +1,5 @@
 import openpgp from './initOpenpgp.js';
+import { isSafari15or16 } from './browserChecks.ts';
 
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
@@ -35,7 +36,7 @@ describe('Unit Tests', function () {
   if (typeof window !== 'undefined') {
     // Safari 15.* and 16.* seem to have issues handling rejections when their native TransformStream implementation is involved,
     // so for now we ignore unhandled rejections for those browser versions.
-    if (!window.navigator.userAgent.match(/Version\/1(5|6)\.\d(\.\d)* (Mobile\/\w+ )?Safari/)) {
+    if (!isSafari15or16()) {
       window.addEventListener('unhandledrejection', function (event) {
         throw event.reason;
       });
