@@ -70,7 +70,7 @@
     "postversion": "git push --follow-tags && npm publish"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
+    "@eslint/js": "^10.0.1",
     "@noble/ciphers": "^2.2.0",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
@@ -103,7 +103,7 @@
     "chai-as-promised": "^8.0.2",
     "cpy-cli": "^6.0.0",
     "eckey-utils": "^0.7.14",
-    "eslint": "^9.39.3",
+    "eslint": "^10.9.1",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-chai-friendly": "^1.2.0",
     "eslint-plugin-import-x": "^4.17.1",

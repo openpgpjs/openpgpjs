@@ -17,7 +17,6 @@ export default defineConfig(
   globalIgnores(['dist/', 'test/lib/', 'docs/', '.jsdocrc.cjs']),
   { // JSDoc-specific linting rules
     files: ['src/**/!(*.d).{js,ts}'], // exclude .d.ts files
-    // @ts-expect-error outdated declarations
     plugins: { 'jsdoc': pluginJSDoc },
     rules: {
       'jsdoc/require-file-overview': ['error', {
@@ -131,6 +130,8 @@ export default defineConfig(
       '@typescript-eslint/lines-between-class-members': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-this-alias': 'off',
+      'preserve-caught-error': 'off', // we hide the original errors on purpose in sensitive contexts
+      'no-useless-assignment': 'warn',
 
       // Custom errors:
       '@typescript-eslint/no-use-before-define': ['error', { 'functions': false, 'classes': true, 'variables': false, 'allowNamedExports': true }],
