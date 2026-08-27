@@ -5,7 +5,8 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 // @ts-expect-error missing types
 import pluginChaiFriendly from 'eslint-plugin-chai-friendly';
-import pluginImport from 'eslint-plugin-import';
+import pluginImportX from 'eslint-plugin-import-x';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import pluginStylistic from '@stylistic/eslint-plugin';
 import pluginUnicorn from 'eslint-plugin-unicorn';
 import pluginJSDoc from 'eslint-plugin-jsdoc';
@@ -41,13 +42,13 @@ export default defineConfig(
       }
     },
     settings: {
-      'import/resolver': {
-        typescript: { alwaysTryTypes: true }
-      }
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({ alwaysTryTypes: true })
+      ]
     },
     plugins: {
       'chai-friendly': pluginChaiFriendly,
-      'import': pluginImport,
+      'import-x': pluginImportX,
       '@stylistic': pluginStylistic,
       'unicorn': pluginUnicorn
     },
@@ -111,15 +112,15 @@ export default defineConfig(
           'argsIgnorePattern': '^_'
         }
       ],
-      // eslint-plugin-import rules:
-      'import/named': 'error',
-      'import/extensions': ['error', 'always', { ignorePackages: true }],
-      'import/first': 'off',
-      'import/no-extraneous-dependencies': ['error', { 'devDependencies': true, 'optionalDependencies': false, 'peerDependencies': false }],
-      'import/no-unassigned-import': 'error',
-      'import/no-unresolved': 'error',
-      'import/prefer-default-export': 'off',
-      'import/newline-after-import': 'error',
+      // eslint-plugin-import-x rules:
+      'import-x/named': 'error',
+      'import-x/extensions': ['error', 'always', { ignorePackages: true }],
+      'import-x/first': 'off',
+      'import-x/no-extraneous-dependencies': ['error', { 'devDependencies': true, 'optionalDependencies': false, 'peerDependencies': false }],
+      'import-x/no-unassigned-import': 'error',
+      'import-x/no-unresolved': 'error',
+      'import-x/prefer-default-export': 'off',
+      'import-x/newline-after-import': 'error',
 
       // Custom silencers:
       'no-multi-assign': 'off',

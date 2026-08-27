@@ -3,7 +3,7 @@
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import-x/newline-after-import
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';

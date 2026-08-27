@@ -1,7 +1,7 @@
 import x25519 from '@openpgp/tweetnacl';
 import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import-x/newline-after-import
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
