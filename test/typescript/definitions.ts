@@ -177,7 +177,7 @@ import {
   const packets = new PacketList();
   expect(packets.push()).to.equal(0);
   expect(packets.push(new LiteralDataPacket())).to.equal(1);
-  packets.map(packet => packet.write);
+  packets.map(packet => packet.write());
   // @ts-expect-error for unsafe downcasting
   packets.map((packet: LiteralDataPacket) => packet.getText());
   // @ts-expect-error for non-packet element
