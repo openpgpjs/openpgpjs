@@ -88,7 +88,7 @@
     "@rollup/plugin-wasm": "^6.2.2",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/chai": "^5.2.3",
-    "@types/node": "^24.12.4",
+    "@types/node": "^26.1.2",
     "@types/sinon": "^21.0.1",
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-browserstack": "npm:@openpgp/wtr-test-runner-browserstack@0.8.1-patch.0",
