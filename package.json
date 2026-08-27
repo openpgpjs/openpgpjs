@@ -12,6 +12,11 @@
     "runtime": {
       "name": "node",
       "version": ">= 22.0.0"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">= 12.0.0",
+      "onFail": "warn"
     }
   },
   "keywords": [
@@ -90,10 +95,10 @@
     "@types/chai": "^5.2.3",
     "@types/node": "^26.1.2",
     "@types/sinon": "^21.0.1",
-    "@web/test-runner": "^0.20.2",
-    "@web/test-runner-browserstack": "npm:@openpgp/wtr-test-runner-browserstack@0.8.1-patch.0",
-    "@web/test-runner-mocha": "^0.9.0",
-    "@web/test-runner-playwright": "^0.11.1",
+    "@web/test-runner": "^1.0.0",
+    "@web/test-runner-browserstack": "^1.0.0",
+    "@web/test-runner-mocha": "^1.0.0",
+    "@web/test-runner-playwright": "^1.0.0",
     "argon2id": "^1.0.1",
     "benchmark": "^2.1.4",
     "better-docs": "^2.7.3",
@@ -129,11 +134,16 @@
     }
   },
   "overrides": {
-    "@web/dev-server-core": "npm:@openpgp/wtr-dev-server-core@0.7.3-patch.1",
-    "@web/test-runner-core": "npm:@openpgp/wtr-test-runner-core@0.13.4-patch.3"
+    "@web/dev-server-core": "1.0.1",
+    "@web/test-runner-core": "1.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/openpgpjs/openpgpjs"
+  },
+  "patchedDependencies": {
+    "@web/test-runner-core@1.0.0": "patches/@web/test-runner-core@1.0.0.patch",
+    "@web/dev-server-core@1.0.1": "patches/@web/dev-server-core@1.0.1.patch",
+    "@web/test-runner-browserstack@1.0.0": "patches/@web/test-runner-browserstack@1.0.0.patch"
   }
 }

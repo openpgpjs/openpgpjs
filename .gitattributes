@@ -1,0 +1,3 @@
+# Prevent autocrlf from converting EOL on Windows,
+# which triggers patch content hash check failure
+patches/**/*.patch -text

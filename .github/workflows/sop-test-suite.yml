@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: package.json
+          package-manager-cache: false # enabled by default with `devEngine.packageManager`
+      - run: npm install -g "npm@$(node -p 'require("./package.json").devEngines.packageManager.version')"
       # check out pull request branch
       - name: Checkout openpgpjs-branch
         uses: actions/checkout@v7

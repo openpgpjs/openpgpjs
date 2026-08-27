@@ -1,0 +1,143 @@
+--- a/dist/browser-launcher/BrowserLauncher.d.ts	
++++ b/dist/browser-launcher/BrowserLauncher.d.ts	
+@@ -30,9 +30,9 @@
+     /**
+      * Called after running tests when not in watch mode. Called when the test runner
+      * shuts down when in watch mode.
+      */
+-    stop?(): Promise<void>;
++    stop?(sessionStatus?: 'passed' | 'failed', failedReason?: string): Promise<void>;
+     /**
+      * Start a single test sessions in a single browser page or tab. This should
+      * open the browser for the given URL.
+      *
+--- a/dist/config/TestRunnerCoreConfig.d.ts	
++++ b/dist/config/TestRunnerCoreConfig.d.ts	
+@@ -48,8 +48,10 @@
+     browserStartTimeout: number;
+     testsStartTimeout: number;
+     testsFinishTimeout: number;
+     staticLogging?: boolean;
++    testsStartTimeoutMaxRetries?: number;
++    testsInterruptedMaxRetries?: number;
+     /** Ignores browsers option and prints manual testing URL. */
+     manual?: boolean;
+     /** Opens browser for manual testing. Requires the manual option to be set. */
+     open?: boolean;
+--- a/dist/runner/TestScheduler.d.ts	
++++ b/dist/runner/TestScheduler.d.ts	
+@@ -9,8 +9,10 @@
+     private browsers;
+     private finishedBrowsers;
+     private stopPromises;
+     private browserStartTimeoutMsg;
++    private testsStartTimeoutRetriesPerSession;
++    private testsInterruptedRetriesPerSession;
+     constructor(config: TestRunnerCoreConfig, sessions: TestSessionManager, browsers: BrowserLauncher[]);
+     /**
+      * Schedules a session for execution. Execution is batched, the session
+      * will be queued until there is a browser page available.
+@@ -19,10 +21,10 @@
+     stop(): Promise<unknown>;
+     /** Runs the next batch of scheduled sessions, if any. */
+     private runNextScheduled;
+     private startSession;
+-    private setSessionFailed;
+-    stopSession(session: TestSession, errors?: TestResultError[]): Promise<void>;
++    setSessionFailed(session: TestSession, ...errors: TestResultError[]): Promise<void> | undefined;
++    private stopSession;
+     private getScheduledSessions;
+     private getRunningSessions;
+     private getUnfinishedSessions;
+ }
+--- a/dist/runner/TestScheduler.js	
++++ b/dist/runner/TestScheduler.js	
+@@ -12,8 +12,10 @@
+     browsers;
+     finishedBrowsers = new Set();
+     stopPromises = new Set();
+     browserStartTimeoutMsg;
++    testsStartTimeoutRetriesPerSession = {};
++    testsInterruptedRetriesPerSession = {};
+     constructor(config, sessions, browsers) {
+         this.config = config;
+         this.sessions = sessions;
+         this.browsers = [...browsers].sort((a, b) => (a.__experimentalWindowFocus__ ? 1 : 0) - (b.__experimentalWindowFocus__ ? 1 : 0));
+@@ -26,8 +28,27 @@
+                 this.timeoutHandler.waitForTestsFinished(session.testRun, session.id);
+                 return;
+             }
+             if (session.status === TestSessionStatus_js_1.SESSION_STATUS.TEST_FINISHED) {
++                // In Browserstack Safari, tests can get interrupted by page reloads (reason unclear).
++                // If this happens, we retry running the test session.
++                if (this.config.testsInterruptedMaxRetries &&
++                    session.errors.some(error => error.message.includes('Tests were interrupted'))) {
++                    if (this.testsInterruptedRetriesPerSession[session.id] === undefined) {
++                        this.testsInterruptedRetriesPerSession[session.id] = 0;
++                    }
++                    if (this.testsInterruptedRetriesPerSession[session.id]++ < this.config.testsInterruptedMaxRetries) {
++                        console.log(`restarting session after test interruption (retry #${this.testsInterruptedRetriesPerSession[session.id]})`);
++                        return session.browser.stop()
++                            .then(async () => {
++                            session.errors = [];
++                            await session.browser.initialize(this.config, /* unused arg, needed for TS */ []);
++                            await this.startSession(session);
++                        }).catch(error => {
++                            console.error('error restarting session', error);
++                        });
++                    }
++                }
+                 // the session finished executing tests, close the browser page
+                 await this.stopSession(session);
+                 return;
+             }
+@@ -125,8 +146,25 @@
+             browserStarted = true;
+         }
+     }
+     setSessionFailed(session, ...errors) {
++        // retry mechanism for browserstack failing to start tests due to server disconnect, for unclear reasons.
++        if (this.config.testsStartTimeoutMaxRetries &&
++            errors.some(error => error.message.includes('testsStartTimeout'))) {
++            if (this.testsStartTimeoutRetriesPerSession[session.id] === undefined) {
++                this.testsStartTimeoutRetriesPerSession[session.id] = 0;
++            }
++            if (this.testsStartTimeoutRetriesPerSession[session.id]++ < this.config.testsStartTimeoutMaxRetries) {
++                console.log(`restarting session after testsStartTimeout (retry #${this.testsStartTimeoutRetriesPerSession[session.id]})`);
++                return session.browser.stop()
++                    .then(async () => {
++                    await session.browser.initialize(this.config, /* unused arg, needed for TS */ []);
++                    await this.startSession(session);
++                }).catch(error => {
++                    console.error('error restarting session', error);
++                });
++            }
++        }
+         this.stopSession(session, errors);
+     }
+     async stopSession(session, errors = []) {
+         if (this.timeoutHandler.isStale(session)) {
+@@ -157,9 +195,9 @@
+                 remaining.length === 0) {
+                 if (session.browser.stop) {
+                     this.finishedBrowsers.add(session.browser);
+                     const stopPromise = session.browser
+-                        .stop()
++                        .stop(updatedSession.passed ? 'passed' : 'failed', updatedSession.errors.map(err => err.stack ?? err.toString()).join(';'))
+                         .catch(error => {
+                         console.error(error);
+                     })
+                         .then(() => {
+--- a/dist/runner/TestSessionTimeoutHandler.js	
++++ b/dist/runner/TestSessionTimeoutHandler.js	
+@@ -66,9 +66,9 @@
+         }
+         timeoutIds.push(id);
+     }
+     setSessionFailed(session, ...errors) {
+-        this.scheduler.stopSession(session, errors);
++        this.scheduler.setSessionFailed(session, ...errors);
+     }
+     clearTimeoutsForSession(session) {
+         // the session is full finished, clear any related timeouts
+         const timeoutIds = this.timeoutIdsPerSession.get(session.id);
