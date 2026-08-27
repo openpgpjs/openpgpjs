@@ -23,8 +23,7 @@ export default () => describe('Util unit tests', function() {
       expect(util.isString(data)).to.be.true;
     });
     it('should return false for undefined', function() {
-      let data;
-      expect(util.isString(data)).to.be.false;
+      expect(util.isString(undefined)).to.be.false;
     });
     it('should return false for Object', function() {
       const data = {};
@@ -48,8 +47,7 @@ export default () => describe('Util unit tests', function() {
       expect(util.isArray(data)).to.be.true;
     });
     it('should return false for undefined', function() {
-      let data;
-      expect(util.isArray(data)).to.be.false;
+      expect(util.isArray(undefined)).to.be.false;
     });
     it('should return false for Object', function() {
       const data = {};
@@ -69,8 +67,7 @@ export default () => describe('Util unit tests', function() {
       expect(util.isUint8Array(data)).to.be.true;
     });
     it('should return false for undefined', function() {
-      let data;
-      expect(util.isUint8Array(data)).to.be.false;
+      expect(util.isUint8Array(undefined)).to.be.false;
     });
     it('should return false for Object', function() {
       const data = {};
@@ -149,8 +146,7 @@ export default () => describe('Util unit tests', function() {
       expect(util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for undefined', function() {
-      let data;
-      expect(util.isEmailAddress(data)).to.be.false;
+      expect(util.isEmailAddress(undefined)).to.be.false;
     });
     it('should return false for Object', function() {
       const data = {};
