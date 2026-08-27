@@ -101,7 +101,7 @@
     "c8": "^12.0.0",
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
-    "cpy-cli": "^6.0.0",
+    "cpy-cli": "^7.0.0",
     "eckey-utils": "^0.7.14",
     "eslint": "^10.9.1",
     "eslint-import-resolver-typescript": "^4.4.5",
