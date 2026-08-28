@@ -6,6 +6,7 @@ updates:
     # see https://github.com/dependabot/dependabot-core/issues/1778#issuecomment-1988140219 .
     target-branch: main
     directory: "/"
+    open-pull-requests-limit: 10
     schedule:
       interval: "daily"
     allow:
@@ -33,6 +34,7 @@ updates:
   # update other dependencies separately on a monthly basis
   - package-ecosystem: "npm"
     directory: "/"
+    open-pull-requests-limit: 10
     schedule:
       interval: "monthly"
     ignore: # targeted by other schedule above
