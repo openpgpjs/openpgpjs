@@ -72,7 +72,7 @@ class User {
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
         throw new Error("The user's own key can only be used for self-certifications");
       }
-      const signingKey = await privateKey.getSigningKey(undefined, date, undefined, config);
+      const signingKey = await privateKey.getCertSigningKey(undefined, date, undefined, config);
       return createSignaturePacket(dataToSign, [privateKey], signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
@@ -128,7 +128,7 @@ class User {
       return null;
     }
     await Promise.all(issuerKeys.map(async key => {
-      const signingKey = await key.getSigningKey(issuerKeyID, certificate.created, undefined, config);
+      const signingKey = await key.getCertVerificationKey(issuerKeyID, certificate.created, undefined, config);
       if (certificate.revoked || await that.isRevoked(certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
