@@ -22,3 +22,4 @@ export { default as SecretSubkeyPacket } from './secret_subkey.js';
 export { default as SignaturePacket } from './signature.js';
 export { default as TrustPacket } from './trust.js';
 export { default as PaddingPacket } from './padding.js';
+export { default as PersistentSymmetricKeyPacket } from './persistent_symmetric_key.js';
