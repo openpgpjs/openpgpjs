@@ -174,8 +174,11 @@ class CurveWithOID {
     switch (this.type) {
       case 'web':
         try {
-          return await webGenKeyPair(this.name, this.wireFormatLeadingByte, this.payloadSize);
+          return await webGenKeyPair(this.name, this.wireFormatLeadingByte);
         } catch (err) {
+          if (err.name !== 'NotSupportedError') {
+            throw err;
+          }
           util.printDebugError('Browser did not support generating ec key ' + err.message);
           return jsGenKeyPair(this.name);
         }
@@ -303,19 +306,16 @@ async function jsGenKeyPair(name) {
   return { publicKey, privateKey };
 }
 
-async function webGenKeyPair(name, wireFormatLeadingByte, expectedPayloadSize) {
+async function webGenKeyPair(name, wireFormatLeadingByte) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent
   const webCryptoKey = await webCrypto.generateKey({ name: 'ECDSA', namedCurve: webCurves[name] }, true, ['sign', 'verify']);
 
   const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
   const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
 
-  const rawPublicKey = jwkToRawPublic(publicKey, wireFormatLeadingByte);
-  const rawPrivateKey = b64ToUint8Array(privateKey.d, true);
-
   return {
-    publicKey: rawPublicKey,
-    privateKey: util.leftPad(rawPrivateKey, expectedPayloadSize)
+    publicKey: jwkToRawPublic(publicKey, wireFormatLeadingByte),
+    privateKey: b64ToUint8Array(privateKey.d, true)
   };
 }
 
