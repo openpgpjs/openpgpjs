@@ -625,7 +625,7 @@ class SignaturePacket {
     let i = subpacketLengthBytes;
 
     // subpacket data set (zero or more subpackets)
-    while (i < 2 + subpacketLength) {
+    while (i < subpacketLengthBytes + subpacketLength) {
       const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
