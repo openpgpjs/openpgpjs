@@ -177,7 +177,7 @@ export async function validateParams(pBytes, qBytes, gBytes, yBytes, xBytes) {
    */
   const qSize = BigInt(bitLength(q));
   const _150n = BigInt(150);
-  if (qSize < _150n || !isProbablePrime(q, null, 32)) {
+  if (qSize < _150n || !isProbablePrime(q, 32)) {
     return false;
   }
 
