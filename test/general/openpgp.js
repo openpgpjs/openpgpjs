@@ -917,6 +917,103 @@ me8oJym/ILMHRGIc4JvY9+2wE5U1FBYTsze3WnVH5dP5mfA2Uk83TR5KewKANsb4kl/OEPlADWdR
 =c2mQ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+// v6 Ed25519 public key with X25519 and experimental ML-KEM-768+ECDH-NIST-P-384 (algorithm ID=100) subkeys
+const experimentalPqcNistReadyPubKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+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
+J+4F/K6Ue/e7f74A
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+// v6 Ed25519 private key with X25519 and experimental ML-KEM-768+ECDH-NIST-P-384 (algorithm ID=100) subkeys
+const experimentalPqcNistReadySecKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function withCompression(tests) {
   const compressionTypes = Object.values(openpgp.enums.compression);
 
@@ -1051,6 +1148,34 @@ PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
 
     it('readPrivateKeys should throw on armored public keys', async function() {
       await expect(openpgp.readPrivateKeys({ armoredKeys: twoPublicKeys })).to.be.rejectedWith(/Armored text not of type private key/);
+    });
+
+    it('read[Private]Key[s] can read key with unknown subkey and trailing empty subpacket', async function() {
+      const key = await openpgp.readKey({ armoredKey: experimentalPqcNistReadyPubKey });
+      const keys = await openpgp.readKeys({ armoredKeys: experimentalPqcNistReadyPubKey });
+      const privateKey = await openpgp.readPrivateKey({ armoredKey: experimentalPqcNistReadySecKey });
+      const privateKeys = await openpgp.readPrivateKeys({ armoredKeys: experimentalPqcNistReadySecKey });
+      expect(keys.length).to.equal(1);
+      expect(privateKeys.length).to.equal(1);
+      expect(new Set([
+        key.getFingerprint(),
+        keys[0].getFingerprint(),
+        privateKey.getFingerprint(),
+        privateKeys[0].getFingerprint()
+      ]).size).to.equal(1);
+      expect(key.isPrivate()).to.be.false;
+      expect(privateKey.isPrivate()).to.be.true;
+
+      expect(key.subkeys.length).to.equal(1);
+      expect(privateKey.subkeys.length).to.equal(1);
+    });
+
+    it('read[Private]Key[s] reject key with unknown subkey with `ignoreUnsupportedPackets: false`', async function() {
+      const config = { ignoreUnsupportedPackets: false };
+      await expect(openpgp.readKey({ armoredKey: experimentalPqcNistReadyPubKey, config })).to.be.rejectedWith(/Unknown public key encryption algorithm/);
+      await expect(openpgp.readKeys({ armoredKeys: experimentalPqcNistReadyPubKey, config })).to.be.rejectedWith(/Unknown public key encryption algorithm/);
+      await expect(openpgp.readPrivateKey({ armoredKey: experimentalPqcNistReadySecKey, config })).to.be.rejectedWith(/Unknown public key encryption algorithm/);
+      await expect(openpgp.readPrivateKeys({ armoredKeys: experimentalPqcNistReadySecKey, config })).to.be.rejectedWith(/Unknown public key encryption algorithm/);
     });
   });
 
