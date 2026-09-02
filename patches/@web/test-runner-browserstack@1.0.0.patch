@@ -1,0 +1,41 @@
+--- a/dist/browserstackLauncher.d.ts	
++++ b/dist/browserstackLauncher.d.ts	
+@@ -12,8 +12,8 @@
+     constructor(capabilities: Record<string, unknown>, name: string, localOptions?: Partial<browserstack.Options> | undefined);
+     initialize(config: TestRunnerCoreConfig): Promise<void>;
+     startSession(sessionId: string, url: string): Promise<void>;
+     startDebugSession(): Promise<void>;
+-    stop(): Promise<void>;
++    stop(status?: 'passed' | 'failed', reason?: string): any;
+ }
+ export declare function browserstackLauncher(args: BrowserstackLauncherArgs): BrowserLauncher;
+ //# sourceMappingURL=browserstackLauncher.d.ts.map
+\ No newline at end of file
+--- a/dist/browserstackLauncher.js	
++++ b/dist/browserstackLauncher.js	
+@@ -40,10 +40,23 @@
+     }
+     async startDebugSession() {
+         throw new Error('Starting a debug session is not supported in browserstack');
+     }
+-    stop() {
+-        const stopPromise = super.stop();
++    stop(status, reason) {
++        // Set status in Browserstack
++        // https://www.browserstack.com/docs/automate/api-reference/selenium/session#set-test-status
++        // https://www.browserstack.com/docs/automate/selenium/getting-started/nodejs/integrate-your-tests?fw-lang=nodejs
++        const reportPromise = status ?
++            // driver is a private member of the parent webdriver launcher
++            this.driver.executeScript('browserstack_executor: ' + JSON.stringify({
++                "action": "setSessionStatus",
++                "arguments": {
++                    "status": status,
++                    "reason": reason ?? ''
++                }
++            }), []) :
++            Promise.resolve();
++        const stopPromise = reportPromise.then(() => super.stop());
+         (0, browserstackManager_js_1.unregisterBrowserstackLocal)(this);
+         return stopPromise;
+     }
+ }

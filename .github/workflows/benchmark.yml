@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: main/package.json
+          package-manager-cache: false # enabled by default with `devEngine.packageManager`
+      - run: npm install -g "npm@$(node -p 'require("./main/package.json").devEngines.packageManager.version')"
 
       - name: Run pull request time benchmark
         run: cd pr && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt

@@ -1,5 +1,6 @@
 import { browserstackLauncher } from '@web/test-runner-browserstack';
-import wtrConfig from './web-test-runner.config.js';
+import wtrConfig from './web-test-runner.config.ts';
+import type { TestRunnerConfig } from '@web/test-runner';
 
 const sharedBrowserstackCapabilities = {
   'browserstack.user': process.env.BROWSERSTACK_USERNAME,
@@ -18,8 +19,8 @@ export default {
   sslKey: './127.0.0.1-key.pem',
   sslCert: './127.0.0.1.pem',
   testsStartTimeout: 25000,
-  testsStartTimeoutMaxRetries: 3, // custom config from @openpgp/wtr-test-runner-core
-  testsInterruptedMaxRetries: 3, // custom config from @openpgp/wtr-test-runner-core
+  testsStartTimeoutMaxRetries: 3, // custom config from patched test-runner-core
+  testsInterruptedMaxRetries: 3, // custom config from patched test-runner-core
   browserStartTimeout: 120000,
   testsFinishTimeout: 600000,
   concurrentBrowsers: 1,
@@ -48,4 +49,4 @@ export default {
       }
     })
   ]
-};
+} satisfies TestRunnerConfig;

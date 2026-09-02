@@ -1,4 +1,5 @@
 import { playwrightLauncher } from '@web/test-runner-playwright';
+import type { TestRunnerConfig } from '@web/test-runner';
 
 const sharedPlaywrightCIOptions = {
   // createBrowserContext: ({ browser }) => browser.newContext({ ignoreHTTPSErrors: true }),
@@ -56,4 +57,4 @@ export default {
       browsers: getCommonBrowsers({ firefoxBeta: true })
     }
   ]
-};
+} satisfies TestRunnerConfig;
