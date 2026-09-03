@@ -45,8 +45,8 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
         const gcmMode = crypto.cipherMode.getAEADMode(openpgp.enums.aead.gcm);
         const iv = crypto.getRandomBytes(gcmMode.ivLength);
 
-        const nativeEncryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createCipheriv') : sinonSandbox.spy(webCrypto, 'encrypt');
-        const nativeDecryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createDecipheriv') : sinonSandbox.spy(webCrypto, 'decrypt');
+        const nativeEncryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'encrypt') : sinonSandbox.spy(nodeCrypto, 'createCipheriv');
+        const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
 
         nativeEncrypt || disableNative();
         let modeInstance = await gcmMode(algo, key);
