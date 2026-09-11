@@ -425,7 +425,7 @@ const util = {
 
   /**
    * Get native Web Cryptography API.
-   * @returns {Object} The SubtleCrypto API
+   * @returns {SubtleCrypto} The SubtleCrypto API
    * @throws if the API is not available
    */
   getWebCrypto: function() {
