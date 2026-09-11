@@ -31,6 +31,28 @@ import PacketList from './packetlist.js';
 import { UnsupportedError } from './packet.js';
 import { MessageGrammarValidator } from './grammar.ts';
 
+/**
+ * Store `value` in the 64-bit big-endian field at `byteOffset` of `view`.
+ * @param {DataView} dataView
+ * @param {Number} byteOffset - Offset of the 64-bit field
+ * @param {Number} value - Value to store (a safe integer)
+ */
+function setUint64(dataView, byteOffset, value) {
+  if (typeof dataView.setBigUint64 === 'function') {
+    return dataView.setBigUint64(byteOffset, BigInt(value));
+  }
+
+  // Fallback for Safari 14, which lacks `DataView.prototype.setBigUint64`.
+  if (value <= 0xFFFFFFFF) {
+    dataView.setUint32(byteOffset, 0);
+    dataView.setUint32(byteOffset + 4, value);
+  } else {
+    const bigValue = BigInt(value);
+    dataView.setUint32(byteOffset, Number(bigValue >> BigInt(32)));
+    dataView.setUint32(byteOffset + 4, Number(bigValue & BigInt(0xFFFFFFFF)));
+  }
+}
+
 // A SEIP packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
@@ -316,7 +338,7 @@ export async function runAEAD(packet, fn, key, data) {
           // After the last chunk, we either encrypt a final, empty
           // data chunk to get the final authentication tag or
           // validate that final authentication tag.
-          adataView.setInt32(5 + chunkIndexSizeIfAEADEP + 4, cryptedBytes); // Should be setInt64(5 + chunkIndexSizeIfAEADEP, ...)
+          setUint64(adataView, 5 + chunkIndexSizeIfAEADEP, cryptedBytes);
           cryptedPromise = modeInstance[fn](finalChunk, nonce, adataTagArray);
           cryptedPromise.catch(() => {});
           queuedBytes += tagLengthIfEncrypting;
@@ -332,10 +354,14 @@ export async function runAEAD(packet, fn, key, data) {
           await latestPromise; // Respect backpressure
         }
         if (!done) {
+          // The chunk index is written as a full 64-bit value, so the derived nonces are always unique
+          // and never wrap. This also keeps AES-GCM within its security bounds without an explicit chunk limit:
+          // the NIST SP 800-38D 2^32-invocation limit guards against random-nonce collisions, which do not
+          // apply to the OpenPGP counter-based nonces.
           if (isSEIPDv2) { // SEIPD V2
-            ivView.setInt32(iv.length - 4, ++chunkIndex); // Should be setInt64(iv.length - 8, ...)
+            setUint64(ivView, iv.length - 8, ++chunkIndex);
           } else { // AEADEncryptedDataPacket
-            adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+            setUint64(adataView, 5, ++chunkIndex);
           }
         } else {
           await writer.close();
