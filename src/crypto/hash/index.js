@@ -14,57 +14,61 @@ const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 const nodeCryptoHashes = nodeCrypto && nodeCrypto.getHashes();
 
-function nodeHash(type) {
-  if (!nodeCrypto || !nodeCryptoHashes.includes(type)) {
-    return;
-  }
-  // eslint-disable-next-line @typescript-eslint/require-await
-  return async function (data) {
-    const shasum = nodeCrypto.createHash(type);
-    return streamTransform(data, value => {
-      shasum.update(value);
-    }, () => new Uint8Array(shasum.digest()));
-  };
-}
+const getNobleHash = async nobleHashName => {
+  const { nobleHashes } = await import('./noble_hashes.js');
+  const hash = nobleHashes.get(nobleHashName);
+  if (!hash) throw new Error('Unsupported hash');
+  return hash;
+};
 
-function nobleHash(nobleHashName, webCryptoHashName) {
-  const getNobleHash = async () => {
-    const { nobleHashes } = await import('./noble_hashes.js');
-    const hash = nobleHashes.get(nobleHashName);
-    if (!hash) throw new Error('Unsupported hash');
-    return hash;
-  };
+/**
+ * Compute the requested hash preferring WebCrypto if supported,
+ * otherwise use NodeCrypto or a JS fallback.
+ */
+function nativeOrNobleHash(nobleHashName, webCryptoHashName, nodeHashName) {
+  const supportsNodeCrypto = nodeCrypto && nodeCryptoHashes.includes(nodeHashName);
 
-  return async function(data) {
-    if (isArrayStream(data)) {
-      data = await streamReadToEnd(data);
-    }
+  return async function(maybeArrayStreamData) {
+    const data = isArrayStream(maybeArrayStreamData) ?
+      await streamReadToEnd(maybeArrayStreamData) :
+      maybeArrayStreamData;
+
     if (util.isStream(data)) {
-      const hash = await getNobleHash();
+      if (supportsNodeCrypto) {
+        const nodeHashInstance = nodeCrypto.createHash(nodeHashName);
+        return streamTransform(data, value => {
+          nodeHashInstance.update(value);
+        }, () => new Uint8Array(nodeHashInstance.digest()));
+      }
 
+      const hash = await getNobleHash(nobleHashName);
       const hashInstance = hash.create();
       return streamTransform(data, value => {
         hashInstance.update(value);
       }, () => hashInstance.digest());
-    } else if (webCrypto && webCryptoHashName) {
+    } else if (webCryptoHashName) {
       return new Uint8Array(await webCrypto.digest(webCryptoHashName, data));
+    } else if (supportsNodeCrypto) {
+      return new Uint8Array(nodeCrypto.createHash(nodeHashName).update(data).digest());
     } else {
-      const hash = await getNobleHash();
+      const hash = await getNobleHash(nobleHashName);
 
       return hash(data);
     }
   };
 }
 
-const md5 = nodeHash('md5') || nobleHash('md5');
-const sha1 = nodeHash('sha1') || nobleHash('sha1', 'SHA-1');
-const sha224 = nodeHash('sha224') || nobleHash('sha224');
-const sha256 = nodeHash('sha256') || nobleHash('sha256', 'SHA-256');
-const sha384 = nodeHash('sha384') || nobleHash('sha384', 'SHA-384');
-const sha512 = nodeHash('sha512') || nobleHash('sha512', 'SHA-512');
-const ripemd = nodeHash('ripemd160') || nobleHash('ripemd160');
-const sha3_256 = nodeHash('sha3-256') || nobleHash('sha3_256');
-const sha3_512 = nodeHash('sha3-512') || nobleHash('sha3_512');
+const hashFunctions = {
+  [enums.hash.md5]: nativeOrNobleHash('md5', null, 'md5'),
+  [enums.hash.sha1]: nativeOrNobleHash('sha1', 'SHA-1', 'sha1'),
+  [enums.hash.ripemd]: nativeOrNobleHash('ripemd160', null, 'ripemd160'),
+  [enums.hash.sha256]: nativeOrNobleHash('sha256', 'SHA-256', 'sha256'),
+  [enums.hash.sha384]: nativeOrNobleHash('sha384', 'SHA-384', 'sha384'),
+  [enums.hash.sha512]: nativeOrNobleHash('sha512', 'SHA-512', 'sha512'),
+  [enums.hash.sha224]: nativeOrNobleHash('sha224', null, 'sha224'),
+  [enums.hash.sha3_256]: nativeOrNobleHash('sha3_256', null, 'sha3-256'),
+  [enums.hash.sha3_512]: nativeOrNobleHash('sha3_512', null, 'sha3-512')
+};
 
 /**
  * Create a hash on the specified data using the specified algorithm
@@ -73,28 +77,12 @@ const sha3_512 = nodeHash('sha3-512') || nobleHash('sha3_512');
  * @returns {Promise<Uint8Array>} Hash value.
  */
 export function computeDigest(algo, data) {
-  switch (algo) {
-    case enums.hash.md5:
-      return md5(data);
-    case enums.hash.sha1:
-      return sha1(data);
-    case enums.hash.ripemd:
-      return ripemd(data);
-    case enums.hash.sha256:
-      return sha256(data);
-    case enums.hash.sha384:
-      return sha384(data);
-    case enums.hash.sha512:
-      return sha512(data);
-    case enums.hash.sha224:
-      return sha224(data);
-    case enums.hash.sha3_256:
-      return sha3_256(data);
-    case enums.hash.sha3_512:
-      return sha3_512(data);
-    default:
-      throw new Error('Unsupported hash function');
+  const hashFn = hashFunctions[algo];
+  if (!hashFn) {
+    throw new Error('Unsupported hash function')
   }
+
+  return hashFn(data);
 }
 
 /**
