@@ -332,10 +332,14 @@ export async function runAEAD(packet, fn, key, data) {
           await latestPromise; // Respect backpressure
         }
         if (!done) {
+          // The chunk index is written as a full 64-bit value, so the derived nonces are always unique
+          // and never wrap. This also keeps AES-GCM within its security bounds without an explicit chunk limit:
+          // the NIST SP 800-38D 2^32-invocation limit guards against random-nonce collisions, which do not
+          // apply to the OpenPGP counter-based nonces.
           if (isSEIPDv2) { // SEIPD V2
-            ivView.setInt32(iv.length - 4, ++chunkIndex); // Should be setInt64(iv.length - 8, ...)
+            ivView.setBigUint64(iv.length - 8, BigInt(++chunkIndex));
           } else { // AEADEncryptedDataPacket
-            adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+            adataView.setBigUint64(5, BigInt(++chunkIndex));
           }
         } else {
           await writer.close();
