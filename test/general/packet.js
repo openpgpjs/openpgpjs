@@ -1377,6 +1377,33 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       expect(otherPackets[0].constructor.tag).to.equal(openpgp.enums.packet.userID);
     });
 
+    it('Parses four-octet packet lengths of 2**31 and above', async function () {
+      // Literal Data body: format 'b', zero-length filename, zeroed date, payload 'AA'.
+      const literalDataBody = util.hexToUint8Array('6200000000004141');
+      // Old format, length type 2 (four-octet length), and new format, five-octet length.
+      const oldFormatHeader = declaredLength => util.concatUint8Array([
+        new Uint8Array([0x80 | (openpgp.enums.packet.literalData << 2) | 2]),
+        util.writeNumber(declaredLength, 4)
+      ]);
+      const newFormatHeader = declaredLength => util.concatUint8Array([
+        new Uint8Array([0xC0 | openpgp.enums.packet.literalData, 255]),
+        util.writeNumber(declaredLength, 4)
+      ]);
+
+      // Each packet declares far more bytes than actually follow, so truncation is the only
+      // correct outcome. Reaching it proves the declared length was parsed as a large positive
+      // number: when it was parsed as negative, the body was skipped instead, and an unrelated
+      // TypeError ('Cannot read properties of undefined') surfaced.
+      for (const buildHeader of [oldFormatHeader, newFormatHeader]) {
+        for (const declaredLength of [0x7fffffff, 0x80000000, 0xffffffff]) {
+          const bytes = util.concatUint8Array([buildHeader(declaredLength), literalDataBody]);
+          await expect(
+            openpgp.PacketList.fromBinary(bytes, allAllowedPackets)
+          ).to.be.rejectedWith(/Unexpected end of packet/);
+        }
+      }
+    });
+
     describe('Grammar validation', () => {
       describe('MessageGrammarValidator - unit tests', () => {
         it('valid nested signed messages should be valid', () => {

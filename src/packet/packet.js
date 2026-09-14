@@ -180,8 +180,10 @@ export async function readPacket(reader, useStreamType, callback) {
           case 2:
             // The packet has a four-octet length. The header is 5
             // octets long.
-            packetLength = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
-              8) | await reader.readByte();
+            // The final `>>> 0` is needed because `<< 24` operates on signed 32-bit integers:
+            // without it, lengths >= 2**31 parse as negative, and the body is skipped below.
+            packetLength = ((await reader.readByte() << 24) | (await reader.readByte() << 16) |
+              (await reader.readByte() << 8) | await reader.readByte()) >>> 0;
             break;
           default:
             // 3 - The packet is of indeterminate length. The header is 1
@@ -215,8 +217,10 @@ export async function readPacket(reader, useStreamType, callback) {
           }
           // 4.2.2.3. Five-Octet Lengths
         } else {
-          packetLength = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
-            8) | await reader.readByte();
+          // The final `>>> 0` is needed because `<< 24` operates on signed 32-bit integers:
+          // without it, lengths >= 2**31 parse as negative, and the body is skipped below.
+          packetLength = ((await reader.readByte() << 24) | (await reader.readByte() << 16) |
+            (await reader.readByte() << 8) | await reader.readByte()) >>> 0;
         }
       }
       if (packetLength > 0) {
