@@ -565,12 +565,12 @@ export class Message {
    * @returns {Promise<Signature>} New detached signature of message content.
    * @async
    */
-  async signDetached(signingKeys = [], recipientKeys = [], signature = null, signingKeyIDs = [], recipientKeyIDs = [], date = new Date(), userIDs = [], notations = [], config = defaultConfig) {
+  async signDetached(signingKeys = [], recipientKeys = [], signature = null, signingKeyIDs = [], date = new Date(), signingUserIDs = [], recipientUserIDs = [], notations = [], config = defaultConfig) {
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
     if (!literalDataPacket) {
       throw new Error('No literal data packet to sign.');
     }
-    return new Signature(await createSignaturePackets(literalDataPacket, signingKeys, recipientKeys, signature, signingKeyIDs, recipientKeyIDs, date, userIDs, notations, true, config));
+    return new Signature(await createSignaturePackets(literalDataPacket, signingKeys, recipientKeys, signature, signingKeyIDs, date, signingUserIDs, recipientUserIDs, notations, true, config));
   }
 
   /**
