@@ -79,6 +79,8 @@ export abstract class Key {
   public verifyAllUsers(publicKeys?: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature?: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<MaybeStream<string> | undefined>;
+  public applyRevocationCertificate(revocationCertificate: string, date?: Date, config?: Config): Promise<this>;
+  public getPrimarySelfSignature(date?: Date, userID?: UserID, config?: Config): Promise<SignaturePacket>;
   public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getKeys(keyID?: KeyID): (this | Subkey)[];
@@ -330,6 +332,12 @@ export class Message<T extends MaybeStream<Data>> {
       @param verificationKeys array of public keys to verify signatures
   */
   public verify(verificationKeys: PublicKey[], date?: Date, config?: Config): Promise<VerificationResult[]>;
+
+  /** Verify a detached message signature
+      @param signature the detached signature to verify
+      @param verificationKeys array of public keys to verify signatures
+  */
+  public verifyDetached(signature: Signature, verificationKeys: PublicKey[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 
   /**
    * Append signature to unencrypted message object

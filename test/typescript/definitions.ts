@@ -12,7 +12,7 @@ import { Readable as NodeNativeReadableStream } from 'stream';
 import { expect } from 'chai';
 import {
   generateKey, readKey, readKeys, readPrivateKey, PrivateKey, type Key, PublicKey, revokeKey,
-  readMessage, createMessage, Message, createCleartextMessage,
+  readMessage, createMessage, Message, createCleartextMessage, readSignature,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
   LiteralDataPacket, PacketList, CompressedDataPacket, SymEncryptedIntegrityProtectedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
@@ -75,11 +75,24 @@ import {
   expect(revokedKeyPair.privateKey).to.be.null;
   expect(revokedKeyPair.publicKey).to.be.instanceOf(PublicKey);
 
+  // Apply a revocation certificate directly, and read the primary self-signature
+  const externallyRevokedKey = await publicKey.applyRevocationCertificate(revocationCertificate);
+  expect(externallyRevokedKey).to.be.instanceOf(PublicKey);
+  expect(externallyRevokedKey.revocationSignatures).to.have.lengthOf(1);
+  const primarySelfSignature = await privateKey.getPrimarySelfSignature();
+  expect(primarySelfSignature.created).to.be.instanceOf(Date);
+
   // Encrypt text message (armored)
   const text = 'hello';
   const textMessage = await createMessage({ text: 'hello', format: 'text' });
   const encryptedArmor: string = await encrypt({ encryptionKeys: publicKeys, message: textMessage });
   expect(encryptedArmor).to.include('-----BEGIN PGP MESSAGE-----');
+
+  // Verify a detached signature produced through the top-level sign() API
+  const armoredDetachedSignature = await sign({ signingKeys: privateKeys, message: textMessage, detached: true });
+  const parsedDetachedSignature = await readSignature({ armoredSignature: armoredDetachedSignature });
+  const detachedVerification = await textMessage.verifyDetached(parsedDetachedSignature, publicKeys);
+  expect(await detachedVerification[0].verified).to.be.true;
 
   // Encrypt binary message (unarmored)
   const binary = new Uint8Array([1, 2]);
