@@ -324,6 +324,15 @@ export class Message<T extends MaybeStream<Data>> {
   */
   public sign(signingKeys: PrivateKey[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], notations?: RawNotation[], config?: Config): Promise<Message<T>>;
 
+  /** Decrypt the message's session keys
+      @param decryptionKeys private keys with decrypted secret data
+  */
+  public decryptSessionKeys(decryptionKeys?: PrivateKey[], passwords?: string[], expectedSymmetricAlgorithm?: enums.symmetric, date?: Date, config?: Config): Promise<DecryptedSessionKey[]>;
+
+  /** Compress the message (the literal and, if signed, signature data packets)
+   */
+  public compress(algo: enums.compression, config?: Config): Message<T>;
+
   /** Unwrap compressed message
    */
   public unwrapCompressed(): Message<T>;

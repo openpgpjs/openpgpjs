@@ -94,6 +94,13 @@ import {
   const detachedVerification = await textMessage.verifyDetached(parsedDetachedSignature, publicKeys);
   expect(await detachedVerification[0].verified).to.be.true;
 
+  // Message.compress and Message.decryptSessionKeys
+  const compressedMessage = textMessage.compress(enums.compression.zip);
+  expect(compressedMessage).to.be.instanceOf(Message);
+  const encryptedForSessionKeys = await readMessage({ armoredMessage: encryptedArmor });
+  const recoveredSessionKeys = await encryptedForSessionKeys.decryptSessionKeys(privateKeys);
+  expect(recoveredSessionKeys[0].data).to.be.instanceOf(Uint8Array);
+
   // Encrypt binary message (unarmored)
   const binary = new Uint8Array([1, 2]);
   const binaryMessage = await createMessage({ binary });
