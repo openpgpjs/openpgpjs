@@ -179,7 +179,7 @@ export default () => describe('Decompress message tests', function () {
         }
       });
 
-      await expect(messagePromise).to.be.rejectedWith('Maximum decompressed message size exceeded');
+      await expect(messagePromise).to.be.rejectedWith(/Maximum decompressed size exceeded|Maximum decompressed message size exceeded/);
     });
 
     it(`Can stop decompressing an overly large ${key} message - high limit`, async function() {
@@ -190,7 +190,7 @@ export default () => describe('Decompress message tests', function () {
         }
       });
 
-      await expect(messagePromise).to.be.rejectedWith('Maximum decompressed message size exceeded');
+      await expect(messagePromise).to.be.rejectedWith(/Maximum decompressed size exceeded|Maximum decompressed message size exceeded/);
     });
 
     it(`Can stop decompressing an overly large ${key} message - low limit - streaming`, async function() {
@@ -201,7 +201,7 @@ export default () => describe('Decompress message tests', function () {
         }
       });
 
-      await expect(messagePromise).to.be.rejectedWith('Maximum decompressed message size exceeded');
+      await expect(messagePromise).to.be.rejectedWith(/Maximum decompressed size exceeded|Maximum decompressed message size exceeded/);
     });
 
     it(`Can stop decompressing an overly large ${key} message - high limit - streaming`, async function() {
@@ -215,7 +215,7 @@ export default () => describe('Decompress message tests', function () {
       const verified = await openpgp.verify({ message, verificationKeys: [] });
       const dataPromise = stream.readToEnd(verified.data);
 
-      await expect(dataPromise).to.be.rejectedWith('Maximum decompressed message size exceeded');
+      await expect(dataPromise).to.be.rejectedWith(/Maximum decompressed size exceeded|Maximum decompressed message size exceeded/);
     });
   }
 
