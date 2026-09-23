@@ -112,7 +112,7 @@ export async function encrypt(data, n, e) {
 
 /**
  * Decrypt RSA message
- * @param {Uint8Array} m - Message
+ * @param {Uint8Array} data - encrypted data
  * @param {Uint8Array} n - RSA public modulus
  * @param {Uint8Array} e - RSA public exponent
  * @param {Uint8Array} d - RSA private exponent
@@ -372,7 +372,6 @@ function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
 
 /** Convert Openpgp private key params to jwk key according to
  * @link https://tools.ietf.org/html/rfc7517
- * @param {String} hashAlgo
  * @param {Uint8Array} n
  * @param {Uint8Array} e
  * @param {Uint8Array} d
@@ -407,7 +406,6 @@ function privateToJWK(n, e, d, p, q, u) {
 
 /** Convert Openpgp key public params to jwk key according to
  * @link https://tools.ietf.org/html/rfc7517
- * @param {String} hashAlgo
  * @param {Uint8Array} n
  * @param {Uint8Array} e
  */

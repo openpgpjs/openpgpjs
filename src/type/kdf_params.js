@@ -30,8 +30,9 @@ import { UnsupportedError } from '../packet/packet.js';
  */
 class KDFParams {
   /**
-   * @param {enums.hash} hash - Hash algorithm
-   * @param {enums.symmetric} cipher - Symmetric algorithm
+   * @param {Object} data
+   * @param {enums.hash} data.hash - Hash algorithm
+   * @param {enums.symmetric} data.cipher - Symmetric algorithm
    */
   constructor(data) {
     if (data) {

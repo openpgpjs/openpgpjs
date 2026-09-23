@@ -698,7 +698,7 @@ async function convertStream(data) {
  * Link result.data to the input message stream for cancellation.
  * Also, forward errors in the input message and intermediate messages to result.data.
  * @param {Object} result - the data to convert
- * @param {Message} message - message object provided by the user
+ * @param {Message} inputMessage - message object provided by the user
  * @param {Message} intermediateMessages - intermediate message object with packet streams to link
  * @returns {Object}
  * @private

@@ -234,6 +234,7 @@ export default SymEncryptedIntegrityProtectedDataPacket;
 
 /**
  * En/decrypt the payload.
+ * @param {Object} packet
  * @param {encrypt|decrypt} fn - Whether to encrypt or decrypt
  * @param {Uint8Array} key - The session key used to en/decrypt the payload
  * @param {Uint8Array | ReadableStream<Uint8Array>} data - The data to en/decrypt

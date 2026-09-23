@@ -36,7 +36,7 @@ function selectBigInt(cond: 0n | 1n, a: bigint, b: bigint) {
 
 /**
  * Compute modular exponentiation using square and multiply
- * @param {BigInt} a - Base
+ * @param {BigInt} b - Base
  * @param {BigInt} e - Exponent
  * @param {BigInt} n - Modulo
  * @returns {BigInt} b ** e mod n.
@@ -72,8 +72,8 @@ function abs(x: bigint) {
  * Extended Eucleadian algorithm (http://anh.cs.luc.edu/331/notes/xgcd.pdf)
  * Given a and b, compute (x, y) such that ax + by = gdc(a, b).
  * Negative numbers are also supported.
- * @param {BigInt} a - First operand
- * @param {BigInt} b - Second operand
+ * @param {BigInt} aInput - First operand
+ * @param {BigInt} bInput - Second operand
  * @returns {{ gcd, x, y: bigint }}
  */
 function _egcd(aInput: bigint, bInput: bigint) {
@@ -203,6 +203,7 @@ export function byteLength(x: bigint) {
 
 /**
  * Get Uint8Array representation of this number
+ * @param {BigInt} x - Input number
  * @param {String} endian - Endianess of output array (defaults to 'be')
  * @param {Number} length - Of output array
  * @returns {Uint8Array}

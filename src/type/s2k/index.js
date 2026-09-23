@@ -12,7 +12,7 @@ const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterat
 
 /**
  * Instantiate a new S2K instance of the given type
- * @param {module:enums.s2k} type
+ * @param {enums.s2k} type
  * @param {Object} [config]
  * @returns {Object} New s2k object
  * @throws {Error} for unknown or unsupported types

@@ -72,7 +72,8 @@ class UserIDPacket {
 
   /**
    * Parsing function for a user id packet (tag 13).
-   * @param {Uint8Array} input - Payload of a tag 13 packet
+   * @param {Uint8Array} bytes - Payload of a tag 13 packet
+   * @param {Object} config - full configuration, defaults to openpgp.config
    */
   read(bytes, config = defaultConfig) {
     const userID = util.decodeUTF8(bytes);

@@ -35,15 +35,16 @@ export async function generateSecretKey(options, config) {
 /**
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param {Array<SignaturePacket>} signatures - List of signatures
- * @param {PublicKeyPacket|PublicSubkeyPacket} publicKey - Public key packet to verify the signature
+ * @param {PublicKeyPacket|PublicSubkeyPacket} publicKeyPacket - Public key packet to verify the signature
  * @param {module:enums.signature} signatureType - Signature type to determine how to hash the data (NB: for userID signatures,
  *                          `enums.signatures.certGeneric` should be given regardless of the actual trust level)
- * @param {Date} date - Use the given date instead of the current time
+ * @param {Object} dataToVerify
+ * @param {Date} [date] - Use the given date instead of the current time
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature.
  * @async
  */
-export async function getLatestValidSignature(signatures, publicKey, signatureType, dataToVerify, date = new Date(), config) {
+export async function getLatestValidSignature(signatures, publicKeyPacket, signatureType, dataToVerify, date = new Date(), config) {
   let latestValid;
   let exception;
   for (let i = signatures.length - 1; i >= 0; i--) {
@@ -51,7 +52,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
       if (
         (!latestValid || signatures[i].created >= latestValid.created)
       ) {
-        await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
+        await signatures[i].verify(publicKeyPacket, signatureType, dataToVerify, date, undefined, config);
         latestValid = signatures[i];
       }
     } catch (e) {
@@ -60,7 +61,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
   }
   if (!latestValid) {
     throw util.wrapError(
-      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${publicKey.getKeyID().toHex()}`
+      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${publicKeyPacket.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
         .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase()),
       exception);
@@ -110,7 +111,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @param {Array<Key>} [targetKeys] - The keys to get preferences from
  * @param {SecretKeyPacket|SecretSubkeyPacket} signingKeyPacket - key packet used for signing
  * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Object} [targetUserID] - User IDs corresponding to `targetKeys` to get preferences from
+ * @param {Object} [targetUserIDs] - User IDs corresponding to `targetKeys` to get preferences from
  * @param {Object} config - full configuration
  * @returns {Promise<enums.hash>}
  * @async
@@ -284,7 +285,7 @@ export async function getPreferredCipherSuite(keys = [], date = new Date(), user
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
  * @param {Date} [date] - Override the creationtime of the signature
- * @param {Object} [userID] - User ID
+ * @param {Object} [recipientUserIDs] - User IDs
  * @param {Array} [notations] - Notation Data to add to the signature, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Object} config - full configuration
@@ -336,13 +337,14 @@ export async function mergeSignatures(source, dest, attr, date = new Date(), che
  * Checks if a given certificate or binding signature is revoked
  * @param  {SecretKeyPacket|
  *          PublicKeyPacket}        primaryKey   The primary key packet
+ * @param {module:enums.signature} signatureType
  * @param {Object} dataToVerify - The data to check
  * @param {Array<SignaturePacket>} revocations - The revocation signatures to check
  * @param {SignaturePacket} signature - The certificate or signature to check
  * @param  {PublicSubkeyPacket|
  *          SecretSubkeyPacket|
  *          PublicKeyPacket|
- *          SecretKeyPacket} key, optional The key packet to verify the signature, instead of the primary key
+ *          SecretKeyPacket} key optional The key packet to verify the signature, instead of the primary key
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - Full configuration
  * @returns {Promise<Boolean>} True if the signature revokes the data.

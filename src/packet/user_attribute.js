@@ -49,7 +49,7 @@ class UserAttributePacket {
 
   /**
    * parsing function for a user attribute packet (tag 17).
-   * @param {Uint8Array} input - Payload of a tag 17 packet
+   * @param {Uint8Array} bytes - Payload of a tag 17 packet
    */
   read(bytes) {
     let i = 0;

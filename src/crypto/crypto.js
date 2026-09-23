@@ -90,7 +90,7 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
 /**
  * Decrypts data using specified algorithm and private key parameters.
  * See {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 5.5.3}
- * @param {module:enums.publicKey} algo - Public key algorithm
+ * @param {module:enums.publicKey} keyAlgo - Public key algorithm
  * @param {Object} publicKeyParams - Algorithm-specific public key parameters
  * @param {Object} privateKeyParams - Algorithm-specific private key parameters
  * @param {Object} sessionKeyParams - Encrypted session key parameters

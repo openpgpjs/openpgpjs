@@ -632,8 +632,8 @@ export class Message {
 
   /**
    * Verify detached message signature
-   * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
    * @param {Signature} signature
+   * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -714,7 +714,6 @@ export class Message {
  * @param {Array<UserID>} [signingUserIDs] - User IDs to sign to, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param {Array<UserID>} [recipientUserIDs] - User IDs associated with `recipientKeys` to get the signing preferences from
  * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
- * @param {Array} [signatureSalts] - A list of signature salts matching the number of signingKeys that should be used for v6 signatures
  * @param {Boolean} [detached] - Whether to create detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {Promise<PacketList>} List of signature packets.
