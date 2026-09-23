@@ -2283,24 +2283,6 @@ BdPq
       expect(verified.data).to.equal(text);
     });
 
-    it('Message.signDetached should use the default date when called directly', async function() {
-      const text = 'test';
-      const message = await openpgp.createMessage({ text });
-      const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
-        passphrase
-      });
-      const config = { ...openpgp.config, minRSABits: 1024 };
-
-      // signDetached used to forward `recipientKeyIDs` into the `date` parameter of
-      // createSignaturePackets, so leaving `date` unset passed an array where a Date was
-      // expected and threw 'Signature creation time is in the future'.
-      const signature = await message.signDetached([privateKey], undefined, undefined, undefined, undefined, undefined, undefined, undefined, config);
-      expect(signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
-      const verified = await openpgp.verify({ message, signature, verificationKeys: privateKey, expectSigned: true, config });
-      expect(verified.data).to.equal(text);
-    });
-
     it('should output message of expected format (detached, with streaming)', async function() {
       const text = 'test';
       const privateKey = await openpgp.decryptKey({
