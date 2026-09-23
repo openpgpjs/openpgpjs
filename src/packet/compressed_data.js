@@ -115,7 +115,7 @@ class CompressedDataPacket {
       throw new Error(`${compressionName} decompression not supported`);
     }
 
-    let decompressed = await decompressionFn(this.compressed);
+    let decompressed = await decompressionFn(this.compressed, config);
     if (config.maxDecompressedMessageSize !== Infinity) {
       let decompressedSize = 0;
       decompressed = streamTransform(decompressed, chunk => {
@@ -194,7 +194,7 @@ function splitStream(data) {
  * @private
  */
 function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
-  return data => {
+  return (data, _config) => {
     let stream;
     if (isArrayStream(data)) {
       stream = new ReadableStream({
@@ -274,9 +274,9 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
 }
 
 function bzip2Decompress() {
-  return async function(data) {
+  return async function(data, config) {
     const { default: unbzip2Stream } = await import('@openpgp/unbzip2-stream');
-    return unbzip2Stream(toStream(data));
+    return unbzip2Stream(toStream(data), config.maxDecompressedMessageSize);
   };
 }
 
@@ -299,7 +299,7 @@ const compress_fns = {
 };
 
 const decompress_fns = {
-  uncompressed: data => data,
+  uncompressed: (data, _config) => data,
   zip: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate-raw').decompressor, Inflate),
   zlib: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate').decompressor, Unzlib),
   bzip2: /*#__PURE__*/ bzip2Decompress() // NB: async due to dynamic lib import
