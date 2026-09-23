@@ -319,6 +319,25 @@ const util = {
   },
 
   /**
+   * Check Uint8Array equality in algorithmic constant time
+   * @param {Uint8Array} array1 - First array
+   * @param {Uint8Array} array2 - Second array
+   * @returns {Boolean} Equality
+   * @throws on input arrays of different lengths
+   */
+  timingSafeEqualsUint8Array: function (array1, array2) {
+    if (array1.length !== array2.length) {
+      throw new Error('Equal input arrays expected');
+    }
+
+    let equal = 1;
+    for (let i = 0; i < array1.length; i++) {
+      equal &= array1[i] === array2[i];
+    }
+    return !!equal;
+  },
+
+  /**
    * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
    * @param {Uint8Array} Uint8Array - To create a sum of

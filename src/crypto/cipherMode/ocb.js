@@ -251,7 +251,7 @@ async function OCB(cipher, key) {
 
       const crypted = crypt(decipher, ciphertext, nonce, adata);
       // if (Tag[1..TAGLEN] == T)
-      if (util.equalsUint8Array(tag, crypted.subarray(-tagLength))) {
+      if (util.timingSafeEqualsUint8Array(tag, crypted.subarray(-tagLength))) {
         return crypted.subarray(0, -tagLength);
       }
       throw new Error('Authentication tag mismatch');

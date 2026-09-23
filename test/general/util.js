@@ -154,6 +154,30 @@ export default () => describe('Util unit tests', function() {
     });
   });
 
+  describe('constant time uint8array equality', function() {
+    it('timingSafeEqualsUint8Array should return true for equal arrays', function () {
+      const a = new Uint8Array([1, 2, 3, 4, 5]);
+      const b = new Uint8Array([1, 2, 3, 4, 5]);
+      expect(util.timingSafeEqualsUint8Array(a, b)).to.be.true;
+    });
+
+    it('timingSafeEqualsUint8Array should return true for empty arrays', function () {
+      expect(util.timingSafeEqualsUint8Array(new Uint8Array(), new Uint8Array())).to.be.true;
+    });
+
+    it('timingSafeEqualsUint8Array should return false when a byte differs', function () {
+      const a = new Uint8Array([1, 2, 3, 4, 5]);
+      const b = new Uint8Array([1, 2, 3, 4, 6]);
+      expect(util.timingSafeEqualsUint8Array(a, b)).to.be.false;
+    });
+
+    it('timingSafeEqualsUint8Array should throw for arrays of different length', function () {
+      const a = new Uint8Array([1, 2, 3]);
+      const b = new Uint8Array([1, 2, 3, 4]);
+      expect(() => util.timingSafeEqualsUint8Array(a, b)).to.throw(/Equal input arrays expected/);
+    });
+  });
+
   describe('constant time select', function() {
     it('selectUint8Array should work for arrays of equal length', function () {
       const size = 10;
