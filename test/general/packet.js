@@ -14,6 +14,7 @@ import * as random from '../../src/crypto/random.js';
 import * as input from './testInputs.js';
 import { mockCryptoRandomGenerator, restoreCryptoRandomGenerator } from '../mockRandom.ts';
 import { MessageGrammarValidator } from '../../src/packet/grammar.ts';
+import { readPacket } from '../../src/packet/packet.js';
 
 function stringify(array) {
   if (stream.isStream(array)) {
@@ -1226,6 +1227,56 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
           stream.readToEnd(signed2[0].getBytes())
         ]);
       });
+    });
+  });
+
+  describe('readPacket: four-octet body lengths >= 2GiB', () => {
+    async function consumeDeclaredBodyLength(packetHeader) {
+      function makeDummyBodyReader(header) {
+        // Dummy chunk returned on every read(), until the full packet
+        // length (from the input `packetHeader`) has been consumed.
+        // This avoids allocating the whole packet.
+        // Chunk size is only relevant to limit the number of `read()` calls needed
+        const dummyBodyChunk = new Uint8Array(10_000_000);
+        let pos = 0;
+        return {
+          // eslint-disable-next-line @typescript-eslint/require-await
+          peekBytes: async n => header.subarray(pos, pos + n),
+          // eslint-disable-next-line @typescript-eslint/require-await
+          readByte: async () => header[pos++],
+          // eslint-disable-next-line @typescript-eslint/require-await
+          readBytes: async n => {
+            const b = header.subarray(pos, pos + n);
+            pos += n;
+            return b;
+          },
+          // eslint-disable-next-line @typescript-eslint/require-await
+          read: async () => ({ done: false, value: dummyBodyChunk }),
+          unshift() {} // unused in this context
+        };
+      }
+      let readBodyBytes = 0;
+      await readPacket(makeDummyBodyReader(packetHeader), 'web', async ({ packet: parsedPacket }) => {
+        const r = stream.getReader(parsedPacket);
+        while (true) {
+          const { done, value } = await r.read();
+          if (done) break;
+          readBodyBytes += value.length;
+        }
+      });
+      return readBodyBytes;
+    }
+
+    it('old format, four-octet length', async () => {
+      const tag = openpgp.enums.packet.literalData;
+      const header = util.concatUint8Array([new Uint8Array([0x80 | (tag << 2) | 2]), util.writeNumber(0x80000000, 4)]);
+      expect(await consumeDeclaredBodyLength(header)).to.equal(0x80000000);
+    });
+
+    it('new format, five-octet length', async () => {
+      const tag = openpgp.enums.packet.literalData;
+      const header = util.concatUint8Array([new Uint8Array([0xC0 | tag, 255]), util.writeNumber(0x80000000, 4)]);
+      expect(await consumeDeclaredBodyLength(header)).to.equal(0x80000000);
     });
   });
 
