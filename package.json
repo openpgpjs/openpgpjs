@@ -82,7 +82,7 @@
     "@noble/post-quantum": "^0.7.1",
     "@openpgp/jsdoc": "^4.0.4",
     "@openpgp/tweetnacl": "^1.0.4-2",
-    "@openpgp/unbzip2-stream": "^2.0.0",
+    "@openpgp/unbzip2-stream": "^2.1.0",
     "@openpgp/web-stream-tools": "~0.3.1",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-commonjs": "^29.0.3",
