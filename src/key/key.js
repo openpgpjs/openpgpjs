@@ -31,10 +31,10 @@ import { UnparseablePacket } from '../packet/packet.js';
 
 // A key revocation certificate can contain the following packets
 const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
-const mainKeyPacketTags = new Set([enums.packet.publicKey, enums.packet.privateKey]);
+const mainKeyPacketTags = new Set([enums.packet.publicKey, enums.packet.secretKey]);
 const keyPacketTags = new Set([
-  enums.packet.publicKey, enums.packet.privateKey,
-  enums.packet.publicSubkey, enums.packet.privateSubkey
+  enums.packet.publicKey, enums.packet.secretKey,
+  enums.packet.publicSubkey, enums.packet.secretSubkey
 ]);
 
 /**

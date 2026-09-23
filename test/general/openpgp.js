@@ -1168,6 +1168,8 @@ PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
 
       expect(key.subkeys.length).to.equal(1);
       expect(privateKey.subkeys.length).to.equal(1);
+      expect(key.subkeys[0].bindingSignatures.length).to.equal(1);
+      expect(privateKey.subkeys[0].bindingSignatures.length).to.equal(1);
     });
 
     it('read[Private]Key[s] reject key with unknown subkey with `ignoreUnsupportedPackets: false`', async function() {
