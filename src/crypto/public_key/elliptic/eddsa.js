@@ -163,7 +163,6 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
  * @param {module:enums.publicKey} algo - Algorithm identifier
  * @param {Uint8Array} A - EdDSA public point
  * @param {Uint8Array} seed - EdDSA secret seed
- * @param {Uint8Array} oid - (legacy only) EdDSA OID
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */

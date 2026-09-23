@@ -58,7 +58,7 @@ class Subkey {
    * @param  {PublicSubkeyPacket|
    *          SecretSubkeyPacket|
    *          PublicKeyPacket|
-   *          SecretKeyPacket} key, optional The key to verify the signature
+   *          SecretKeyPacket} [key] optional key to verify the signature
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>} True if the binding signature is revoked.

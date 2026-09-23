@@ -319,15 +319,14 @@ const util = {
   },
 
   /**
-   * Calculates a 16bit sum of a Uint8Array by adding each character
-   * codes modulus 65535
-   * @param {Uint8Array} Uint8Array - To create a sum of
-   * @returns {Uint8Array} 2 bytes containing the sum of all charcodes % 65535.
+   * Calculates a 16bit sum of a Uint8Array by adding each byte modulus 65535
+   * @param {Uint8Array} input - To create a sum of
+   * @returns {Uint8Array} 2 bytes containing the sum of all bytes % 65535.
    */
-  writeChecksum: function (text) {
+  writeChecksum: function (input) {
     let s = 0;
-    for (let i = 0; i < text.length; i++) {
-      s = (s + text[i]) & 0xFFFF;
+    for (let i = 0; i < input.length; i++) {
+      s = (s + input[i]) & 0xFFFF;
     }
     return util.writeNumber(s, 2);
   },
@@ -346,7 +345,7 @@ const util = {
   /**
    * Helper function to print a debug error. Debug
    * messages are only printed if
-   * @param {String} str - String of the debug message
+   * @param {String} error - String of the debug message
    */
   printDebugError: function (error) {
     if (debugMode) {

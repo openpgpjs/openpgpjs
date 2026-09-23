@@ -74,9 +74,9 @@ class PrivateKey extends PublicKey {
   /**
    * Returns all keys that are available for decryption, matching the keyID when given
    * This is useful to retrieve keys for session key decryption
-   * @param  {module:type/keyid~KeyID} keyID, optional
-   * @param  {Date}              date, optional
-   * @param  {String}            userID, optional
+   * @param  {module:type/keyid~KeyID} keyID optional
+   * @param  {Date}              date optional
+   * @param  {String}            userID optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<Key|Subkey>>} Array of decryption keys.
    * @throws {Error} if no decryption key is found
@@ -221,6 +221,7 @@ class PrivateKey extends PublicKey {
    * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
    * Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519.
    * Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
+   * @param {Object} options
    * @param {ecc|rsa|curve25519|curve448} options.type The subkey algorithm: ECC, RSA, Curve448 or Curve25519 (new format).
    *                                                   Note: Curve448 and Curve25519 are not widely supported yet.
    * @param {String}  options.curve      (optional) Elliptic curve for ECC keys

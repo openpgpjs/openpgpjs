@@ -35,6 +35,7 @@ import util from '../../util.js';
  */
 class GenericS2K {
   /**
+   * @param {enums.s2k} s2kType
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(s2kType, config = defaultConfig) {

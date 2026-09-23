@@ -153,7 +153,7 @@ export async function encrypt(algo, data, recipientA) {
  *
  * @param {module:enums.publicKey} algo - Algorithm identifier
  * @param {Uint8Array} ephemeralPublicKey - (K_A)
- * @param {Uint8Array} wrappedKey,
+ * @param {Uint8Array} wrappedKey
  * @param {Uint8Array} A - Recipient public key (K_b), needed for KDF
  * @param {Uint8Array} k - Recipient secret key (b)
  * @returns {Promise<Uint8Array>} decrypted session key data

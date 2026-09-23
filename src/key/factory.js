@@ -51,7 +51,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
 
 /**
  * Creates a PublicKey or PrivateKey depending on the packetlist in input
- * @param {PacketList} - packets to parse
+ * @param {PacketList} packetlist - packets to parse
  * @return {Key} parsed key
  * @throws if no key packet was found
  */
@@ -71,6 +71,7 @@ function createKey(packetlist) {
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519 keys.
  * By default, primary and subkeys will be of same type.
+ * @param {Object} options
  * @param {ecc|rsa|curve448|curve25519} options.type                  The primary key algorithm type: ECC, RSA, Curve448 or Curve25519 (new format).
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
@@ -78,10 +79,10 @@ function createKey(packetlist) {
  * @param {String}  options.passphrase            Passphrase used to encrypt the resulting private key
  * @param {Number}  options.keyExpirationTime     (optional) Number of seconds from the key creation time after which the key expires
  * @param {Date}    options.date                  Creation date of the key and the key signatures
- * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ * @param {Object} config - Full configuration
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Promise<{{ key: PrivateKey, revocationCertificate: String }}>}
+ * @returns {Promise<{ key: PrivateKey, revocationCertificate: String }>}
  * @async
  * @static
  * @private
@@ -102,6 +103,7 @@ export async function generate(options, config) {
 
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
+ * @param {Object} options
  * @param {PrivateKey} options.privateKey         The private key to reformat
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key

@@ -23,7 +23,8 @@ export default defineConfig(
         'tags': {
           'access': { 'initialCommentsOnly': true, 'mustExist': true }
         }
-      }]
+      }],
+      'jsdoc/check-param-names': 'error'
     }
   },
   {

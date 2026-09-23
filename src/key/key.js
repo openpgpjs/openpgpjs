@@ -369,10 +369,7 @@ class Key {
   /**
    * Checks if a signature on a key is revoked
    * @param {SignaturePacket} signature - The signature to verify
-   * @param  {PublicSubkeyPacket|
-   *          SecretSubkeyPacket|
-   *          PublicKeyPacket|
-   *          SecretKeyPacket} key, optional The key to verify the signature
+   * @param {PublicSubkeyPacket|SecretSubkeyPacket|PublicKeyPacket|SecretKeyPacket} [key] - Optional key to verify the signature
    * @param {Date} [date] - Use the given date for verification, instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>} True if the certificate is revoked.

@@ -111,7 +111,8 @@ export function supportsStreaming(tag) {
 /**
  * Generic static Packet Parser function
  *
- * @param {Uint8Array | ReadableStream<Uint8Array>} input - Input stream as string
+ * @param {Object} reader - Input stream reader
+ * @param {String} useStreamType
  * @param {Function} callback - Function to call with the parsed packet
  * @returns {Promise<Boolean>} Returns false if the stream was empty and parsing is done, and true otherwise.
  */
