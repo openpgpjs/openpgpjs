@@ -14,6 +14,7 @@ import * as random from '../../src/crypto/random.js';
 import * as input from './testInputs.js';
 import { mockCryptoRandomGenerator, restoreCryptoRandomGenerator } from '../mockRandom.ts';
 import { MessageGrammarValidator } from '../../src/packet/grammar.ts';
+import { readPacket } from '../../src/packet/packet.js';
 
 function stringify(array) {
   if (stream.isStream(array)) {
@@ -1229,6 +1230,56 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     });
   });
 
+  describe('readPacket: four-octet body lengths >= 2GiB', () => {
+    async function consumeDeclaredBodyLength(packetHeader) {
+      function makeDummyBodyReader(header) {
+        // Dummy chunk returned on every read(), until the full packet
+        // length (from the input `packetHeader`) has been consumed.
+        // This avoids allocating the whole packet.
+        // Chunk size is only relevant to limit the number of `read()` calls needed
+        const dummyBodyChunk = new Uint8Array(10_000_000);
+        let pos = 0;
+        return {
+          // eslint-disable-next-line @typescript-eslint/require-await
+          peekBytes: async n => header.subarray(pos, pos + n),
+          // eslint-disable-next-line @typescript-eslint/require-await
+          readByte: async () => header[pos++],
+          // eslint-disable-next-line @typescript-eslint/require-await
+          readBytes: async n => {
+            const b = header.subarray(pos, pos + n);
+            pos += n;
+            return b;
+          },
+          // eslint-disable-next-line @typescript-eslint/require-await
+          read: async () => ({ done: false, value: dummyBodyChunk }),
+          unshift() {} // unused in this context
+        };
+      }
+      let readBodyBytes = 0;
+      await readPacket(makeDummyBodyReader(packetHeader), 'web', async ({ packet: parsedPacket }) => {
+        const r = stream.getReader(parsedPacket);
+        while (true) {
+          const { done, value } = await r.read();
+          if (done) break;
+          readBodyBytes += value.length;
+        }
+      });
+      return readBodyBytes;
+    }
+
+    it('old format, four-octet length', async () => {
+      const tag = openpgp.enums.packet.literalData;
+      const header = util.concatUint8Array([new Uint8Array([0x80 | (tag << 2) | 2]), util.writeNumber(0x80000000, 4)]);
+      expect(await consumeDeclaredBodyLength(header)).to.equal(0x80000000);
+    });
+
+    it('new format, five-octet length', async () => {
+      const tag = openpgp.enums.packet.literalData;
+      const header = util.concatUint8Array([new Uint8Array([0xC0 | tag, 255]), util.writeNumber(0x80000000, 4)]);
+      expect(await consumeDeclaredBodyLength(header)).to.equal(0x80000000);
+    });
+  });
+
   describe('PacketList parsing', function () {
     it('Ignores unknown packet version with `config.ignoreUnsupportedPackets` enabled', async function() {
       const armoredSignature = `-----BEGIN PGP SIGNATURE-----
@@ -1375,33 +1426,6 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       const otherPackets = await stream.readToEnd(parsed.stream, _ => _);
       expect(otherPackets.length).to.equal(1);
       expect(otherPackets[0].constructor.tag).to.equal(openpgp.enums.packet.userID);
-    });
-
-    it('Parses four-octet packet lengths of 2**31 and above', async function () {
-      // Literal Data body: format 'b', zero-length filename, zeroed date, payload 'AA'.
-      const literalDataBody = util.hexToUint8Array('6200000000004141');
-      // Old format, length type 2 (four-octet length), and new format, five-octet length.
-      const oldFormatHeader = declaredLength => util.concatUint8Array([
-        new Uint8Array([0x80 | (openpgp.enums.packet.literalData << 2) | 2]),
-        util.writeNumber(declaredLength, 4)
-      ]);
-      const newFormatHeader = declaredLength => util.concatUint8Array([
-        new Uint8Array([0xC0 | openpgp.enums.packet.literalData, 255]),
-        util.writeNumber(declaredLength, 4)
-      ]);
-
-      // Each packet declares far more bytes than actually follow, so truncation is the only
-      // correct outcome. Reaching it proves the declared length was parsed as a large positive
-      // number: when it was parsed as negative, the body was skipped instead, and an unrelated
-      // TypeError ('Cannot read properties of undefined') surfaced.
-      for (const buildHeader of [oldFormatHeader, newFormatHeader]) {
-        for (const declaredLength of [0x7fffffff, 0x80000000, 0xffffffff]) {
-          const bytes = util.concatUint8Array([buildHeader(declaredLength), literalDataBody]);
-          await expect(
-            openpgp.PacketList.fromBinary(bytes, allAllowedPackets)
-          ).to.be.rejectedWith(/Unexpected end of packet/);
-        }
-      }
     });
 
     describe('Grammar validation', () => {
