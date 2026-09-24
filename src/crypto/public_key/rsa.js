@@ -25,7 +25,7 @@ import util from '../../util.js';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64.js';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1.js';
 import enums from '../../enums.ts';
-import { bigIntToNumber, bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
+import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
 import { getHashByteLength } from '../hash/index.js';
 
 const webCrypto = util.getWebCrypto();
@@ -55,14 +55,11 @@ export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
   }
 
   if (data && !util.isStream(data)) {
-    if (util.getWebCrypto()) {
-      try {
-        return await webSign(enums.read(enums.webHash, hashAlgo), data, n, e, d, p, q, u);
-      } catch (err) {
-        util.printDebugError(err);
-      }
-    } else if (util.getNodeCrypto()) {
-      return nodeSign(hashAlgo, data, n, e, d, p, q, u);
+    try {
+      return await webSign(enums.read(enums.webHash, hashAlgo), data, n, e, d, p, q, u);
+    } catch (err) {
+      util.printDebugError(err);
+      return bnSign(hashAlgo, n, d, hashed);
     }
   }
   return bnSign(hashAlgo, n, d, hashed);
@@ -81,14 +78,11 @@ export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
  */
 export async function verify(hashAlgo, data, s, n, e, hashed) {
   if (data && !util.isStream(data)) {
-    if (util.getWebCrypto()) {
-      try {
-        return await webVerify(enums.read(enums.webHash, hashAlgo), data, s, n, e);
-      } catch (err) {
-        util.printDebugError(err);
-      }
-    } else if (util.getNodeCrypto()) {
-      return nodeVerify(hashAlgo, data, s, n, e);
+    try {
+      return await webVerify(enums.read(enums.webHash, hashAlgo), data, s, n, e);
+    } catch (err) {
+      util.printDebugError(err);
+      return bnVerify(hashAlgo, s, n, e, hashed);
     }
   }
   return bnVerify(hashAlgo, s, n, e, hashed);
@@ -127,25 +121,14 @@ export async function encrypt(data, n, e) {
  */
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
-  // Node v18.19.1, 20.11.1 and 21.6.2 (and above) have disabled support for PKCS#1 decryption,
-  // and we want to avoid checking the error type to decide if the random payload
-  // should indeed be returned.
-  if (util.getNodeCrypto() && !randomPayload) {
-    try {
-      return nodeDecrypt(data, n, e, d, p, q, u);
-    } catch (err) {
-      util.printDebugError(err);
-    }
-  }
+  // Node v22+ no longer supports native NodeCrypto PKCS#1 decryption
   return bnDecrypt(data, n, e, d, p, q, u, randomPayload);
 }
 
 /**
  * Generate a new random private key B bits long with public exponent E.
  *
- * When possible, webCrypto or nodeCrypto is used. Otherwise, primes are generated using
- * 40 rounds of the Miller-Rabin probabilistic random prime generation algorithm.
- * @see module:crypto/public_key/prime
+ * Key generation is only supported via WebCrypto API.
  * @param {Integer} bits - RSA bit length
  * @param {Integer} e - RSA public exponent
  * @returns {Promise<{n, e, d,
@@ -157,41 +140,21 @@ export async function generate(bits, e) {
   e = BigInt(e);
 
   // Native RSA keygen using Web Crypto
-  if (util.getWebCrypto()) {
-    const keyGenOpt = {
-      name: 'RSASSA-PKCS1-v1_5',
-      modulusLength: bits, // the specified keysize in bits
-      publicExponent: bigIntToUint8Array(e), // take three bytes (max 65537) for exponent
-      hash: {
-        name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
-      }
-    };
-    const keyPair = await webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
+  const keyGenOpt = {
+    name: 'RSASSA-PKCS1-v1_5',
+    modulusLength: bits, // the specified keysize in bits
+    publicExponent: bigIntToUint8Array(e), // take three bytes (max 65537) for exponent
+    hash: {
+      name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
+    }
+  };
+  const keyPair = await webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
 
-    // export the generated keys as JsonWebKey (JWK)
-    // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-    const jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
-    // map JWK parameters to corresponding OpenPGP names
-    return jwkToPrivate(jwk, e);
-  } else if (util.getNodeCrypto()) {
-    const opts = {
-      modulusLength: bits,
-      publicExponent: bigIntToNumber(e),
-      publicKeyEncoding: { type: 'pkcs1', format: 'jwk' },
-      privateKeyEncoding: { type: 'pkcs1', format: 'jwk' }
-    };
-    const jwk = await new Promise((resolve, reject) => {
-      nodeCrypto.generateKeyPair('rsa', opts, (err, _, jwkPrivateKey) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(jwkPrivateKey);
-        }
-      });
-    });
-    return jwkToPrivate(jwk, e);
-  }
-  throw new Error('Web Crypto or Node Crypto support is required for RSA key generation')
+  // export the generated keys as JsonWebKey (JWK)
+  // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
+  const jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
+  // map JWK parameters to corresponding OpenPGP names
+  return jwkToPrivate(jwk, e);
 }
 
 /**
@@ -268,15 +231,6 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
   return new Uint8Array(await webCrypto.sign('RSASSA-PKCS1-v1_5', key, data));
 }
 
-function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
-  const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
-  sign.write(data);
-  sign.end();
-
-  const jwk = privateToJWK(n, e, d, p, q, u);
-  return new Uint8Array(sign.sign({ key: jwk, format: 'jwk', type: 'pkcs1' }));
-}
-
 function bnVerify(hashAlgo, s, n, e, hashed) {
   n = uint8ArrayToBigInt(n);
   s = uint8ArrayToBigInt(s);
@@ -298,21 +252,6 @@ async function webVerify(hashName, data, s, n, e) {
   return webCrypto.verify('RSASSA-PKCS1-v1_5', key, s, data);
 }
 
-function nodeVerify(hashAlgo, data, s, n, e) {
-  const jwk = publicToJWK(n, e);
-  const key = { key: jwk, format: 'jwk', type: 'pkcs1' };
-
-  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
-  verify.write(data);
-  verify.end();
-
-  try {
-    return verify.verify(key, s);
-  } catch {
-    return false;
-  }
-}
-
 function nodeEncrypt(data, n, e) {
   const jwk = publicToJWK(n, e);
   const key = { key: jwk, format: 'jwk', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
@@ -328,17 +267,6 @@ function bnEncrypt(data, n, e) {
     throw new Error('Message size cannot exceed modulus size');
   }
   return bigIntToUint8Array(modExp(data, e, n), 'be', byteLength(n));
-}
-
-function nodeDecrypt(data, n, e, d, p, q, u) {
-  const jwk = privateToJWK(n, e, d, p, q, u);
-  const key = { key: jwk, format: 'jwk' , type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
-
-  try {
-    return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
-  } catch {
-    throw new Error('Decryption error');
-  }
 }
 
 function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {

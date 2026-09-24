@@ -23,9 +23,6 @@
  * @access private
  */
 import { byteLength, mod, uint8ArrayToBigInt } from './biginteger.ts';
-import util from '../util.js';
-
-const nodeCrypto = util.getNodeCrypto();
 
 /**
  * Retrieve secure random byte array of the specified length
@@ -33,10 +30,9 @@ const nodeCrypto = util.getNodeCrypto();
  * @returns {Uint8Array} Random byte array.
  */
 export function getRandomBytes(length) {
-  const webcrypto = typeof crypto !== 'undefined' ? crypto : nodeCrypto?.webcrypto;
-  if (webcrypto?.getRandomValues) {
+  if (crypto?.getRandomValues) {
     const buf = new Uint8Array(length);
-    return webcrypto.getRandomValues(buf);
+    return crypto.getRandomValues(buf);
   } else {
     throw new Error('No secure random number generator available.');
   }

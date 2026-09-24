@@ -7,10 +7,9 @@ import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto/index.js';
 import util from '../../src/util.js';
 
-export default () => describe('Symmetric AES-GCM (experimental)', function() {
+export default () => describe('Symmetric AES-GCM', function() {
   let sinonSandbox;
   let getWebCryptoStub;
-  let getNodeCryptoStub;
 
   beforeEach(function () {
     sinonSandbox = sinon.createSandbox();
@@ -23,13 +22,12 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
 
   const disableNative = () => {
     enableNative();
-    // stubbed functions return undefined
-    getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto').returns({
+      importKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; }
+    });
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
-    getNodeCryptoStub && getNodeCryptoStub.restore();
   };
 
   function testAESGCM(plaintext, nativeEncrypt, nativeDecrypt) {
@@ -38,15 +36,14 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
     );
     aesAlgoNames.forEach(function(algoName) {
       it(algoName, async function() {
-        const nodeCrypto = util.getNodeCrypto();
         const webCrypto = util.getWebCrypto();
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const key = crypto.generateSessionKey(algo);
         const gcmMode = crypto.cipherMode.getAEADMode(openpgp.enums.aead.gcm);
         const iv = crypto.getRandomBytes(gcmMode.ivLength);
 
-        const nativeEncryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createCipheriv') : sinonSandbox.spy(webCrypto, 'encrypt');
-        const nativeDecryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createDecipheriv') : sinonSandbox.spy(webCrypto, 'decrypt');
+        const nativeEncryptSpy = sinonSandbox.spy(webCrypto, 'encrypt');
+        const nativeDecryptSpy = sinonSandbox.spy(webCrypto, 'decrypt');
 
         nativeEncrypt || disableNative();
         let modeInstance = await gcmMode(algo, key);

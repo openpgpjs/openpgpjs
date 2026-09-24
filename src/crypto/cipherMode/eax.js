@@ -28,8 +28,6 @@ import util from '../../util.js';
 import enums from '../../enums.ts';
 
 const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 
 const blockLength = 16;
@@ -48,36 +46,24 @@ async function OMAC(key) {
 }
 
 async function CTR(key) {
-  if (util.getNodeCrypto()) { // Node crypto library
-    // eslint-disable-next-line @typescript-eslint/require-await
+  try {
+    const keyRef = await webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
     return async function(pt, iv) {
-      const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-ctr', key, iv);
-      const ct = Buffer.concat([en.update(pt), en.final()]);
+      const ct = await webCrypto.encrypt({ name: 'AES-CTR', counter: iv, length: blockLength * 8 }, keyRef, pt);
       return new Uint8Array(ct);
     };
-  }
-
-  if (util.getWebCrypto()) {
-    try {
-      const keyRef = await webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
-      return async function(pt, iv) {
-        const ct = await webCrypto.encrypt({ name: 'AES-CTR', counter: iv, length: blockLength * 8 }, keyRef, pt);
-        return new Uint8Array(ct);
-      };
-    } catch (err) {
-      // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-      if (err.name !== 'NotSupportedError' &&
-        !(key.length === 24 && err.name === 'OperationError')) {
-        throw err;
-      }
-      util.printDebugError('Browser did not support operation: ' + err.message);
+  } catch (err) {
+    // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    if (err.name !== 'NotSupportedError' &&
+      !(key.length === 24 && err.name === 'OperationError')) {
+      throw err;
     }
+    util.printDebugError('Browser did not support operation: ' + err.message);
+    // eslint-disable-next-line @typescript-eslint/require-await
+    return async function(pt, iv) {
+      return nobleAesCtr(key, iv).encrypt(pt);
+    };
   }
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  return async function(pt, iv) {
-    return nobleAesCtr(key, iv).encrypt(pt);
-  };
 }
 
 

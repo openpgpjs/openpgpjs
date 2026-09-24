@@ -25,6 +25,8 @@ import { cbc as nobleAesCbc } from '@noble/ciphers/aes.js';
 import { getCipherParams } from '../cipher/index.js';
 import util from '../../util.js';
 
+const nodeCrypto = util.getNodeCrypto();
+
 const blockLength = 16;
 const ivLength = 15;
 
@@ -68,6 +70,33 @@ async function OCB(cipher, key) {
   // sanity checks
   if (!util.isAES(cipher) || key.length !== keySize) {
     throw new Error('Unexpected algorithm or key size');
+  }
+
+  if (util.getNodeCrypto()) { // Node crypto library, using native OCB (WebCrypto does not support it)
+    const Buffer = util.getNodeBuffer();
+    return {
+      // eslint-disable-next-line @typescript-eslint/require-await
+      encrypt: async function(plaintext, nonce, adata = new Uint8Array()) {
+        const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-ocb', key, nonce, { authTagLength: tagLength });
+        en.setAAD(adata);
+        const ct = Buffer.concat([en.update(plaintext), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
+        return new Uint8Array(ct);
+      },
+
+      // eslint-disable-next-line @typescript-eslint/require-await
+      decrypt: async function(ciphertext, nonce, adata = new Uint8Array()) {
+        if (ciphertext.length < tagLength) throw new Error('Invalid OCB ciphertext');
+        const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-ocb', key, nonce, { authTagLength: tagLength });
+        de.setAAD(adata);
+        de.setAuthTag(ciphertext.slice(ciphertext.length - tagLength, ciphertext.length)); // read auth tag at end of ciphertext
+        try {
+          const pt = Buffer.concat([de.update(ciphertext.slice(0, ciphertext.length - tagLength)), de.final()]);
+          return new Uint8Array(pt);
+        } catch {
+          throw new Error('Authentication tag mismatch');
+        }
+      }
+    };
   }
 
   let maxNtz = 0;
