@@ -118,7 +118,7 @@ jobs:
         if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
         run: |
           npx playwright install --with-deps chromium --only-shell
-          npx playwright install --with-deps firefox-beta
+          npx playwright install --with-deps firefox
 
       - name: Install WebKit # caching not possible, external shared libraries required
         if: ${{ matrix.runner != 'windows-latest' }}
