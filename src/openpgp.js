@@ -22,7 +22,7 @@ import { CleartextMessage } from './cleartext.js';
 import { generate, reformat, getPreferredCompressionAlgo } from './key/index.js';
 import defaultConfig from './config.ts';
 import util from './util.js';
-import { checkKeyRequirements } from './key/helper.js';
+import { checkKeyRequirements, isPublicOrDummyKeyPacket } from './key/helper.js';
 
 
 //////////////////////
@@ -193,10 +193,13 @@ export async function decryptKey({ privateKey, passphrase, config, ...rest }) {
   const passphrases = util.isArray(passphrase) ? passphrase : [passphrase];
 
   try {
-    await Promise.all(clonedPrivateKey.getKeys().map(key => (
+    await Promise.all(clonedPrivateKey.getKeys().map(key => {
+      if (isPublicOrDummyKeyPacket(key.keyPacket)) {
+        return;
+      }
       // try to decrypt each key with any of the given passphrases
-      util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase, config)))
-    )));
+      return util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase, config)));
+    }));
 
     await clonedPrivateKey.validate(config);
     return clonedPrivateKey;
@@ -234,6 +237,9 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
   try {
     await Promise.all(keys.map(async (key, i) => {
       const { keyPacket } = key;
+      if (isPublicOrDummyKeyPacket(keyPacket)) {
+        return;
+      }
       await keyPacket.encrypt(passphrases[i], config);
       keyPacket.clearPrivateParams();
     }));
