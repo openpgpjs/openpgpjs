@@ -4,7 +4,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import-x/n
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import util from '../../src/util.js';
+import { cryptoProviders, removeTrailingSpaces } from '../../src/util.ts';
 
 import * as input from './testInputs.js';
 
@@ -13,7 +13,7 @@ export default () => (openpgp.config.ci ? describe.skip : describe)('Brainpool C
   let rejectCurvesVal;
   before(() => {
     //only x25519 crypto is fully functional in lightbuild
-    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !cryptoProviders.getNodeCrypto()) {
       this.skip(); // eslint-disable-line no-invalid-this
     }
   });
@@ -283,7 +283,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   });
 
   tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
-    if: openpgp.config.useEllipticFallback || util.getNodeCrypto()
+    if: openpgp.config.useEllipticFallback || cryptoProviders.getNodeCrypto()
   });
 });
 
@@ -306,7 +306,7 @@ function omnibus() {
       }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
       // Verifying detached signature
       await openpgp.verify({
-        message: await openpgp.createMessage({ text: util.removeTrailingSpaces(testData) }),
+        message: await openpgp.createMessage({ text: removeTrailingSpaces(testData) }),
         verificationKeys: pubHi,
         signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
       }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);

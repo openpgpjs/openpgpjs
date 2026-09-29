@@ -8,7 +8,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 import keyIDType from '../../src/type/keyid.js';
 import { getPreferredCipherSuite } from '../../src/key/index.js';
 
@@ -4298,7 +4298,7 @@ XfA3pqV4mTzF
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
-          expect(literals[0].format).to.equal(openpgp.enums.literal.binary);
+          expect(literals[0].format).to.equal(openpgp.enums.literalFormat.binary);
           expect(+literals[0].date).to.equal(+future);
           const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
           expect(await stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
@@ -4327,7 +4327,7 @@ XfA3pqV4mTzF
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
-          expect(literals[0].format).to.equal(openpgp.enums.literal.mime);
+          expect(literals[0].format).to.equal(openpgp.enums.literalFormat.mime);
           expect(+literals[0].date).to.equal(+future);
           const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
           expect(await stream.readToEnd(message.getLiteralData())).to.deep.equal(data);

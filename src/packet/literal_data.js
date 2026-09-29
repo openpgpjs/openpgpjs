@@ -19,7 +19,7 @@
 
 import { isArrayStream, passiveClone as streamPassiveClone, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 
 /**
  * Implementation of the Literal Data Packet (Tag 11)
@@ -37,7 +37,7 @@ class LiteralDataPacket {
    * @param {Date} date - The creation date of the literal package
    */
   constructor(date = new Date()) {
-    this.format = enums.literal.utf8; // default format for literal data packets
+    this.format = enums.literalFormat.utf8; // default format for literal data packets
     this.date = util.normalizeDate(date);
     this.text = null; // textual data representation
     this.data = null; // literal data representation
@@ -48,9 +48,9 @@ class LiteralDataPacket {
    * Set the packet data to a javascript native string, end of line
    * will be normalized to \r\n and by default text is converted to UTF8
    * @param {String | ReadableStream<String>} text - Any native javascript string
-   * @param {enums.literal} [format] - The format of the string of bytes
+   * @param {enums.literalFormat} [format] - The format of the string of bytes
    */
-  setText(text, format = enums.literal.utf8) {
+  setText(text, format = enums.literalFormat.utf8) {
     this.format = format;
     this.text = text;
     this.data = null;
@@ -72,7 +72,7 @@ class LiteralDataPacket {
   /**
    * Set the packet data to value represented by the provided string of bytes.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - The string of bytes
-   * @param {enums.literal} format - The format of the string of bytes
+   * @param {enums.literalFormat} format - The format of the string of bytes
    */
   setBytes(bytes, format) {
     this.format = format;
@@ -125,7 +125,7 @@ class LiteralDataPacket {
   async read(bytes) {
     await streamParse(bytes, async reader => {
       // - A one-octet field that describes how the data is formatted.
-      const format = await reader.readByte(); // enums.literal
+      const format = await reader.readByte(); // enums.literalFormat
 
       const filename_len = await reader.readByte();
       this.filename = util.decodeUTF8(await reader.readBytes(filename_len));

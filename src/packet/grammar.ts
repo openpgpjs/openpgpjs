@@ -1,5 +1,5 @@
 /** @access private */
-import enums from '../enums.ts';
+import enums, { type Enums } from '../enums.ts';
 
 export class GrammarError extends Error {
   constructor(...params: any[]) {
@@ -43,7 +43,7 @@ export class MessageGrammarValidator {
    * @param additionalAllowedPackets - object containing packets which are allowed anywhere in the sequence, except they cannot precede a OPS packet
    * @throws {GrammarError} on invalid `packet` input
    */
-  recordPacket(packet: enums.packet, additionalAllowedPackets?: { [key in enums.packet]: any }) {
+  recordPacket(packet: Enums['packet'], additionalAllowedPackets?: { [key in Enums['packet']]: any }) {
     switch (this.state) {
       case MessageType.EmptyMessage:
       case MessageType.StandaloneAdditionalAllowedData:

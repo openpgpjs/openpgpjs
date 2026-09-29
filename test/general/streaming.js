@@ -7,7 +7,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import * as random from '../../src/crypto/random.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 import * as input from './testInputs.js';
 
@@ -933,7 +933,7 @@ function tests() {
       if (typeof navigator !== 'undefined') {
         Object.defineProperty(navigator, 'hardwareConcurrency', { value: 1, configurable: true });
       } else {
-        coresStub = sinon.stub(util.nodeRequire('os'), 'cpus');
+        coresStub = sinon.stub(util.cryptoProviders.nodeRequire('os'), 'cpus');
         coresStub.returns(new Array(2));
       }
 

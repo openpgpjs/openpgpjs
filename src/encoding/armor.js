@@ -20,7 +20,7 @@
 import { transform as streamTransform, transformPair as streamTransformPair, getReader as streamGetReader, getWriter as streamGetWriter, isArrayStream, readToEnd as streamReadToEnd, passiveClone as streamPassiveClone } from '@openpgp/web-stream-tools';
 import { encode as encodeBase64, decode as decodeBase64 } from './base64.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import { concat as streamConcat, printDebugError, removeTrailingSpaces } from '../util.ts';
 import defaultConfig from '../config.ts';
 
 /**
@@ -193,10 +193,10 @@ function createcrc24(input) {
 function verifyHeaders(headers) {
   for (let i = 0; i < headers.length; i++) {
     if (!/^([^\s:]|[^\s:][^:]*[^\s:]): .+$/.test(headers[i])) {
-      util.printDebugError(new Error('Improperly formatted armor header: ' + headers[i]));
+      printDebugError(new Error('Improperly formatted armor header: ' + headers[i]));
     }
     if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
-      util.printDebugError(new Error('Unknown header: ' + headers[i]));
+      printDebugError(new Error('Unknown header: ' + headers[i]));
     }
   }
 }
@@ -249,7 +249,7 @@ export function unarmor(input) {
               throw new Error('Misformed armored text');
             }
             // remove trailing whitespace at end of lines
-            line = util.removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
+            line = removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -300,7 +300,7 @@ export function unarmor(input) {
               let remainder = await reader.readToEnd();
               if (!remainder.length) remainder = '';
               remainder = line + remainder;
-              remainder = util.removeTrailingSpaces(remainder.replace(/\r/g, ''));
+              remainder = removeTrailingSpaces(remainder.replace(/\r/g, ''));
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
@@ -409,5 +409,5 @@ export function armor(messageType, body, partIndex, partTotal, customComment, em
       break;
   }
 
-  return util.concat(result);
+  return streamConcat(result);
 }

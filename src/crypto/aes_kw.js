@@ -24,9 +24,9 @@
 
 import { aeskw as nobleAesKW } from '@noble/ciphers/aes.js';
 import { getCipherParams } from './cipher/index.js';
-import util from '../util.js';
+import { isAES, printDebugError, cryptoProviders } from '../util.ts';
 
-const webCrypto = util.getWebCrypto();
+const webCrypto = cryptoProviders.getWebCrypto();
 /**
  * AES key wrap
  * @param {enums.symmetric.aes128|enums.symmetric.aes256|enums.symmetric.aes192} algo - AES algo
@@ -37,7 +37,7 @@ const webCrypto = util.getWebCrypto();
 export async function wrap(algo, key, dataToWrap) {
   const { keySize } = getCipherParams(algo);
   // sanity checks, since WebCrypto does not use the `algo` input
-  if (!util.isAES(algo) || key.length !== keySize) {
+  if (!isAES(algo) || key.length !== keySize) {
     throw new Error('Unexpected algorithm or key size');
   }
 
@@ -53,7 +53,7 @@ export async function wrap(algo, key, dataToWrap) {
       !(key.length === 24 && err.name === 'OperationError')) {
       throw err;
     }
-    util.printDebugError('Browser did not support operation: ' + err.message);
+    printDebugError('Browser did not support operation: ' + err.message);
   }
 
   return nobleAesKW(key).encrypt(dataToWrap);
@@ -69,7 +69,7 @@ export async function wrap(algo, key, dataToWrap) {
 export async function unwrap(algo, key, wrappedData) {
   const { keySize } = getCipherParams(algo);
   // sanity checks, since WebCrypto does not use the `algo` input
-  if (!util.isAES(algo) || key.length !== keySize) {
+  if (!isAES(algo) || key.length !== keySize) {
     throw new Error('Unexpected algorithm or key size');
   }
 
@@ -82,7 +82,7 @@ export async function unwrap(algo, key, wrappedData) {
       !(key.length === 24 && err.name === 'OperationError')) {
       throw err;
     }
-    util.printDebugError('Browser did not support operation: ' + err.message);
+    printDebugError('Browser did not support operation: ' + err.message);
     return nobleAesKW(key).decrypt(wrappedData);
   }
 

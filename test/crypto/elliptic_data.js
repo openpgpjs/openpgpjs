@@ -1,4 +1,4 @@
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 const elliptic_data = {
   key_data: {

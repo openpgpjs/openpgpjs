@@ -6,10 +6,10 @@
  */
 
 import { cbc as nobleAesCbc } from '@noble/ciphers/aes.js';
-import util from '../util.js';
+import { cryptoProviders, double, printDebugError } from '../util.ts';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = cryptoProviders.getWebCrypto();
+const nodeCrypto = cryptoProviders.getNodeCrypto();
 
 
 /**
@@ -63,8 +63,8 @@ export default async function CMAC(key) {
   const cbc = await CBC(key);
 
   // L ← E_K(0^n); B ← 2L; P ← 4L
-  const padding = util.double(await cbc(zeroBlock));
-  const padding2 = util.double(padding);
+  const padding = double(await cbc(zeroBlock));
+  const padding2 = double(padding);
 
   return async function(data) {
     // return CBC_K(pad(M; B, P))
@@ -73,7 +73,7 @@ export default async function CMAC(key) {
 }
 
 async function CBC(key) {
-  if (util.getNodeCrypto()) { // Node crypto library
+  if (cryptoProviders.getNodeCrypto()) { // Node crypto library
     // eslint-disable-next-line @typescript-eslint/require-await
     return async function(pt) {
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
@@ -82,7 +82,7 @@ async function CBC(key) {
     };
   }
 
-  if (util.getWebCrypto()) {
+  if (cryptoProviders.getWebCrypto()) {
     try {
       key = await webCrypto.importKey('raw', key, { name: 'AES-CBC', length: key.length * 8 }, false, ['encrypt']);
       return async function(pt) {
@@ -95,7 +95,7 @@ async function CBC(key) {
         !(key.length === 24 && err.name === 'OperationError')) {
         throw err;
       }
-      util.printDebugError('Browser did not support operation: ' + err.message);
+      printDebugError('Browser did not support operation: ' + err.message);
     }
   }
 

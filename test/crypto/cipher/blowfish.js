@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import BF from '../../../src/crypto/cipher/blowfish.js';
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 
 export default () => it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {

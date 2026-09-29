@@ -20,7 +20,7 @@
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
 import { isStream, isArrayStream, toStream, fromAsync as streamFromAsync, transform as streamTransform, parse as streamParse, getReader as streamGetReader, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums.ts';
-import util from '../util.js';
+import { concat as streamConcat, constructAllowedPackets } from '../util.ts';
 import defaultConfig from '../config.ts';
 
 import LiteralDataPacket from './literal_data.js';
@@ -30,7 +30,7 @@ import PacketList from './packetlist.js';
 import { MessageGrammarValidator } from './grammar.ts';
 
 // A Compressed Data packet can contain the following packet types
-const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
+const allowedPackets = /*#__PURE__*/ constructAllowedPackets([
   LiteralDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
@@ -99,7 +99,7 @@ class CompressedDataPacket {
       this.compress();
     }
 
-    return util.concat([new Uint8Array([this.algorithm]), this.compressed]);
+    return streamConcat([new Uint8Array([this.algorithm]), this.compressed]);
   }
 
 

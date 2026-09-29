@@ -9,15 +9,15 @@ import {
   SecretSubkeyPacket,
   SignaturePacket
 } from '../packet/index.js';
-import enums from '../enums.ts';
+import enums, { assertEnum } from '../enums.ts';
 import { getPreferredCurveHashAlgo, getHashByteLength, publicKey } from '../crypto/index.js';
-import util from '../util.js';
+import { equalsUint8Array, isString, normalizeDate, wrapError } from '../util.ts';
 import defaultConfig from '../config.ts';
 
 export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
-  secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
+  secretSubkeyPacket.algorithm = assertEnum(enums.publicKey, options.algorithm);
   await secretSubkeyPacket.generate(options.rsaBits, options.curve);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
@@ -26,7 +26,7 @@ export async function generateSecretSubkey(options, config) {
 export async function generateSecretKey(options, config) {
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
-  secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
+  secretKeyPacket.algorithm = assertEnum(enums.publicKey, options.algorithm);
   await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
@@ -59,7 +59,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
     }
   }
   if (!latestValid) {
-    throw util.wrapError(
+    throw wrapError(
       `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${publicKey.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
         .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase()),
@@ -69,7 +69,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
 }
 
 export function isDataExpired(keyPacket, signature, date = new Date()) {
-  const normDate = util.normalizeDate(date);
+  const normDate = normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getKeyExpirationTime(keyPacket, signature);
     return !(keyPacket.created <= normDate && normDate < expirationTime);
@@ -135,7 +135,7 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
     for (const hashAlgo of supportedAlgos) {
       try {
         // ensure that `hashAlgo` is recognized/implemented by us, otherwise e.g. `getHashByteLength` will throw later on
-        const supportedAlgo = enums.write(enums.hash, hashAlgo);
+        const supportedAlgo = assertEnum(enums.hash, hashAlgo);
         supportedAlgosMap.set(
           supportedAlgo,
           supportedAlgosMap.has(supportedAlgo) ? supportedAlgosMap.get(supportedAlgo) + 1 : 1
@@ -323,7 +323,7 @@ export async function mergeSignatures(source, dest, attr, date = new Date(), che
       await Promise.all(source.map(async function(sourceSig) {
         if (!sourceSig.isExpired(date) && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
-              return util.equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
+              return equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
             })) {
           dest[attr].push(sourceSig);
         }
@@ -409,7 +409,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
-  options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+  options.passphrase = isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
   options.date = options.date || subkeyDefaults.date;
 
   options.sign = options.sign || false;
@@ -529,7 +529,7 @@ export function validateDecryptionKeyPacket(keyPacket, signature, config) {
  * @throws {Error} if the key packet does not meet the requirements
  */
 export function checkKeyRequirements(keyPacket, config) {
-  const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
+  const keyAlgo = assertEnum(enums.publicKey, keyPacket.algorithm);
   const algoInfo = keyPacket.getAlgorithmInfo();
   if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
     throw new Error(`${algoInfo.algorithm} keys are considered too weak.`);

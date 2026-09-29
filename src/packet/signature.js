@@ -22,7 +22,7 @@ import { readSimpleLength, UnsupportedError, writeSimpleLength } from './packet.
 import KeyID from '../type/keyid.js';
 import { signature, serializeParams, getRandomBytes, getHashByteLength, computeDigest } from '../crypto/index.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import defaultConfig from '../config.ts';
 
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.

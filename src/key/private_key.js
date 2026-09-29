@@ -8,7 +8,7 @@ import {
   PublicSubkeyPacket
 } from '../packet/index.js';
 import defaultConfig from '../config.ts';
-import enums from '../enums.ts';
+import enums, { assertEnum } from '../enums.ts';
 import * as helper from './helper.js';
 
 /**
@@ -210,7 +210,7 @@ class PrivateKey extends PublicKey {
     const key = this.clone();
     key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, [], this.keyPacket, {
       signatureType: enums.signature.keyRevocation,
-      reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
+      reasonForRevocationFlag: assertEnum(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
     }, date, undefined, undefined, undefined, config));
     return key;

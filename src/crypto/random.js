@@ -23,9 +23,9 @@
  * @access private
  */
 import { byteLength, mod, uint8ArrayToBigInt } from './biginteger.ts';
-import util from '../util.js';
+import { cryptoProviders } from '../util.ts';
 
-const nodeCrypto = util.getNodeCrypto();
+const nodeCrypto = cryptoProviders.getNodeCrypto();
 
 /**
  * Retrieve secure random byte array of the specified length

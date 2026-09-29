@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import { computeDigest } from '../../../src/crypto/hash/index.js';
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 import enums from '../../../src/enums.ts';
 
 export default () => it('RIPE-MD 160 bits with test vectors from https://homes.esat.kuleuven.be/~bosselae/ripemd160.html', async function() {

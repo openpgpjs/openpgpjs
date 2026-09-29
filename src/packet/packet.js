@@ -23,7 +23,7 @@
 
 import { ArrayStream, getWriter as streamGetWriter } from '@openpgp/web-stream-tools';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 
 export function readSimpleLength(bytes) {
   let len = 0;

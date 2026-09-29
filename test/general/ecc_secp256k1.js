@@ -3,10 +3,10 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import-x/n
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import util from '../../src/util.js';
+import { cryptoProviders } from '../../src/util.ts';
 
 export default () => describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
-  if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
+  if (!openpgp.config.useEllipticFallback && !cryptoProviders.getNodeCrypto()) {
     before(function() {
       this.skip(); // eslint-disable-line no-invalid-this
     });

@@ -21,7 +21,7 @@
  * @access private
  */
 import { getRandomBigInteger } from '../random.js';
-import util from '../../util.js';
+import { printDebug } from '../../util.ts';
 import { isProbablePrime } from './prime.ts';
 import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
 
@@ -116,13 +116,13 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
 
   if (r <= _0n || r >= q ||
       s <= _0n || s >= q) {
-    util.printDebug('invalid DSA Signature');
+    printDebug('invalid DSA Signature');
     return false;
   }
   const h = mod(uint8ArrayToBigInt(hashed.subarray(0, byteLength(q))), q);
   const w = modInv(s, q); // s**-1 mod q
   if (w === _0n) {
-    util.printDebug('invalid DSA Signature');
+    printDebug('invalid DSA Signature');
     return false;
   }
 

@@ -7,7 +7,7 @@
  * @access private
  */
 
-import util from '../util.js';
+import { concatUint8Array, readExactSubarray } from '../util.ts';
 
 class ECDHXSymmetricKey {
   static fromObject({ wrappedKey, algorithm }) {
@@ -28,7 +28,7 @@ class ECDHXSymmetricKey {
     let followLength = bytes[read++];
     this.algorithm = followLength % 2 ? bytes[read++] : null; // session key size is always even
     followLength -= followLength % 2;
-    this.wrappedKey = util.readExactSubarray(bytes, read, read + followLength); read += followLength;
+    this.wrappedKey = readExactSubarray(bytes, read, read + followLength); read += followLength;
   }
 
   /**
@@ -36,7 +36,7 @@ class ECDHXSymmetricKey {
    * @returns  {Uint8Array} Serialised data
    */
   write() {
-    return util.concatUint8Array([
+    return concatUint8Array([
       this.algorithm ?
         new Uint8Array([this.wrappedKey.length + 1, this.algorithm]) :
         new Uint8Array([this.wrappedKey.length]),

@@ -1,7 +1,7 @@
 import type { SinonStub } from 'sinon';
-import util from '../src/util.js';
+import { nodeRequire } from '../src/util.ts';
 
-const webcrypto = typeof crypto !== 'undefined' ? crypto : util.nodeRequire('crypto')?.webcrypto;
+const webcrypto = typeof crypto !== 'undefined' ? crypto : nodeRequire('crypto')?.webcrypto;
 
 type GetRandomValuesFn = typeof crypto.getRandomValues;
 let original: GetRandomValuesFn | null = null;

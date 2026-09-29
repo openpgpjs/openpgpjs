@@ -23,11 +23,11 @@
  */
 
 import { gcm as nobleAesGcm } from '@noble/ciphers/aes.js';
-import util from '../../util.js';
+import * as util from '../../util.ts';
 import enums from '../../enums.ts';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = util.cryptoProviders.getWebCrypto();
+const nodeCrypto = util.cryptoProviders.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
 const blockLength = 16;
@@ -47,7 +47,7 @@ async function GCM(cipher, key) {
     throw new Error('GCM mode supports only AES cipher');
   }
 
-  if (util.getNodeCrypto()) { // Node crypto library
+  if (util.cryptoProviders.getNodeCrypto()) { // Node crypto library
     return {
       // eslint-disable-next-line @typescript-eslint/require-await
       encrypt: async function(pt, iv, adata = new Uint8Array()) {
@@ -68,7 +68,7 @@ async function GCM(cipher, key) {
     };
   }
 
-  if (util.getWebCrypto()) {
+  if (webCrypto) {
     try {
       const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
       return {

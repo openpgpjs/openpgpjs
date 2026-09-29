@@ -30,7 +30,7 @@ import { getCipherParams } from './cipher/index.js';
 import ECDHSymkey from '../type/ecdh_symkey.js';
 import KDFParams from '../type/kdf_params.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import OID from '../type/oid.js';
 import { UnsupportedError } from '../packet/packet.js';
 import ECDHXSymmetricKey from '../type/ecdh_x_symkey.js';

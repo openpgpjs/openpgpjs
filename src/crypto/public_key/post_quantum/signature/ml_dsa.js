@@ -1,7 +1,7 @@
 /** @access private */
 
 import enums from '../../../../enums.ts';
-import util from '../../../../util.js';
+import { equalsUint8Array } from '../../../../util.ts';
 import { getRandomBytes } from '../../../random.js';
 
 export async function generate(algo) {
@@ -64,7 +64,7 @@ export async function validateParams(algo, mldsaPublicKey, mldsaSeed) {
   switch (algo) {
     case enums.publicKey.mldsa65Ed25519: {
       const { mldsaPublicKey: expectedPublicKey } = await expandSecretSeed(algo, mldsaSeed);
-      return util.equalsUint8Array(mldsaPublicKey, expectedPublicKey);
+      return equalsUint8Array(mldsaPublicKey, expectedPublicKey);
     }
     default:
       throw new Error('Unsupported signature algorithm');

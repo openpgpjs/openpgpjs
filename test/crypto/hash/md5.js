@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 import { computeDigest } from '../../../src/crypto/hash/index.js';
 import enums from '../../../src/enums.ts';
 

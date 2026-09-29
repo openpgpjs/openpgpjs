@@ -25,13 +25,13 @@
 import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes.js';
 
 import { transform as streamTransform, transformAsync as streamTransformAsync } from '@openpgp/web-stream-tools';
-import util from '../../util.js';
+import * as util from '../../util.ts';
 import enums from '../../enums.ts';
 import { getLegacyCipher, getCipherParams } from '../cipher/index.js';
 import { getRandomBytes } from '../random.js';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = util.cryptoProviders.getWebCrypto();
+const nodeCrypto = util.cryptoProviders.getNodeCrypto();
 
 const knownAlgos = nodeCrypto ? nodeCrypto.getCiphers() : [];
 const nodeAlgos = {
@@ -69,7 +69,7 @@ export function getPrefixRandom(algo) {
  */
 export async function encrypt(algo, key, plaintext, iv, config) {
   const algoName = enums.read(enums.symmetric, algo);
-  if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
+  if (util.cryptoProviders.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
     return nodeEncrypt(algo, key, plaintext, iv);
   }
   if (util.isAES(algo)) {

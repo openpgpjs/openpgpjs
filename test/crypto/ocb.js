@@ -7,7 +7,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import { cipherMode } from '../../src/crypto/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 export default () => describe('Symmetric AES-OCB', function() {
   it('Passes all test vectors', async function() {

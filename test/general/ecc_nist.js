@@ -4,7 +4,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 
-import util from '../../src/util.js';
+import { removeTrailingSpaces } from '../../src/util.ts';
 
 import * as input from './testInputs.js';
 
@@ -24,7 +24,7 @@ export default () => describe('Elliptic Curve Cryptography for NIST P-256,P-384,
       }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
       // Verifying detached signature
       await openpgp.verify({
-        message: await openpgp.createMessage({ text: util.removeTrailingSpaces(testData) }),
+        message: await openpgp.createMessage({ text: removeTrailingSpaces(testData) }),
         verificationKeys: pubHi,
         signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
       }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);

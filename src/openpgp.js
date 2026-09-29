@@ -21,7 +21,7 @@ import { Message } from './message.js';
 import { CleartextMessage } from './cleartext.js';
 import { generate, reformat, getPreferredCompressionAlgo } from './key/index.js';
 import defaultConfig from './config.ts';
-import util from './util.js';
+import * as util from './util.ts';
 import { checkKeyRequirements } from './key/helper.js';
 
 

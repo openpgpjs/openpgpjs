@@ -17,7 +17,7 @@
  */
 
 import { transform as streamTransform } from '@openpgp/web-stream-tools';
-import util from '../util.js';
+import * as util from '../util.ts';
 
 const Buffer = util.getNodeBuffer();
 

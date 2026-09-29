@@ -23,7 +23,7 @@ import {
 } from '../packet/index.js';
 import defaultConfig from '../config.ts';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import User from './user.js';
 import Subkey from './subkey.js';
 import * as helper from './helper.js';

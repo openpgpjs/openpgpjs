@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import TF from '../../../src/crypto/cipher/twofish.js';
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 
 export default () => it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
   function tfencrypt(block, key) {

@@ -21,15 +21,15 @@
  * @access private
  */
 import { getRandomBigInteger } from '../random.js';
-import util from '../../util.js';
+import * as util from '../../util.ts';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64.js';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1.js';
 import enums from '../../enums.ts';
 import { bigIntToNumber, bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger.ts';
 import { getHashByteLength } from '../hash/index.js';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = util.cryptoProviders.getWebCrypto();
+const nodeCrypto = util.cryptoProviders.getNodeCrypto();
 const _1n = BigInt(1);
 
 /** Create signature
@@ -55,13 +55,13 @@ export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
   }
 
   if (data && !util.isStream(data)) {
-    if (util.getWebCrypto()) {
+    if (util.cryptoProviders.getWebCrypto()) {
       try {
         return await webSign(enums.read(enums.webHash, hashAlgo), data, n, e, d, p, q, u);
       } catch (err) {
         util.printDebugError(err);
       }
-    } else if (util.getNodeCrypto()) {
+    } else if (util.cryptoProviders.getNodeCrypto()) {
       return nodeSign(hashAlgo, data, n, e, d, p, q, u);
     }
   }
@@ -81,13 +81,13 @@ export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
  */
 export async function verify(hashAlgo, data, s, n, e, hashed) {
   if (data && !util.isStream(data)) {
-    if (util.getWebCrypto()) {
+    if (util.cryptoProviders.getWebCrypto()) {
       try {
         return await webVerify(enums.read(enums.webHash, hashAlgo), data, s, n, e);
       } catch (err) {
         util.printDebugError(err);
       }
-    } else if (util.getNodeCrypto()) {
+    } else if (util.cryptoProviders.getNodeCrypto()) {
       return nodeVerify(hashAlgo, data, s, n, e);
     }
   }
@@ -104,7 +104,7 @@ export async function verify(hashAlgo, data, s, n, e, hashed) {
  */
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function encrypt(data, n, e) {
-  if (util.getNodeCrypto()) {
+  if (util.cryptoProviders.getNodeCrypto()) {
     return nodeEncrypt(data, n, e);
   }
   return bnEncrypt(data, n, e);
@@ -130,7 +130,7 @@ export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
   // Node v18.19.1, 20.11.1 and 21.6.2 (and above) have disabled support for PKCS#1 decryption,
   // and we want to avoid checking the error type to decide if the random payload
   // should indeed be returned.
-  if (util.getNodeCrypto() && !randomPayload) {
+  if (util.cryptoProviders.getNodeCrypto() && !randomPayload) {
     try {
       return nodeDecrypt(data, n, e, d, p, q, u);
     } catch (err) {
@@ -157,7 +157,7 @@ export async function generate(bits, e) {
   e = BigInt(e);
 
   // Native RSA keygen using Web Crypto
-  if (util.getWebCrypto()) {
+  if (util.cryptoProviders.getWebCrypto()) {
     const keyGenOpt = {
       name: 'RSASSA-PKCS1-v1_5',
       modulusLength: bits, // the specified keysize in bits
@@ -173,7 +173,7 @@ export async function generate(bits, e) {
     const jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
     // map JWK parameters to corresponding OpenPGP names
     return jwkToPrivate(jwk, e);
-  } else if (util.getNodeCrypto()) {
+  } else if (util.cryptoProviders.getNodeCrypto()) {
     const opts = {
       modulusLength: bits,
       publicExponent: bigIntToNumber(e),

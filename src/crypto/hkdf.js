@@ -5,10 +5,10 @@
  */
 
 import enums from '../enums.ts';
-import util from '../util.js';
+import { cryptoProviders } from '../util.ts';
 
 export default async function computeHKDF(hashAlgo, inputKey, salt, info, outLen) {
-  const webCrypto = util.getWebCrypto();
+  const webCrypto = cryptoProviders.getWebCrypto();
   const hash = enums.read(enums.webHash, hashAlgo);
   if (!hash) throw new Error('Hash algo not supported with HKDF');
 

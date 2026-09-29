@@ -1,7 +1,7 @@
 /** @access private */
 
 import enums from '../../../../enums.ts';
-import util from '../../../../util.js';
+import { equalsUint8Array } from '../../../../util.ts';
 import { getRandomBytes } from '../../../random.js';
 
 export async function generate(algo) {
@@ -67,7 +67,7 @@ export async function validateParams(algo, mlkemPublicKey, mlkemSeed) {
   switch (algo) {
     case enums.publicKey.mlkem768X25519: {
       const { mlkemPublicKey: expectedPublicKey } = await expandSecretSeed(algo, mlkemSeed);
-      return util.equalsUint8Array(mlkemPublicKey, expectedPublicKey);
+      return equalsUint8Array(mlkemPublicKey, expectedPublicKey);
     }
     default:
       throw new Error('Unsupported KEM algorithm');

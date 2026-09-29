@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import defaultConfig from '../config.ts';
 
 /**

@@ -3,7 +3,7 @@
 import * as eccKem from './ecc_kem.js';
 import * as mlKem from './ml_kem.js';
 import * as aesKW from '../../../aes_kw.js';
-import util from '../../../../util.js';
+import { concatUint8Array, encodeUTF8 } from '../../../../util.ts';
 import enums from '../../../../enums.ts';
 import { computeDigest } from '../../../hash/index.js';
 
@@ -35,8 +35,8 @@ export async function decrypt(algo, eccCipherText, mlkemCipherText, eccSecretKey
  * @private
  */
 async function multiKeyCombine(algo, mlkemKeyShare, ecdhKeyShare, ecdhCipherText, ecdhPublicKey) {
-  const domSep = util.encodeUTF8('OpenPGPCompositeKDFv1');
-  const encData = util.concatUint8Array([
+  const domSep = encodeUTF8('OpenPGPCompositeKDFv1');
+  const encData = concatUint8Array([
     mlkemKeyShare,
     ecdhKeyShare,
     ecdhCipherText,

@@ -15,7 +15,7 @@ import {
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
-  LiteralDataPacket, PacketList, CompressedDataPacket, SymEncryptedIntegrityProtectedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
+  LiteralDataPacket, PacketList, CompressedDataPacket, SymEncryptedIntegrityProtectedDataPacket, type PublicKeyPacket, PublicSubkeyPacket, type SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
   type WebStream, type NodeWebStream
 } from 'openpgp';
 

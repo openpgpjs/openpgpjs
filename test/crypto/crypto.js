@@ -4,7 +4,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 export default () => describe('API functional testing', async function() {
   const RSAPublicKeyMaterial = util.concatUint8Array([

@@ -26,7 +26,7 @@
 
 import { getRandomBytes } from './random.js';
 import { getHashByteLength } from './hash/index.js';
-import util from '../util.js';
+import { selectUint8Array } from '../util.ts';
 
 /**
  * ASN1 object identifiers for hashes
@@ -119,7 +119,7 @@ export function emeDecode(encoded, randomPayload) {
   const isValidPadding = encoded[0] === 0 & encoded[1] === 2 & psLen >= 8 & !separatorNotFound;
 
   if (randomPayload) {
-    return util.selectUint8Array(isValidPadding, payload, randomPayload);
+    return selectUint8Array(isValidPadding, payload, randomPayload);
   }
 
   if (isValidPadding) {

@@ -135,6 +135,7 @@ export default defineConfig(
 
       // Custom errors:
       '@typescript-eslint/no-use-before-define': ['error', { 'functions': false, 'classes': true, 'variables': false, 'allowNamedExports': true }],
+      '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false, fixStyle: 'inline-type-imports' }],
       'no-constant-condition': [2, { 'checkLoops': false }],
       'new-cap': ['error', {
         properties: false,

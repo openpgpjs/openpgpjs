@@ -21,7 +21,7 @@
  * @access private
  */
 
-import util from '../util.js';
+import { equalsUint8Array } from '../util.ts';
 
 /**
  * Add pkcs5 padding to a message
@@ -47,7 +47,7 @@ export function decode(message) {
     if (c >= 1) {
       const provided = message.subarray(len - c);
       const computed = new Uint8Array(c).fill(c);
-      if (util.equalsUint8Array(provided, computed)) {
+      if (equalsUint8Array(provided, computed)) {
         return message.subarray(0, len - c);
       }
     }

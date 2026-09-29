@@ -20,7 +20,7 @@
 import { clone as streamClone, parse as streamParse } from '@openpgp/web-stream-tools';
 import { cipherMode, getRandomBytes } from '../crypto/index.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import { concat as streamConcat, constructAllowedPackets } from '../util.ts';
 import defaultConfig from '../config.ts';
 import { UnsupportedError } from './packet.js';
 import { runAEAD } from './sym_encrypted_integrity_protected_data.js';
@@ -33,7 +33,7 @@ import PacketList from './packetlist.js';
 import { MessageGrammarValidator } from './grammar.ts';
 
 // An AEAD-encrypted Data packet can contain the following packet types
-const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
+const allowedPackets = /*#__PURE__*/ constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
@@ -92,7 +92,7 @@ class AEADEncryptedDataPacket {
    * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload.
    */
   write() {
-    return util.concat([new Uint8Array([this.version, this.cipherAlgorithm, this.aeadAlgorithm, this.chunkSizeByte]), this.iv, this.encrypted]);
+    return streamConcat([new Uint8Array([this.version, this.cipherAlgorithm, this.aeadAlgorithm, this.chunkSizeByte]), this.iv, this.encrypted]);
   }
 
   /**

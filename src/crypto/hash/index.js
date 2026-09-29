@@ -7,11 +7,11 @@
  */
 
 import { transform as streamTransform, isArrayStream, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
-import util from '../../util.js';
+import { cryptoProviders, isStream } from '../../util.ts';
 import enums from '../../enums.ts';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = cryptoProviders.getWebCrypto();
+const nodeCrypto = cryptoProviders.getNodeCrypto();
 const nodeCryptoHashes = nodeCrypto && nodeCrypto.getHashes();
 
 function nodeHash(type) {
@@ -39,7 +39,7 @@ function nobleHash(nobleHashName, webCryptoHashName) {
     if (isArrayStream(data)) {
       data = await streamReadToEnd(data);
     }
-    if (util.isStream(data)) {
+    if (isStream(data)) {
       const hash = await getNobleHash();
 
       const hashInstance = hash.create();

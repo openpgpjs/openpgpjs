@@ -7,7 +7,7 @@
 import * as aesKW from '../../aes_kw.js';
 
 import enums from '../../../enums.ts';
-import util from '../../../util.js';
+import * as util from '../../../util.ts';
 import computeHKDF from '../../hkdf.js';
 import { getCipherParams } from '../../cipher/index.js';
 import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64.js';
@@ -26,7 +26,7 @@ export async function generate(algo) {
   switch (algo) {
     case enums.publicKey.x25519:
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const webCryptoKey = await webCrypto.generateKey('X25519', true, ['deriveKey', 'deriveBits'])
           .catch(err => {
             if (err.name === 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
@@ -206,7 +206,7 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
   switch (algo) {
     case enums.publicKey.x25519:
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const ephemeralKeyPair = await webCrypto.generateKey('X25519', true, ['deriveKey', 'deriveBits'])
           .catch(err => {
             if (err.name === 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
@@ -260,7 +260,7 @@ export async function recomputeSharedSecret(algo, ephemeralPublicKey, A, k) {
   switch (algo) {
     case enums.publicKey.x25519:
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const privateKeyJWK = privateKeyToJWK(algo, A, k);
         const ephemeralPublicKeyJWK = publicKeyToJWK(algo, ephemeralPublicKey);
         const privateKey = await webCrypto.importKey('jwk', privateKeyJWK, 'X25519', false, ['deriveKey', 'deriveBits']);

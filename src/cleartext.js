@@ -18,7 +18,7 @@
 
 import { armor, unarmor } from './encoding/armor.js';
 import enums from './enums.ts';
-import util from './util.js';
+import * as util from './util.ts';
 import { PacketList, LiteralDataPacket, SignaturePacket } from './packet/index.js';
 import { Signature } from './signature.js';
 import { createVerificationObjects, createSignaturePackets } from './message.js';

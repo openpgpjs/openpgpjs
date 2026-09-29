@@ -8,7 +8,7 @@ import openpgp from '../initOpenpgp.js';
 import * as elliptic from '../../src/crypto/public_key/elliptic/index.js';
 import * as signature from '../../src/crypto/signature.js';
 import OID from '../../src/type/oid.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 import * as input from './testInputs.js';
 import { isSafariOrHeadlessWebKit } from '../browserChecks.ts';
