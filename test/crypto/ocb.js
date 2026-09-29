@@ -1,12 +1,13 @@
 // Modified by ProtonTech AG
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
+import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import-x/newline-after-import
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import { cipherMode } from '../../src/crypto/index.js';
+import { cipherMode, generateSessionKey, getRandomBytes } from '../../src/crypto/index.js';
 import util from '../../src/util.js';
 
 export default () => describe('Symmetric AES-OCB', function() {
@@ -182,5 +183,83 @@ export default () => describe('Symmetric AES-OCB', function() {
       const output = await ocb.encrypt(new Uint8Array(), n, util.concatUint8Array(c));
       expect(util.uint8ArrayToHex(output)).to.equal(outputs[keylen].toLowerCase());
     }));
+  });
+
+  // Native OCB is provided by Node crypto only (WebCrypto does not implement OCB), so the native
+  // path is exercised only under Node. The cross combinations also confirm that the native and
+  // noble implementations interoperate.
+  (util.getNodeCrypto() ? describe : describe.skip)('Compare native and fallback implementations', function() {
+    let sinonSandbox;
+    let getNodeCryptoStub;
+
+    const disableNative = () => {
+      enableNative();
+      // stubbed function returns undefined
+      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    };
+    const enableNative = () => {
+      getNodeCryptoStub && getNodeCryptoStub.restore();
+    };
+
+    beforeEach(function () {
+      sinonSandbox = sinon.createSandbox();
+      enableNative();
+    });
+
+    afterEach(function () {
+      sinonSandbox.restore();
+    });
+
+    function testNativeAESOCB(plaintext, nativeEncrypt, nativeDecrypt) {
+      const aesAlgoNames = Object.keys(openpgp.enums.symmetric).filter(
+        algoName => algoName.slice(0, 3) === 'aes'
+      );
+      aesAlgoNames.forEach(function(algoName) {
+        it(algoName, async function() {
+          const nodeCrypto = util.getNodeCrypto();
+          const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
+          const key = generateSessionKey(algo);
+          const ocbMode = cipherMode.getAEADMode(openpgp.enums.aead.ocb);
+          const iv = getRandomBytes(ocbMode.ivLength);
+          const adata = getRandomBytes(16);
+
+          const nativeEncryptSpy = sinonSandbox.spy(nodeCrypto, 'createCipheriv');
+          const nativeDecryptSpy = sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
+
+          nativeEncrypt || disableNative();
+          let modeInstance = await ocbMode(algo, key);
+          const ciphertext = await modeInstance.encrypt(util.stringToUint8Array(plaintext), iv, adata);
+          enableNative();
+
+          nativeDecrypt || disableNative();
+          modeInstance = await ocbMode(algo, key);
+          const decrypted = await modeInstance.decrypt(ciphertext, iv, adata);
+          enableNative();
+
+          const decryptedStr = util.uint8ArrayToString(decrypted);
+          expect(decryptedStr).to.equal(plaintext);
+
+          // sanity check that native crypto was used only where expected
+          expect(nativeEncryptSpy.called).to.equal(nativeEncrypt);
+          expect(nativeDecryptSpy.called).to.equal(nativeDecrypt);
+        });
+      });
+    }
+
+    describe('AES-OCB (native)', function() {
+      testNativeAESOCB('12345678901234567890123456789012345678901234567890', true, true);
+    });
+
+    describe('AES-OCB (non-native)', function() {
+      testNativeAESOCB('12345678901234567890123456789012345678901234567890', false, false);
+    });
+
+    describe('AES-OCB (native encrypt, non-native decrypt)', function() {
+      testNativeAESOCB('12345678901234567890123456789012345678901234567890', true, false);
+    });
+
+    describe('AES-OCB (non-native encrypt, native decrypt)', function() {
+      testNativeAESOCB('12345678901234567890123456789012345678901234567890', false, true);
+    });
   });
 });

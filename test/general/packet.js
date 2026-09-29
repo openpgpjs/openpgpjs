@@ -259,7 +259,6 @@ export default () => describe('Packet', function() {
 
   it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEADP, GCM)', async function() {
     const webCrypto = util.getWebCrypto();
-    if (!webCrypto || util.getNodeCrypto()) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
     const decryptStub = cryptStub(webCrypto, 'decrypt');
 

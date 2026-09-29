@@ -193,10 +193,12 @@ export async function decryptKey({ privateKey, passphrase, config, ...rest }) {
   const passphrases = util.isArray(passphrase) ? passphrase : [passphrase];
 
   try {
-    await Promise.all(clonedPrivateKey.getKeys().map(key => (
+    // Decrypt one key packet at a time, to limit s2k memory usage if many subkeys are present
+    // and the underlying hashing function supports parallelism (WebCrypto hashes only)
+    for (const key of clonedPrivateKey.getKeys()) {
       // try to decrypt each key with any of the given passphrases
-      util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase, config)))
-    )));
+      await util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase, config)));
+    }
 
     await clonedPrivateKey.validate(config);
     return clonedPrivateKey;

@@ -129,17 +129,14 @@ function testAESEAX() {
 export default () => describe('Symmetric AES-EAX', function() {
   let sinonSandbox;
   let getWebCryptoStub;
-  let getNodeCryptoStub;
 
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
     getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
-    getNodeCryptoStub && getNodeCryptoStub.restore();
   };
 
   describe('Symmetric AES-EAX (native)', function() {
