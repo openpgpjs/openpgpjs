@@ -248,8 +248,8 @@ export function unarmor(input) {
             if (line === undefined) {
               throw new Error('Misformed armored text');
             }
-            // remove trailing whitespace at end of lines
-            line = util.removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
+            // remove trailing whitespace at end of line
+            line = util.removeTrailingSpaces(line.replace(/\n$/, ''));
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -300,7 +300,7 @@ export function unarmor(input) {
               let remainder = await reader.readToEnd();
               if (!remainder.length) remainder = '';
               remainder = line + remainder;
-              remainder = util.removeTrailingSpaces(remainder.replace(/\r/g, ''));
+              remainder = util.removeTrailingSpaces(remainder);
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
