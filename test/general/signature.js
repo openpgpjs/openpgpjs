@@ -1805,6 +1805,44 @@ ${armoredSignature}
     expect(await signatures[0].verified).to.be.true;
   });
 
+  it('Verify cleartext signed message with bare CR character', async function() {
+    const cleartextMessage = `-----BEGIN PGP SIGNED MESSAGE-----
+
+test\rmessage
+-----BEGIN PGP SIGNATURE-----
+
+wogGARsIAAAAKQWCasDWGSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAN04EJ5BqfZT2rWdizSiUrnd+Ndz+yvP5aVkhXPDZtxICAQvKRUMd9Sz
+6I4X4VYOhFZDkUYSs0qGvhZTKB5u3kGIZXvlPQZ+bqnIah8cQg9SJtoL
+-----END PGP SIGNATURE-----
+`;
+
+    const signedText = 'test\rmessage';
+    const message = await openpgp.readCleartextMessage({ cleartextMessage });
+    const pubKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xioGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laPCsQYf
+GwoAAABCBYJjh3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxy
+KwwfHifBilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lw
+gyU2kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaE
+QsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBM4qBmOHf+MZAAAAIIaTJINn
++eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1wpsGGBsKAAAALAWCY4d/4wKbDCIh
+BssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbpGG2dWTX8
+j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
+I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+    const { signatures, data } = await openpgp.verify({
+      verificationKeys: [pubKey],
+      message,
+      expectSigned: true
+    });
+
+    expect(data).to.equal(signedText);
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+  });
+
   it('Sign and verify cleartext signed message with trailing spaces correctly normalised', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
     const privKey = await openpgp.decryptKey({
