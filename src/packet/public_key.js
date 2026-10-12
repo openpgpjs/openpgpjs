@@ -189,6 +189,14 @@ class PublicKeyPacket {
   }
 
   /**
+   * Check whether the key is a secret-key or secret-subkey packet.
+   * @returns {Boolean}
+   */
+  isPrivate() {
+    return false;
+  }
+
+  /**
    * Check whether secret-key data is available in decrypted form. Returns null for public keys.
    * @returns {Boolean|null}
    */

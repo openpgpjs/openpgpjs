@@ -308,6 +308,14 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
+   * Check whether the key is a secret-key or secret-subkey packet.
+   * @returns {Boolean}
+   */
+  isPrivate() {
+    return true;
+  }
+
+  /**
    * Check whether secret-key data is available in decrypted form.
    * Returns false for gnu-dummy keys and null for public keys.
    * @returns {Boolean|null}

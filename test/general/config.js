@@ -241,15 +241,15 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     const userIDs = { name: 'Test User', email: 'text2@example.com' };
     const passphrase = '12345678';
 
-    const { privateKey: key } = await openpgp.generateKey({ userIDs, passphrase, format: 'object' });
+    const { privateKey: key } = await openpgp.generateKey({ userIDs, passphrase, format: 'object', config: { aeadProtect: true, s2kType: openpgp.enums.s2k.argon2 } });
     key.keyPacket.makeDummy();
 
     const opt = {
       privateKey: await openpgp.readKey({ armoredKey: key.armor() }),
       passphrase,
-      config: { rejectHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) }
+      config: { maxArgon2MemoryExponent: 0 }
     };
-    await expect(openpgp.decryptKey(opt)).to.be.rejectedWith(/Insecure hash algorithm/);
+    await expect(openpgp.decryptKey(opt)).to.be.rejectedWith(/Argon2 required memory exceeds `config\.maxArgon2MemoryExponent`/);
   });
 
   it('openpgp.encryptKey', async function() {

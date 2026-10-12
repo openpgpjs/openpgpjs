@@ -793,14 +793,14 @@ function createVerificationObject(signature, literalDataList, verificationKeys, 
       // We pass the signature creation time to check whether the key was expired at the time of signing.
       // We check this after signature verification because for streamed one-pass signatures, the creation time is not available before
       try {
-        await primaryKey.getSigningKey(unverifiedSigningKey.getKeyID(), signaturePacket.created, undefined, config);
+        await primaryKey.getVerificationKey(unverifiedSigningKey.getKeyID(), signaturePacket.created, undefined, config);
       } catch (e) {
         // If a key was reformatted then the self-signatures of the signing key might be in the future compared to the message signature,
         // making the key invalid at the time of signing.
         // However, if the key is valid at the given `date`, we still allow using it provided the relevant `config` setting is enabled.
         // Note: we do not support the edge case of a key that was reformatted and it has expired.
         if (config.allowInsecureVerificationWithReformattedKeys && e.message.match(/Signature creation time is in the future/)) {
-          await primaryKey.getSigningKey(unverifiedSigningKey.getKeyID(), date, undefined, config);
+          await primaryKey.getVerificationKey(unverifiedSigningKey.getKeyID(), date, undefined, config);
         } else {
           throw e;
         }

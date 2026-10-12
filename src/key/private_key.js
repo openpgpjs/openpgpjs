@@ -20,10 +20,7 @@ class PrivateKey extends PublicKey {
  */
   constructor(packetlist) {
     super();
-    this.packetListToStructure(packetlist, new Set([enums.packet.publicKey, enums.packet.publicSubkey]));
-    if (!this.keyPacket) {
-      throw new Error('Invalid key: missing private-key packet');
-    }
+    this.packetListToStructure(packetlist, true);
   }
 
   /**
@@ -72,6 +69,20 @@ class PrivateKey extends PublicKey {
   }
 
   /**
+   * Returns last created key or key by given keyID that is available for signing
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of a specific key to retrieve
+   * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
+   * @param  {Object} [userID] - filter keys for the given user ID
+   * @param  {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Key|Subkey>} signing key
+   * @throws if no valid signing key was found
+   * @async
+   */
+  async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+    return this.getSigningOrVerificationKey(true, keyID, date, userID, config);
+  }
+
+  /**
    * Returns all keys that are available for decryption, matching the keyID when given
    * This is useful to retrieve keys for session key decryption
    * @param  {module:type/keyid~KeyID} keyID, optional
@@ -88,8 +99,8 @@ class PrivateKey extends PublicKey {
     let exception = null;
     for (let i = 0; i < this.subkeys.length; i++) {
       if (!keyID || this.subkeys[i].getKeyID().equals(keyID, true)) {
-        if (this.subkeys[i].keyPacket.isDummy()) {
-          exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+        if (helper.isPublicOrDummyKeyPacket(this.subkeys[i].keyPacket)) {
+          exception = exception || new Error('Public or gnu-dummy key packets cannot be used for decryption');
           continue;
         }
 
@@ -108,8 +119,8 @@ class PrivateKey extends PublicKey {
     // evaluate primary key
     const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
     if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) && helper.validateDecryptionKeyPacket(primaryKey, selfCertification, config)) {
-      if (primaryKey.isDummy()) {
-        exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+      if (helper.isPublicOrDummyKeyPacket(primaryKey)) {
+        exception = exception || new Error('Public or gnu-dummy key packets cannot be used for decryption');
       } else {
         keys.push(this);
       }
@@ -146,17 +157,22 @@ class PrivateKey extends PublicKey {
       throw new Error('Cannot validate a public key');
     }
 
+    const keys = this.getKeys();
+    const allPublicOrDummies = keys.map(key => helper.isPublicOrDummyKeyPacket(key.keyPacket)).every(Boolean);
+    if (allPublicOrDummies) {
+      throw new Error('Cannot validate key without secret key material');
+    }
+
     let signingKeyPacket;
-    if (!this.keyPacket.isDummy()) {
+    if (!helper.isPublicOrDummyKeyPacket(this.keyPacket)) {
       signingKeyPacket = this.keyPacket;
     } else {
       /**
        * It is enough to validate any signing keys
        * since its binding signatures are also checked
        */
-      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 });
-      // This could again be a dummy key
-      if (signingKey && !signingKey.keyPacket.isDummy()) {
+      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
+      if (signingKey) {
         signingKeyPacket = signingKey.keyPacket;
       }
     }
@@ -164,13 +180,7 @@ class PrivateKey extends PublicKey {
     if (signingKeyPacket) {
       return signingKeyPacket.validate();
     } else {
-      const keys = this.getKeys();
-      const allDummies = keys.map(key => key.keyPacket.isDummy()).every(Boolean);
-      if (allDummies) {
-        throw new Error('Cannot validate an all-gnu-dummy key');
-      }
-
-      return Promise.all(keys.map(key => key.keyPacket.validate()));
+      return Promise.all(keys.map(key => helper.isPublicOrDummyKeyPacket(key.keyPacket) || key.keyPacket.validate()));
     }
   }
 
@@ -240,14 +250,14 @@ class PrivateKey extends PublicKey {
     if (options.rsaBits < config.minRSABits) {
       throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
     }
-    const secretKeyPacket = this.keyPacket;
-    if (secretKeyPacket.isDummy()) {
-      throw new Error('Cannot add subkey to gnu-dummy primary key');
+    const primaryKeyPacket = this.keyPacket;
+    if (helper.isPublicOrDummyKeyPacket(primaryKeyPacket)) {
+      throw new Error('Cannot add subkey to gnu-dummy or public primary key');
     }
-    if (!secretKeyPacket.isDecrypted()) {
+    if (!primaryKeyPacket.isDecrypted()) {
       throw new Error('Key is not decrypted');
     }
-    const defaultOptions = secretKeyPacket.getAlgorithmInfo();
+    const defaultOptions = primaryKeyPacket.getAlgorithmInfo();
     defaultOptions.type = getDefaultSubkeyType(defaultOptions.algorithm);
     defaultOptions.rsaBits = defaultOptions.bits || 4096;
     defaultOptions.curve = defaultOptions.curve || 'curve25519Legacy';
@@ -258,7 +268,7 @@ class PrivateKey extends PublicKey {
     // The config is always overwritten since we cannot tell if the defaultConfig was changed by the user.
     const keyPacket = await helper.generateSecretSubkey(options, { ...config, v6Keys: this.keyPacket.version === 6 });
     helper.checkKeyRequirements(keyPacket, config);
-    const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
+    const bindingSignature = await helper.createBindingSignature(keyPacket, primaryKeyPacket, options, config);
     const packetList = this.toPacketList();
     packetList.push(keyPacket, bindingSignature);
     return new PrivateKey(packetList);
