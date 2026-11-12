@@ -25,7 +25,7 @@ import enums from '../../../enums.ts';
 import util from '../../../util.js';
 import { getRandomBytes } from '../../random.js';
 import { computeDigest } from '../../hash/index.js';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves.js';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves.js';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -239,14 +239,49 @@ async function webVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   );
 }
 
+// DER (ASN.1) encoding of a single tag-length-value element
+function derEncode(tag, ...values) {
+  const value = util.concatUint8Array(values);
+  const length = value.length;
+  let header;
+  if (length < 0x80) {
+    header = [tag, length];
+  } else if (length < 0x100) {
+    header = [tag, 0x81, length];
+  } else {
+    header = [tag, 0x82, length >> 8, length & 0xff];
+  }
+  return util.concatUint8Array([new Uint8Array(header), value]);
+}
+
+// id-ecPublicKey (1.2.840.10045.2.1)
+const ecPublicKeyOID = new Uint8Array([0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01]);
+
+/**
+ * Encode an EC private key as SEC1 ECPrivateKey (RFC 5915), in DER.
+ * JWK encoding cannot be used for now, as Node does not support Brainpool curves in JWKs.
+ */
+function privateKeyToSEC1DER(curve, privateKey) {
+  return derEncode(0x30,
+    derEncode(0x02, new Uint8Array([1])), // version
+    derEncode(0x04, privateKey),
+    derEncode(0xA0, new Uint8Array(curve.oid))
+  );
+}
+
+/**
+ * Encode an EC public key as SubjectPublicKeyInfo (RFC 5480), in DER.
+ */
+function publicKeyToSPKIDER(curve, publicKey) {
+  return derEncode(0x30,
+    derEncode(0x30, ecPublicKeyOID, new Uint8Array(curve.oid)),
+    derEncode(0x03, new Uint8Array([0]), publicKey) // no unused bits
+  );
+}
+
 function nodeSign(curve, hashAlgo, message, privateKey) {
-  // JWT encoding cannot be used for now, as Brainpool curves are not supported
-  const ecKeyUtils = util.nodeRequire('eckey-utils');
   const nodeBuffer = util.getNodeBuffer();
-  const { privateKey: derPrivateKey } = ecKeyUtils.generateDer({
-    curveName: nodeCurves[curve.name],
-    privateKey: nodeBuffer.from(privateKey)
-  });
+  const derPrivateKey = nodeBuffer.from(privateKeyToSEC1DER(curve, privateKey));
 
   const signInstance = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   signInstance.write(message);
@@ -262,12 +297,8 @@ function nodeSign(curve, hashAlgo, message, privateKey) {
 }
 
 function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
-  const ecKeyUtils = util.nodeRequire('eckey-utils');
   const nodeBuffer = util.getNodeBuffer();
-  const { publicKey: derPublicKey } = ecKeyUtils.generateDer({
-    curveName: nodeCurves[curve.name],
-    publicKey: nodeBuffer.from(publicKey)
-  });
+  const derPublicKey = nodeBuffer.from(publicKeyToSPKIDER(curve, publicKey));
 
   const verifyInstance = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
   verifyInstance.write(message);
