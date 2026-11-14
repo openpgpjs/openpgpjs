@@ -7,7 +7,8 @@ import { getHashByteLength } from '../../../hash/index.js';
 
 export async function generate(algo) {
   switch (algo) {
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       const { eccSecretKey, eccPublicKey } = await eccdsa.generate(algo);
       const { mldsaSeed, mldsaSecretKey, mldsaPublicKey } = await mldsa.generate(algo);
       return { eccSecretKey, eccPublicKey, mldsaSeed, mldsaSecretKey, mldsaPublicKey };
@@ -19,7 +20,8 @@ export async function generate(algo) {
 
 export async function sign(signatureAlgo, hashAlgo, eccSecretKey, eccPublicKey, mldsaSecretKey, dataDigest) {
   switch (signatureAlgo) {
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       const { eccSignature } = await eccdsa.sign(signatureAlgo, hashAlgo, eccSecretKey, eccPublicKey, dataDigest);
       const { mldsaSignature } = await mldsa.sign(signatureAlgo, mldsaSecretKey, dataDigest);
 
@@ -32,7 +34,8 @@ export async function sign(signatureAlgo, hashAlgo, eccSecretKey, eccPublicKey, 
 
 export async function verify(signatureAlgo, hashAlgo, eccPublicKey, mldsaPublicKey, dataDigest, { eccSignature, mldsaSignature }) {
   switch (signatureAlgo) {
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       const eccVerifiedPromise = eccdsa.verify(signatureAlgo, hashAlgo, eccPublicKey, dataDigest, eccSignature);
       const mldsaVerifiedPromise = mldsa.verify(signatureAlgo, mldsaPublicKey, dataDigest, mldsaSignature);
       const verified = await eccVerifiedPromise && await mldsaVerifiedPromise;
@@ -48,6 +51,7 @@ export function isCompatibleHashAlgo(signatureAlgo, hashAlgo) {
   // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
   switch (signatureAlgo) {
     case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448:
       return getHashByteLength(hashAlgo) >= 32;
     default:
       throw new Error('Unsupported signature algorithm');

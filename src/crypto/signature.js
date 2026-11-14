@@ -73,6 +73,12 @@ export function parseSignatureParams(algo, signature) {
       const mldsaSignature = util.readExactSubarray(signature, read, read + 3309); read += mldsaSignature.length;
       return { read, signatureParams: { eccSignature, mldsaSignature } };
     }
+    case enums.publicKey.mldsa87Ed448: {
+      const eccSignatureSize = 2 * elliptic.eddsa.getPayloadSize(enums.publicKey.ed448);
+      const eccSignature = util.readExactSubarray(signature, read, read + eccSignatureSize); read += eccSignature.length;
+      const mldsaSignature = util.readExactSubarray(signature, read, read + 4627); read += mldsaSignature.length;
+      return { read, signatureParams: { eccSignature, mldsaSignature } };
+    }
     default:
       throw new UnsupportedError('Unknown signature algorithm.');
   }
@@ -141,7 +147,8 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       const { A } = publicParams;
       return elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       if (!postQuantum.signature.isCompatibleHashAlgo(algo, hashAlgo)) {
         // The signature hash algo MUST have digest larger than 256 bits
         // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4
@@ -217,7 +224,8 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { seed } = privateKeyParams;
       return elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);
     }
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       if (!postQuantum.signature.isCompatibleHashAlgo(algo, hashAlgo)) {
         // The signature hash algo MUST have digest larger than 256 bits
         // https://www.rfc-editor.org/rfc/rfc9980.html#section-9.4

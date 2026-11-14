@@ -26,7 +26,8 @@ import { UnsupportedError } from './packet.js';
 const algosWithV3CleartextSessionKeyAlgorithm = new Set([
   enums.publicKey.x25519,
   enums.publicKey.x448,
-  enums.publicKey.mlkem768X25519
+  enums.publicKey.mlkem768X25519,
+  enums.publicKey.mlkem1024X448
 ]);
 
 /**
@@ -248,6 +249,7 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
     case enums.publicKey.mlkem768X25519:
+    case enums.publicKey.mlkem1024X448:
       return sessionKeyData;
     default:
       throw new Error('Unsupported public key algorithm');
@@ -296,6 +298,7 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
     case enums.publicKey.mlkem768X25519:
+    case enums.publicKey.mlkem1024X448:
       return {
         sessionKeyAlgorithm: null,
         sessionKey: decryptedData

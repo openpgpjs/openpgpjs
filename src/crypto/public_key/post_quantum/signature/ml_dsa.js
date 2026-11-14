@@ -6,7 +6,8 @@ import { getRandomBytes } from '../../../random.js';
 
 export async function generate(algo) {
   switch (algo) {
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       const mldsaSeed = getRandomBytes(32);
       const { mldsaSecretKey, mldsaPublicKey } = await expandSecretSeed(algo, mldsaSeed);
 
@@ -32,6 +33,12 @@ export async function expandSecretSeed(algo, seed) {
 
       return { mldsaSecretKey, mldsaPublicKey };
     }
+    case enums.publicKey.mldsa87Ed448: {
+      const { ml_dsa87 } = await import('../noble_post_quantum.ts');
+      const { secretKey: mldsaSecretKey, publicKey: mldsaPublicKey } = ml_dsa87.keygen(seed);
+
+      return { mldsaSecretKey, mldsaPublicKey };
+    }
     default:
       throw new Error('Unsupported signature algorithm');
   }
@@ -42,6 +49,11 @@ export async function sign(algo, mldsaSecretKey, dataDigest) {
     case enums.publicKey.mldsa65Ed25519: {
       const { ml_dsa65 } = await import('../noble_post_quantum.ts');
       const mldsaSignature = ml_dsa65.sign(dataDigest, mldsaSecretKey);
+      return { mldsaSignature };
+    }
+    case enums.publicKey.mldsa87Ed448: {
+      const { ml_dsa87 } = await import('../noble_post_quantum.ts');
+      const mldsaSignature = ml_dsa87.sign(dataDigest, mldsaSecretKey);
       return { mldsaSignature };
     }
     default:
@@ -55,6 +67,10 @@ export async function verify(algo, mldsaPublicKey, dataDigest, mldsaSignature) {
       const { ml_dsa65 } = await import('../noble_post_quantum.ts');
       return ml_dsa65.verify(mldsaSignature, dataDigest, mldsaPublicKey);
     }
+    case enums.publicKey.mldsa87Ed448: {
+      const { ml_dsa87 } = await import('../noble_post_quantum.ts');
+      return ml_dsa87.verify(mldsaSignature, dataDigest, mldsaPublicKey);
+    }
     default:
       throw new Error('Unsupported signature algorithm');
   }
@@ -62,7 +78,8 @@ export async function verify(algo, mldsaPublicKey, dataDigest, mldsaSignature) {
 
 export async function validateParams(algo, mldsaPublicKey, mldsaSeed) {
   switch (algo) {
-    case enums.publicKey.mldsa65Ed25519: {
+    case enums.publicKey.mldsa65Ed25519:
+    case enums.publicKey.mldsa87Ed448: {
       const { mldsaPublicKey: expectedPublicKey } = await expandSecretSeed(algo, mldsaSeed);
       return util.equalsUint8Array(mldsaPublicKey, expectedPublicKey);
     }
