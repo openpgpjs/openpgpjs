@@ -141,8 +141,12 @@ class PublicKeyPacket {
         throw new Error('Legacy curve25519 cannot be used with v6 keys');
       }
       // The composite ML-DSA + EdDSA schemes MUST be used only with v6 keys.
-      if (this.version !== 6 && this.algorithm === enums.publicKey.mldsa65Ed25519) {
+      if (this.version !== 6 && (this.algorithm === enums.publicKey.mldsa65Ed25519 || this.algorithm === enums.publicKey.mldsa87Ed448)) {
         throw new Error('Unexpected key version: ML-DSA algorithms can only be used with v6 keys');
+      }
+      // The composite ML-KEM-1024 + X448 (algorithm ID 36) MUST be used only with v6 keys
+      if (this.version !== 6 && this.algorithm === enums.publicKey.mlkem1024X448) {
+        throw new Error('Unexpected key version: ML-KEM-1024 + X448 can only be used with v6 keys');
       }
       this.publicParams = publicParams;
       pos += read;

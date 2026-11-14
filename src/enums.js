@@ -99,8 +99,12 @@ export default {
     ed448: 28,
     /** ML-DSA-65 + Ed25519 (Sign only) */
     mldsa65Ed25519: 30,
+    /** ML-DSA-87 + Ed448 (Sign only) */
+    mldsa87Ed448: 31,
     /** ML-KEM-768 + X25519 (Encrypt only) */
-    mlkem768X25519: 35
+    mlkem768X25519: 35,
+    /** ML-KEM-1024 + X448 (Encrypt only) */
+    mlkem1024X448: 36
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

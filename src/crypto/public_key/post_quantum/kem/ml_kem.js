@@ -6,7 +6,8 @@ import { getRandomBytes } from '../../../random.js';
 
 export async function generate(algo) {
   switch (algo) {
-    case enums.publicKey.mlkem768X25519: {
+    case enums.publicKey.mlkem768X25519:
+    case enums.publicKey.mlkem1024X448: {
       const mlkemSeed = getRandomBytes(64);
       const { mlkemSecretKey, mlkemPublicKey } = await expandSecretSeed(algo, mlkemSeed);
 
@@ -32,6 +33,12 @@ export async function expandSecretSeed(algo, seed) {
 
       return { mlkemPublicKey: encapsulationKey, mlkemSecretKey: decapsulationKey };
     }
+    case enums.publicKey.mlkem1024X448: {
+      const { ml_kem1024 } = await import('../noble_post_quantum.ts');
+      const { publicKey: encapsulationKey, secretKey: decapsulationKey } = ml_kem1024.keygen(seed);
+
+      return { mlkemPublicKey: encapsulationKey, mlkemSecretKey: decapsulationKey };
+    }
     default:
       throw new Error('Unsupported KEM algorithm');
   }
@@ -42,6 +49,12 @@ export async function encaps(algo, mlkemRecipientPublicKey) {
     case enums.publicKey.mlkem768X25519: {
       const { ml_kem768 } = await import('../noble_post_quantum.ts');
       const { cipherText: mlkemCipherText, sharedSecret: mlkemKeyShare } = ml_kem768.encapsulate(mlkemRecipientPublicKey);
+
+      return { mlkemCipherText, mlkemKeyShare };
+    }
+    case enums.publicKey.mlkem1024X448: {
+      const { ml_kem1024 } = await import('../noble_post_quantum.ts');
+      const { cipherText: mlkemCipherText, sharedSecret: mlkemKeyShare } = ml_kem1024.encapsulate(mlkemRecipientPublicKey);
 
       return { mlkemCipherText, mlkemKeyShare };
     }
@@ -58,6 +71,12 @@ export async function decaps(algo, mlkemCipherText, mlkemSecretKey) {
 
       return mlkemKeyShare;
     }
+    case enums.publicKey.mlkem1024X448: {
+      const { ml_kem1024 } = await import('../noble_post_quantum.ts');
+      const mlkemKeyShare = ml_kem1024.decapsulate(mlkemCipherText, mlkemSecretKey);
+
+      return mlkemKeyShare;
+    }
     default:
       throw new Error('Unsupported KEM algorithm');
   }
@@ -65,7 +84,8 @@ export async function decaps(algo, mlkemCipherText, mlkemSecretKey) {
 
 export async function validateParams(algo, mlkemPublicKey, mlkemSeed) {
   switch (algo) {
-    case enums.publicKey.mlkem768X25519: {
+    case enums.publicKey.mlkem768X25519:
+    case enums.publicKey.mlkem1024X448: {
       const { mlkemPublicKey: expectedPublicKey } = await expandSecretSeed(algo, mlkemSeed);
       return util.equalsUint8Array(mlkemPublicKey, expectedPublicKey);
     }

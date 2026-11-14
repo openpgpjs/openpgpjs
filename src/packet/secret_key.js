@@ -534,8 +534,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     )) {
       throw new Error(`Cannot generate v6 keys of type 'ecc' with curve ${curve}. Generate a key of type 'curve25519' instead`);
     }
-    if (this.version !== 6 && this.algorithm === enums.publicKey.mldsa65Ed25519) {
+    if (this.version !== 6 && (this.algorithm === enums.publicKey.mldsa65Ed25519 || this.algorithm === enums.publicKey.mldsa87Ed448)) {
       throw new Error(`Cannot generate v${this.version} signing keys of type 'pqc'. Generate a v6 key instead`);
+    }
+    if (this.version !== 6 && this.algorithm === enums.publicKey.mlkem1024X448) {
+      throw new Error(`Cannot generate v${this.version} ML-KEM-1024 + X448 keys. Generate a v6 key instead`);
     }
     const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve);
     this.privateParams = privateParams;
