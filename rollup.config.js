@@ -62,6 +62,24 @@ const terserOptions = {
   }
 };
 
+/**
+ * Modules loaded at runtime via `util.nodeRequire(...)` are not bundled,
+ * so they must be either Node.js built-ins or declared in `dependencies`.
+ * This plugin fails the build if that is not the case.
+ */
+const checkNodeRequireDependencies = () => ({
+  name: 'check-node-require-dependencies',
+  transform(code, id) {
+    if (id.includes('node_modules')) return null;
+    for (const [, requiredModule] of code.matchAll(/nodeRequire\('(.+?)'\)/g)) {
+      if (!nodeBuiltinModules.includes(requiredModule) && !nodeDependencies.includes(requiredModule)) {
+        this.error(`'${requiredModule}' is loaded via \`nodeRequire\` but is neither a Node.js built-in nor listed in "dependencies"`);
+      }
+    }
+    return null;
+  }
+});
+
 const nodeBuild = {
   input: 'src/index.js',
   external: nodeBuiltinModules.concat(nodeDependencies),
@@ -72,6 +90,7 @@ const nodeBuild = {
     { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
   ].map(options => ({ ...options, inlineDynamicImports: true })),
   plugins: [
+    checkNodeRequireDependencies(),
     resolve(),
     typescript({
       compilerOptions: { outDir: './dist/node' }, // temporary output location, needed to avoid js files being overwritten under `src`
