@@ -20,7 +20,7 @@ import { slice as streamSlice, passiveClone as streamPassiveClone, readToEnd as 
 import { cipherMode, getRandomBytes, getCipherParams, computeDigest } from '../crypto/index.js';
 import computeHKDF from '../crypto/hkdf.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import defaultConfig from '../config.ts';
 
 import LiteralDataPacket from './literal_data.js';

@@ -22,8 +22,8 @@ import { armor, unarmor } from './encoding/armor.js';
 import { Argon2OutOfMemoryError } from './type/s2k/index.js';
 import defaultConfig from './config.ts';
 import { generateSessionKey } from './crypto/index.js';
-import enums from './enums.ts';
-import util from './util.js';
+import enums, { assertEnum } from './enums.ts';
+import * as util from './util.ts';
 import { Signature } from './signature.js';
 import { getPreferredCipherSuite, createSignaturePacket } from './key/index.js';
 import {
@@ -274,7 +274,7 @@ export class Message {
               try {
                 await pkeskPacket.decrypt(decryptionKeyPacket);
                 const symmetricAlgorithm = expectedSymmetricAlgorithm || pkeskPacket.sessionKeyAlgorithm;
-                if (symmetricAlgorithm && !algos.includes(enums.write(enums.symmetric, symmetricAlgorithm))) {
+                if (symmetricAlgorithm && !algos.includes(assertEnum(enums.symmetric, symmetricAlgorithm))) {
                   throw new Error('A non-preferred symmetric algorithm was used.');
                 }
                 decryptedSessionKeyPackets.push(pkeskPacket);
@@ -914,9 +914,9 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   const streamType = util.isStream(input);
   const literalDataPacket = new LiteralDataPacket(date);
   if (text !== undefined) {
-    literalDataPacket.setText(input, enums.write(enums.literal, format));
+    literalDataPacket.setText(input, enums.write(enums.literalFormat, format));
   } else {
-    literalDataPacket.setBytes(input, enums.write(enums.literal, format));
+    literalDataPacket.setBytes(input, enums.write(enums.literalFormat, format));
   }
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);

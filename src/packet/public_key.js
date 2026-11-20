@@ -21,7 +21,7 @@ import KeyID from '../type/keyid.js';
 import defaultConfig from '../config.ts';
 import { computeDigest, parsePublicKeyParams, serializeParams } from '../crypto/index.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import { UnsupportedError } from './packet.js';
 
 /**

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import OID from '../../src/type/oid.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 export default () => describe('Oid tests', function() {
   const p256_oid = new Uint8Array([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]);

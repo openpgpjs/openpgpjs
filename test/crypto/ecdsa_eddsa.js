@@ -7,7 +7,7 @@ import openpgp from '../initOpenpgp.js';
 import * as elliptic_curves from '../../src/crypto/public_key/elliptic/index.js';
 import { computeDigest } from '../../src/crypto/hash/index.js';
 import config from '../../src/config.ts';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 import elliptic_data from './elliptic_data.js';
 import OID from '../../src/type/oid.js';
@@ -27,8 +27,8 @@ const testRountripWithAndWithoutNative = async (
   verifyFunction, // (signFunctionResult) => verification result
   expectNative
 ) => {
-  const nodeCrypto = util.getNodeCrypto();
-  const webCrypto = util.getWebCrypto();
+  const nodeCrypto = util.cryptoProviders.getNodeCrypto();
+  const webCrypto = util.cryptoProviders.getWebCrypto();
   const data = getRandomBytes(16);
   const dataDigest = await computeDigest(openpgp.enums.hash.sha512, data);
 
@@ -118,11 +118,11 @@ export default () => describe('ECC signatures', function () {
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto').returns({
+      getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto').returns({
         generateKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; },
         importKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; }
       });
-      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+      getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();
@@ -139,8 +139,8 @@ export default () => describe('ECC signatures', function () {
     });
     const curves = ['nistP256', 'nistP384', 'nistP521', 'secp256k1', 'ed25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
     curves.forEach(curveName => it(`${curveName} - Creating key pair via genKeyPair`, async function () {
-      const nodeCrypto = util.getNodeCrypto();
-      const webCrypto = util.getWebCrypto();
+      const nodeCrypto = util.cryptoProviders.getNodeCrypto();
+      const webCrypto = util.cryptoProviders.getWebCrypto();
 
       const curve = new elliptic_curves.CurveWithOID(curveName);
 
@@ -196,8 +196,8 @@ export default () => describe('ECC signatures', function () {
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+      getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto');
+      getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();
@@ -205,8 +205,8 @@ export default () => describe('ECC signatures', function () {
     };
 
     const testNativeAndFallback = async fn => {
-      const webCrypto = util.getWebCrypto();
-      const nodeCrypto = util.getNodeCrypto();
+      const webCrypto = util.cryptoProviders.getWebCrypto();
+      const nodeCrypto = util.cryptoProviders.getNodeCrypto();
       const nativeSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'importKey') : sinonSandbox.spy(nodeCrypto, 'createVerify'); // spy on function used on verification, since that's used by all tests calling `testNativeAndFallback`
 
       // if native not available, fallback will be tested twice (not possible to automatically check native algo availability)
@@ -270,7 +270,7 @@ export default () => describe('ECC signatures', function () {
       )).to.be.rejectedWith(Error, /Unknown curve/);
     });
     it('secp256k1 - Invalid public key', async function () {
-      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
+      if (!config.useEllipticFallback && !util.cryptoProviders.getNodeCrypto()) {
         // eslint-disable-next-line no-invalid-this
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
@@ -285,7 +285,7 @@ export default () => describe('ECC signatures', function () {
       )).to.eventually.be.false;
     });
     it('secp256k1 - Invalid signature', async function () {
-      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
+      if (!config.useEllipticFallback && !util.cryptoProviders.getNodeCrypto()) {
         // eslint-disable-next-line no-invalid-this
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
@@ -364,11 +364,11 @@ export default () => describe('ECC signatures', function () {
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto').returns({
+      getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto').returns({
         generateKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; },
         importKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; }
       });
-      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+      getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();

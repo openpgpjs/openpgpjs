@@ -10,10 +10,10 @@
  */
 
 import type { WebStream as GenericWebStream, NodeWebStream as GenericNodeWebStream } from '@openpgp/web-stream-tools';
-import enums from './enums.ts';
+import enums, { type Enums, type EnumLabels } from './enums.ts';
 import config, { type Config, type PartialConfig } from './config.ts';
 
-export { enums, config, Config, PartialConfig };
+export { enums, Enums, config, Config, PartialConfig };
 
 /* ############## STREAM #################### */
 type Data = Uint8Array | string;
@@ -153,7 +153,7 @@ export interface PrimaryUser {
 }
 
 export type AlgorithmInfo = {
-  algorithm: enums.publicKeyNames;
+  algorithm: EnumLabels['publicKey'];
   bits?: number;
   curve?: EllipticCurveName;
 };
@@ -220,8 +220,8 @@ export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { messa
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 
-export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, format?: enums.literalFormatNames }): Promise<Message<T>>;
-export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, format?: enums.literalFormatNames }): Promise<Message<T>>;
+export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, format?: EnumLabels['literalFormat'] }): Promise<Message<T>>;
+export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, format?: EnumLabels['literalFormat'] }): Promise<Message<T>>;
 
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armored' }): Promise<
   T extends WebStream<Data> ? WebStream<string> :
@@ -340,7 +340,7 @@ export class Message<T extends MaybeStream<Data>> {
 
 /* ############## PACKET #################### */
 export declare abstract class BasePacket<AsyncRead extends boolean = false> {
-  static readonly tag: enums.packet;
+  static readonly tag: Enums['packet'];
   public read(bytes: Uint8Array): AsyncRead extends true ? Promise<void> : void;
   public write(): Uint8Array;
 }
@@ -351,7 +351,7 @@ export declare abstract class BasePacket<AsyncRead extends boolean = false> {
  * - A Subkey Packet cannot always be used when a Primary Key Packet is expected (and vice versa).
  */
 declare abstract class BasePublicKeyPacket extends BasePacket<true> {
-  public algorithm: enums.publicKey;
+  public algorithm: Enums['publicKey'];
   public created: Date;
   public version: number;
   public getAlgorithmInfo(): AlgorithmInfo;
@@ -369,12 +369,12 @@ declare abstract class BasePublicKeyPacket extends BasePacket<true> {
 }
 
 export class PublicKeyPacket extends BasePublicKeyPacket {
-  static readonly tag: enums.packet.publicKey;
+  static readonly tag: typeof enums.packet.publicKey;
   protected isSubkey(): false;
 }
 
 export class PublicSubkeyPacket extends BasePublicKeyPacket {
-  static readonly tag: enums.packet.publicSubkey;
+  static readonly tag: typeof enums.packet.publicSubkey;
   protected isSubkey(): true;
 }
 
@@ -389,78 +389,78 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
-  static readonly tag: enums.packet.secretKey;
+  static readonly tag: typeof enums.packet.secretKey;
   protected isSubkey(): false;
 }
 
 export class SecretSubkeyPacket extends BaseSecretKeyPacket {
-  static readonly tag: enums.packet.secretSubkey;
+  static readonly tag: typeof enums.packet.secretSubkey;
   protected isSubkey(): true;
 }
 
 export class CompressedDataPacket extends BasePacket<true> {
-  static readonly tag: enums.packet.compressedData;
+  static readonly tag: typeof enums.packet.compressedData;
   private compress(): void;
   private decompress(config?: Config): void;
 }
 
 export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket<true> {
-  static readonly tag: enums.packet.symEncryptedIntegrityProtectedData;
+  static readonly tag: typeof enums.packet.symEncryptedIntegrityProtectedData;
 }
 
 export class AEADEncryptedDataPacket extends BasePacket<true> {
-  static readonly tag: enums.packet.aeadEncryptedData;
-  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
-  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
+  static readonly tag: typeof enums.packet.aeadEncryptedData;
+  private decrypt(sessionKeyAlgorithm: Enums['symmetric'], sessionKey: Uint8Array, config?: Config): Promise<void>;
+  private encrypt(sessionKeyAlgorithm: Enums['symmetric'], sessionKey: Uint8Array, config?: Config): Promise<void>;
   private crypt(fn: (block: Uint8Array) => Uint8Array, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>;
 }
 
 export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
-  static readonly tag: enums.packet.publicKeyEncryptedSessionKey;
+  static readonly tag: typeof enums.packet.publicKeyEncryptedSessionKey;
   private decrypt(keyPacket: SecretKeyPacket): void; // throws on error
   private encrypt(keyPacket: PublicKeyPacket): void; // throws on error
 }
 
 export class SymEncryptedSessionKeyPacket extends BasePacket {
-  static readonly tag: enums.packet.symEncryptedSessionKey;
+  static readonly tag: typeof enums.packet.symEncryptedSessionKey;
   private decrypt(passphrase: string): Promise<void>;
   private encrypt(passphrase: string, config?: Config): Promise<void>;
 }
 
 export class LiteralDataPacket extends BasePacket<true> {
-  static readonly tag: enums.packet.literalData;
+  static readonly tag: typeof enums.packet.literalData;
   private getText(clone?: boolean): MaybeStream<string>;
   private getBytes(clone?: boolean): MaybeStream<Uint8Array>;
-  private setText(text: MaybeStream<string>, format?: enums.literal);
-  private setBytes(bytes: MaybeStream<Uint8Array>, format: enums.literal);
+  private setText(text: MaybeStream<string>, format?: Enums['literalFormat']);
+  private setBytes(bytes: MaybeStream<Uint8Array>, format: Enums['literalFormat']);
   private setFilename(filename: string);
   private getFilename(): string;
   private writeHeader(): Uint8Array;
 }
 
 export class SymmetricallyEncryptedDataPacket extends BasePacket {
-  static readonly tag: enums.packet.symmetricallyEncryptedData;
-  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
-  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): Promise<void>;
+  static readonly tag: typeof enums.packet.symmetricallyEncryptedData;
+  private decrypt(sessionKeyAlgorithm: Enums['symmetric'], sessionKey: Uint8Array, config?: Config): Promise<void>;
+  private encrypt(sessionKeyAlgorithm: Enums['symmetric'], sessionKey: Uint8Array, config?: Config): Promise<void>;
 }
 
 export class MarkerPacket extends BasePacket {
-  static readonly tag: enums.packet.marker;
+  static readonly tag: typeof enums.packet.marker;
 }
 
 export class UserAttributePacket extends BasePacket {
-  static readonly tag: enums.packet.userAttribute;
+  static readonly tag: typeof enums.packet.userAttribute;
   private equals(packet: UserAttributePacket): boolean;
 }
 
 export class OnePassSignaturePacket extends BasePacket {
-  static readonly tag: enums.packet.onePassSignature;
+  static readonly tag: typeof enums.packet.onePassSignature;
   public correspondingSig?: Promise<SignaturePacket>;
   private verify: SignaturePacket['verify'];
 }
 
 export class UserIDPacket extends BasePacket {
-  static readonly tag: enums.packet.userID;
+  static readonly tag: typeof enums.packet.userID;
   public readonly name: string;
   public readonly comment: string;
   public readonly email: string;
@@ -469,11 +469,11 @@ export class UserIDPacket extends BasePacket {
 }
 
 export class SignaturePacket extends BasePacket {
-  static readonly tag: enums.packet.signature;
+  static readonly tag: typeof enums.packet.signature;
   public version: number;
-  public signatureType: enums.signature | null;
-  public hashAlgorithm: enums.hash | null;
-  public publicKeyAlgorithm: enums.publicKey | null;
+  public signatureType: Enums['signature'] | null;
+  public hashAlgorithm: Enums['hash'] | null;
+  public publicKeyAlgorithm: Enums['publicKey'] | null;
   public signatureData: null | Uint8Array;
   public unhashedSubpackets: RawSubpacket[];
   public unknownSubpackets: RawSubpacket[];
@@ -488,34 +488,34 @@ export class SignaturePacket extends BasePacket {
   public revocable: null | boolean;
   public keyExpirationTime: null | number;
   public keyNeverExpires: null | boolean;
-  public preferredSymmetricAlgorithms: enums.symmetric[] | null;
+  public preferredSymmetricAlgorithms: Enums['symmetric'][] | null;
   public revocationKeyClass: null | number;
-  public revocationKeyAlgorithm: null | enums.publicKey;
+  public revocationKeyAlgorithm: null | Enums['publicKey'];
   public revocationKeyFingerprint: null | Uint8Array;
   public issuerKeyID: KeyID;
   public notation: null | { [name: string]: string };
-  public preferredHashAlgorithms: enums.hash[] | null;
-  public preferredCompressionAlgorithms: enums.compression[] | null;
+  public preferredHashAlgorithms: Enums['hash'][] | null;
+  public preferredCompressionAlgorithms: Enums['compression'][] | null;
   public keyServerPreferences: null | number[];
   public preferredKeyServer: null | string;
   public isPrimaryUserID: null | boolean;
   public policyURI: null | string;
   public keyFlags: Uint8Array | null;
   public signersUserID: null | string;
-  public reasonForRevocationFlag: null | enums.reasonForRevocation;
+  public reasonForRevocationFlag: null | Enums['reasonForRevocation'];
   public reasonForRevocationString: null | string;
   public features: Uint8Array | null;
-  public signatureTargetPublicKeyAlgorithm: enums.publicKey | null;
-  public signatureTargetHashAlgorithm: enums.hash | null;
+  public signatureTargetPublicKeyAlgorithm: Enums['publicKey'] | null;
+  public signatureTargetHashAlgorithm: Enums['hash'] | null;
   public signatureTargetHash: null | string;
   public embeddedSignature: null | SignaturePacket;
   public issuerKeyVersion: null | number;
   public issuerFingerprint: null | Uint8Array;
-  public preferredAEADAlgorithms: enums.aead[] | null;
+  public preferredAEADAlgorithms: Enums['aead'][] | null;
   public revoked: null | boolean;
   public rawNotations: RawNotation[];
   public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean): Promise<void>;
-  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
+  public verify(key: AnyKeyPacket, signatureType: Enums['signature'], data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
 }
@@ -534,11 +534,11 @@ export interface RawNotation {
 }
 
 export class TrustPacket extends BasePacket {
-  static readonly tag: enums.packet.trust;
+  static readonly tag: typeof enums.packet.trust;
 }
 
 export class UnparseablePacket {
-  tag: enums.packet;
+  tag: Enums['packet'];
   write: () => Uint8Array;
 }
 
@@ -546,14 +546,14 @@ export type AnyPacket = BasePacket<boolean> | UnparseablePacket;
 export type AnySecretKeyPacket = SecretKeyPacket | SecretSubkeyPacket;
 export type AnyKeyPacket = BasePublicKeyPacket;
 
-type AllowedPackets = Map<enums.packet, object>; // mapping to Packet classes (i.e. typeof LiteralDataPacket etc.)
+type AllowedPackets = Map<Enums['packet'], object>; // mapping to Packet classes (i.e. typeof LiteralDataPacket etc.)
 export class PacketList<T extends AnyPacket> extends Array<T> {
   static fromBinary(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): Promise<PacketList<AnyPacket>>; // the packet types depend on`allowedPackets`
   public read(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): Promise<void>;
   public write(): Uint8Array;
-  public filterByTag(...args: enums.packet[]): PacketList<T>;
-  public indexOfTag(...tags: enums.packet[]): number[];
-  public findPacket(tag: enums.packet): T | undefined;
+  public filterByTag(...args: Enums['packet'][]): PacketList<T>;
+  public indexOfTag(...tags: Enums['packet'][]): number[];
+  public findPacket(tag: Enums['packet']): T | undefined;
 }
 
 /* ############## GENERAL #################### */
@@ -561,16 +561,16 @@ export class PacketList<T extends AnyPacket> extends Array<T> {
 export interface UserID { name?: string; email?: string; comment?: string; }
 export interface SessionKey {
   data: Uint8Array;
-  algorithm: enums.symmetricNames;
-  aeadAlgorithm?: enums.aeadNames;
+  algorithm: EnumLabels['symmetric'];
+  aeadAlgorithm?: EnumLabels['aead'];
 }
 
 export interface DecryptedSessionKey {
   data: Uint8Array;
-  algorithm: enums.symmetricNames | null; // `null` if the session key is associated with a SEIPDv2 packet
+  algorithm: EnumLabels['symmetric'] | null; // `null` if the session key is associated with a SEIPDv2 packet
 }
 
-export interface ReasonForRevocation { flag?: enums.reasonForRevocation, string?: string }
+export interface ReasonForRevocation { flag?: Enums['reasonForRevocation'], string?: string }
 
 export interface EncryptOptions {
   /** message to be encrypted as created by createMessage */
@@ -717,10 +717,10 @@ export interface VerifyMessageResult<T extends MaybeStream<Data> = MaybeStream<D
 /**
  * Armor an OpenPGP binary packet block
  */
-export function armor(messagetype: enums.armor, body: object, partindex?: number, parttotal?: number, customComment?: string, emitChecksum?: boolean, config?: Config): string;
+export function armor(messagetype: Enums['armor'], body: object, partindex?: number, parttotal?: number, customComment?: string, emitChecksum?: boolean, config?: Config): string;
 
 /**
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
  */
-export function unarmor(input: string, config?: Config): Promise<{ text: string, data: Stream<Uint8Array>, type: enums.armor }>;
+export function unarmor(input: string, config?: Config): Promise<{ text: string, data: Stream<Uint8Array>, type: Enums['armor'] }>;
 

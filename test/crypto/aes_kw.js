@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import * as aesKW from '../../src/crypto/aes_kw.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 import enums from '../../src/enums.ts';
 
 export default () => describe('AES Key Wrap and Unwrap', function () {

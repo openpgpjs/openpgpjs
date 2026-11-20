@@ -21,7 +21,7 @@ import { fromAsync as streamFromAsync } from '@openpgp/web-stream-tools';
 import SignaturePacket from './signature.js';
 import KeyID from '../type/keyid.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import { concatUint8Array, equalsUint8Array } from '../util.ts';
 import { UnsupportedError } from './packet.js';
 
 /**
@@ -167,7 +167,7 @@ class OnePassSignaturePacket {
       arr.push(this.issuerKeyID.write());
     }
     arr.push(new Uint8Array([this.flags]));
-    return util.concatUint8Array(arr);
+    return concatUint8Array(arr);
   }
 
   calculateTrailer(...args) {
@@ -186,8 +186,8 @@ class OnePassSignaturePacket {
       !correspondingSig.issuerKeyID.equals(this.issuerKeyID) ||
       (this.version === 3 && correspondingSig.version === 6) ||
       (this.version === 6 && correspondingSig.version !== 6) ||
-      (this.version === 6 && !util.equalsUint8Array(correspondingSig.issuerFingerprint, this.issuerFingerprint)) ||
-      (this.version === 6 && !util.equalsUint8Array(correspondingSig.salt, this.salt))
+      (this.version === 6 && !equalsUint8Array(correspondingSig.issuerFingerprint, this.issuerFingerprint)) ||
+      (this.version === 6 && !equalsUint8Array(correspondingSig.salt, this.salt))
     ) {
       throw new Error('Corresponding signature packet does not match one-pass signature packet');
     }

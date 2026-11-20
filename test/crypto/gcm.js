@@ -5,7 +5,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 export default () => describe('Symmetric AES-GCM (experimental)', function() {
   let sinonSandbox;
@@ -24,8 +24,8 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
-    getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto');
+    getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
@@ -38,8 +38,8 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
     );
     aesAlgoNames.forEach(function(algoName) {
       it(algoName, async function() {
-        const nodeCrypto = util.getNodeCrypto();
-        const webCrypto = util.getWebCrypto();
+        const nodeCrypto = util.cryptoProviders.getNodeCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const key = crypto.generateSessionKey(algo);
         const gcmMode = crypto.cipherMode.getAEADMode(openpgp.enums.aead.gcm);

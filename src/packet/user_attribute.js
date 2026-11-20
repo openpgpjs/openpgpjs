@@ -19,7 +19,7 @@
 
 import { readSimpleLength, writeSimpleLength } from './packet.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import { concatUint8Array, stringToUint8Array, uint8ArrayToString } from '../util.ts';
 
 /**
  * Implementation of the User Attribute Packet (Tag 17)
@@ -57,7 +57,7 @@ class UserAttributePacket {
       const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
-      this.attributes.push(util.uint8ArrayToString(bytes.subarray(i, i + len.len)));
+      this.attributes.push(uint8ArrayToString(bytes.subarray(i, i + len.len)));
       i += len.len;
     }
   }
@@ -70,9 +70,9 @@ class UserAttributePacket {
     const arr = [];
     for (let i = 0; i < this.attributes.length; i++) {
       arr.push(writeSimpleLength(this.attributes[i].length));
-      arr.push(util.stringToUint8Array(this.attributes[i]));
+      arr.push(stringToUint8Array(this.attributes[i]));
     }
-    return util.concatUint8Array(arr);
+    return concatUint8Array(arr);
   }
 
   /**

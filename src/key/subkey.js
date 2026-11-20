@@ -3,7 +3,7 @@
  * @access private
  */
 
-import enums from '../enums.ts';
+import enums, { assertEnum } from '../enums.ts';
 import * as helper from './helper.js';
 import { PacketList } from '../packet/index.js';
 import defaultConfig from '../config.ts';
@@ -188,7 +188,7 @@ class Subkey {
     const subkey = new Subkey(this.keyPacket, this.mainKey);
     subkey.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, [], primaryKey, {
       signatureType: enums.signature.subkeyRevocation,
-      reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
+      reasonForRevocationFlag: assertEnum(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
     }, date, undefined, undefined, false, config));
     await subkey.update(this);

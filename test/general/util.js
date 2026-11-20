@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 export default () => describe('Util unit tests', function() {
 

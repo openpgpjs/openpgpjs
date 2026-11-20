@@ -21,7 +21,7 @@
  * @access private
  */
 
-import util from '../../../util.js';
+import * as util from '../../../util.ts';
 import enums from '../../../enums.ts';
 import { getRandomBytes } from '../../random.js';
 import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64.js';
@@ -36,7 +36,7 @@ export async function generate(algo) {
   switch (algo) {
     case enums.publicKey.ed25519:
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const webCryptoKey = await webCrypto.generateKey('Ed25519', true, ['sign', 'verify'])
           .catch(err => {
             if (err.name === 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
@@ -92,7 +92,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
   switch (algo) {
     case enums.publicKey.ed25519:
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const jwk = privateKeyToJWK(algo, publicKey, privateKey);
         const key = await webCrypto.importKey('jwk', jwk, 'Ed25519', false, ['sign']);
 
@@ -137,7 +137,7 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
   switch (algo) {
     case enums.publicKey.ed25519:
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const jwk = publicKeyToJWK(algo, publicKey);
         const key = await webCrypto.importKey('jwk', jwk, 'Ed25519', false, ['verify']);
         const verified = await webCrypto.verify('Ed25519', key, RS, hashed);
@@ -175,7 +175,7 @@ export async function validateParams(algo, A, seed) {
       // If we need to fallback to JS, we instead only re-derive the public key,
       // as this is much faster than sign-verify.
       try {
-        const webCrypto = util.getWebCrypto();
+        const webCrypto = util.cryptoProviders.getWebCrypto();
         const jwkPrivate = privateKeyToJWK(algo, A, seed);
         const jwkPublic = publicKeyToJWK(algo, A);
 

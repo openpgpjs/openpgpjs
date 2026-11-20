@@ -8,7 +8,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import { cipherMode } from '../../src/crypto/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 function testAESEAX() {
   it('Passes all test vectors', async function() {
@@ -134,8 +134,8 @@ export default () => describe('Symmetric AES-EAX', function() {
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
-    getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto');
+    getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();

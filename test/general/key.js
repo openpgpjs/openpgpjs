@@ -6,7 +6,7 @@ chaiUse(chaiAsPromised);
 
 import sinon from 'sinon';
 import openpgp from '../initOpenpgp.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 import { getPreferredCipherSuite, getPreferredHashAlgo } from '../../src/key/index.js';
 import KeyID from '../../src/type/keyid.js';
 

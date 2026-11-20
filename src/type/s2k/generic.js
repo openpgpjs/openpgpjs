@@ -20,7 +20,7 @@ import defaultConfig from '../../config.ts';
 import { getRandomBytes, computeDigest } from '../../crypto/index.js';
 import enums from '../../enums.ts';
 import { UnsupportedError } from '../../packet/packet.js';
-import util from '../../util.js';
+import * as util from '../../util.ts';
 
 /**
  * Implementation of the String-to-key specifier

@@ -21,12 +21,12 @@
  * @access public
  */
 
-import enums from './enums.ts';
+import enums, { type Enums } from './enums.ts';
 
 export interface Config {
-  preferredHashAlgorithm: enums.hash;
-  preferredSymmetricAlgorithm: enums.symmetric;
-  preferredCompressionAlgorithm: enums.compression;
+  preferredHashAlgorithm: Enums['hash'];
+  preferredSymmetricAlgorithm: Enums['symmetric'];
+  preferredCompressionAlgorithm: Enums['compression'];
   showVersion: boolean;
   showComment: boolean;
   aeadProtect: boolean;
@@ -38,19 +38,19 @@ export interface Config {
   ignoreUnsupportedPackets: boolean;
   ignoreMalformedPackets: boolean;
   enforceGrammar: boolean;
-  additionalAllowedPackets: Array<{ new(): any, tag: enums.packet }>;
+  additionalAllowedPackets: Array<{ new(): any, tag: Enums['packet'] }>;
   versionString: string;
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;
   allowInsecureVerificationWithReformattedKeys: boolean;
   allowMissingKeyFlags: boolean;
   constantTimePKCS1Decryption: boolean;
-  constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
+  constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<Enums['symmetric']>;
   v6Keys: boolean;
   enableParsingV5Entities: boolean;
-  preferredAEADAlgorithm: enums.aead;
+  preferredAEADAlgorithm: Enums['aead'];
   aeadChunkSizeByte: number;
-  s2kType: enums.s2k.iterated | enums.s2k.argon2;
+  s2kType: typeof enums.s2k.iterated | typeof enums.s2k.argon2;
   s2kIterationCountByte: number;
   s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
   maxArgon2MemoryExponent: number;
@@ -59,10 +59,10 @@ export interface Config {
   knownNotations: string[];
   nonDeterministicSignaturesViaNotation: boolean;
   useEllipticFallback: boolean;
-  rejectHashAlgorithms: Set<enums.hash>;
-  rejectMessageHashAlgorithms: Set<enums.hash>;
-  rejectPublicKeyAlgorithms: Set<enums.publicKey>;
-  rejectCurves: Set<enums.curve>;
+  rejectHashAlgorithms: Set<Enums['hash']>;
+  rejectMessageHashAlgorithms: Set<Enums['hash']>;
+  rejectPublicKeyAlgorithms: Set<Enums['publicKey']>;
+  rejectCurves: Set<Enums['curve']>;
 }
 
 const config: Config = {

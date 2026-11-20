@@ -7,7 +7,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 import * as packet from '../../src/packet/index.js';
 import * as random from '../../src/crypto/random.js';
 
@@ -258,8 +258,8 @@ export default () => describe('Packet', function() {
   }
 
   it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEADP, GCM)', async function() {
-    const webCrypto = util.getWebCrypto();
-    if (!webCrypto || util.getNodeCrypto()) return;
+    const webCrypto = util.cryptoProviders.getWebCrypto();
+    if (!webCrypto || util.cryptoProviders.getNodeCrypto()) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
     const decryptStub = cryptStub(webCrypto, 'decrypt');
 
@@ -308,7 +308,7 @@ export default () => describe('Packet', function() {
     const algo = openpgp.enums.symmetric.aes128;
 
     const literal = new openpgp.LiteralDataPacket(0);
-    literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+    literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literalFormat.binary);
     literal.filename = '';
     const enc = new openpgp.AEADEncryptedDataPacket();
     enc.packets = new openpgp.PacketList();
@@ -408,7 +408,7 @@ export default () => describe('Packet', function() {
         mockCryptoRandomGenerator(randomBytesStub);
 
         const literal = new openpgp.LiteralDataPacket(0);
-        literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+        literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literalFormat.binary);
         literal.filename = '';
         const pad = new openpgp.PaddingPacket();
         await pad.createPadding(14);
@@ -804,7 +804,7 @@ export default () => describe('Packet', function() {
         mockCryptoRandomGenerator(randomBytesStub);
 
         const literal = new openpgp.LiteralDataPacket(0);
-        literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+        literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literalFormat.binary);
         literal.filename = '';
         const skesk = new openpgp.SymEncryptedSessionKeyPacket();
         skesk.version = 5;

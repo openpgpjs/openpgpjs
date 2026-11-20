@@ -19,11 +19,11 @@
 import { armor, unarmor } from './encoding/armor.js';
 import { PacketList, SignaturePacket } from './packet/index.js';
 import enums from './enums.ts';
-import util from './util.js';
+import { constructAllowedPackets, isString, isUint8Array } from './util.ts';
 import defaultConfig from './config.ts';
 
 // A Signature can contain the following packets
-const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
+const allowedPackets = /*#__PURE__*/ constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP signature.
@@ -80,10 +80,10 @@ export async function readSignature({ armoredSignature, binarySignature, config,
   if (!input) {
     throw new Error('readSignature: must pass options object containing `armoredSignature` or `binarySignature`');
   }
-  if (armoredSignature && !util.isString(armoredSignature)) {
+  if (armoredSignature && !isString(armoredSignature)) {
     throw new Error('readSignature: options.armoredSignature must be a string');
   }
-  if (binarySignature && !util.isUint8Array(binarySignature)) {
+  if (binarySignature && !isUint8Array(binarySignature)) {
     throw new Error('readSignature: options.binarySignature must be a Uint8Array');
   }
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);

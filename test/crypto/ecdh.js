@@ -8,7 +8,7 @@ import openpgp from '../initOpenpgp.js';
 import OID from '../../src/type/oid.js';
 import KDFParams from '../../src/type/kdf_params.js';
 import * as elliptic_curves from '../../src/crypto/public_key/elliptic/index.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 import elliptic_data from './elliptic_data.js';
 import * as random from '../../src/crypto/random.js';
 import { isSafari15or16 } from '../browserChecks.ts';
@@ -85,7 +85,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(Error, /Unknown curve/).notify(done);
   });
   it('Invalid elliptic public key', function (done) {
-    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.cryptoProviders.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -93,7 +93,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|bad point/).notify(done);
   });
   it('Invalid key data integrity', async function () {
-    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.cryptoProviders.getNodeCrypto()) {
       this.skip();
     }
     await expect(decrypt_message(
@@ -141,7 +141,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
   const ecdh = elliptic_curves.ecdh;
 
   it('Invalid curve', async function () {
-    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.cryptoProviders.getNodeCrypto()) {
       this.skip();
     }
     const curve = new elliptic_curves.CurveWithOID('secp256k1');
@@ -325,11 +325,11 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto').returns({
+      getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto').returns({
         generateKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; },
         importKey: () => { const e = new Error('getWebCrypto is mocked'); e.name = 'NotSupportedError'; throw e; }
       });
-      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+      getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();
@@ -348,8 +348,8 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       decryptFunction, // (encryptFunctionResult) => decryption result
       expectNative
     ) => {
-      const nodeCrypto = util.getNodeCrypto();
-      const webCrypto = util.getWebCrypto();
+      const nodeCrypto = util.cryptoProviders.getNodeCrypto();
+      const webCrypto = util.cryptoProviders.getWebCrypto();
       const data = random.getRandomBytes(16);
 
       const nativeSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH'); // functions used both for encryption and decryption

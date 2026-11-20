@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import { computeDigest } from '../../../src/crypto/hash/index.js';
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 import enums from '../../../src/enums.ts';
 
 export default () => it('SHA* with test vectors from NIST FIPS 180-2', async function() {

@@ -6,7 +6,7 @@ chaiUse(chaiAsPromised);
 import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto/index.js';
 import * as random from '../../src/crypto/random.js';
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 /* eslint-disable no-invalid-this */
 export default () => describe('basic RSA cryptography', function () {
@@ -26,8 +26,8 @@ export default () => describe('basic RSA cryptography', function () {
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
-    getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    getWebCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getWebCrypto');
+    getNodeCryptoStub = sinonSandbox.stub(util.cryptoProviders, 'getNodeCrypto');
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
@@ -70,7 +70,7 @@ export default () => describe('basic RSA cryptography', function () {
   });
 
   it('decrypt nodeCrypto by bnCrypto and vice versa', async function() {
-    if (!util.getNodeCrypto()) {
+    if (!util.cryptoProviders.getNodeCrypto()) {
       this.skip(); // webcrypto does not implement RSA PKCS#1 v.15 decryption
     }
     const bits = 1024;

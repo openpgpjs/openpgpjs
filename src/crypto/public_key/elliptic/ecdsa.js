@@ -22,13 +22,13 @@
  */
 
 import enums from '../../../enums.ts';
-import util from '../../../util.js';
+import * as util from '../../../util.ts';
 import { getRandomBytes } from '../../random.js';
 import { computeDigest } from '../../hash/index.js';
 import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves.js';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = util.cryptoProviders.getWebCrypto();
+const nodeCrypto = util.cryptoProviders.getNodeCrypto();
 
 /**
  * Sign a message using the provided key

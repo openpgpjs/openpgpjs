@@ -6,7 +6,7 @@
 
 import { elliptic, rsa, dsa, postQuantum } from './public_key/index.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import * as util from '../util.ts';
 import { UnsupportedError } from '../packet/packet.js';
 import { getHashByteLength } from './hash/index.js';
 

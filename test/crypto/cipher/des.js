@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import { DES, TripleDES } from '../../../src/crypto/cipher/des.js';
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 
 export default () => describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {
   // see https://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf

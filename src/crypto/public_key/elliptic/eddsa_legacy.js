@@ -22,7 +22,7 @@
  * @access private
  */
 
-import util from '../../../util.js';
+import { concatUint8Array } from '../../../util.ts';
 import enums from '../../../enums.ts';
 import { CurveWithOID, checkPublicPointEnconding } from './oid_curves.js';
 import { sign as eddsaSign, verify as eddsaVerify, validateParams as eddsaValidateParams } from './eddsa.js';
@@ -68,7 +68,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
 export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, publicKey);
-  const RS = util.concatUint8Array([r, s]);
+  const RS = concatUint8Array([r, s]);
   return eddsaVerify(enums.publicKey.ed25519, hashAlgo, { RS }, m, publicKey.subarray(1), hashed);
 }
 /**

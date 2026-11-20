@@ -22,7 +22,7 @@
  * @access private
  */
 
-import util from '../util.js';
+import { concatUint8Array } from '../util.ts';
 
 class ECDHSymmetricKey {
   constructor(data) {
@@ -54,7 +54,7 @@ class ECDHSymmetricKey {
    * @returns  {Uint8Array} Serialised data
    */
   write() {
-    return util.concatUint8Array([new Uint8Array([this.data.length]), this.data]);
+    return concatUint8Array([new Uint8Array([this.data.length]), this.data]);
   }
 }
 

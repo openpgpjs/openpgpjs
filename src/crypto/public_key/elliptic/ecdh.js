@@ -25,7 +25,7 @@ import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateSta
 import * as aesKW from '../../aes_kw.js';
 import { computeDigest } from '../../hash/index.js';
 import enums from '../../../enums.ts';
-import util from '../../../util.js';
+import * as util from '../../../util.ts';
 import { b64ToUint8Array } from '../../../encoding/base64.js';
 import * as pkcs5 from '../../pkcs5.js';
 import { getCipherParams } from '../../cipher/index.js';
@@ -94,7 +94,7 @@ async function genPublicEphemeralKey(curve, Q) {
       return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
     case 'web':
-      if (curve.web && util.getWebCrypto()) {
+      if (curve.web && util.cryptoProviders.getWebCrypto()) {
         try {
           return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
@@ -159,7 +159,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
       return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
     case 'web':
-      if (curve.web && util.getWebCrypto()) {
+      if (curve.web && util.cryptoProviders.getWebCrypto()) {
         try {
           return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
@@ -240,7 +240,7 @@ async function jsPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
-  const webCrypto = util.getWebCrypto();
+  const webCrypto = util.cryptoProviders.getWebCrypto();
   const recipient = privateToJWK(curve.payloadSize, curve.web, Q, d);
   let privateKey = webCrypto.importKey(
     'jwk',
@@ -292,7 +292,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
-  const webCrypto = util.getWebCrypto();
+  const webCrypto = util.cryptoProviders.getWebCrypto();
   const jwk = rawPublicToJWK(curve.payloadSize, curve.web, Q);
   let keyPair = webCrypto.generateKey(
     {
@@ -342,7 +342,7 @@ async function webPublicEphemeralKey(curve, Q) {
  * @async
  */
 function nodePrivateEphemeralKey(curve, V, d) {
-  const nodeCrypto = util.getNodeCrypto();
+  const nodeCrypto = util.cryptoProviders.getNodeCrypto();
   const recipient = nodeCrypto.createECDH(curve.node);
   recipient.setPrivateKey(d);
   const sharedKey = new Uint8Array(recipient.computeSecret(V));
@@ -360,7 +360,7 @@ function nodePrivateEphemeralKey(curve, V, d) {
  * @async
  */
 function nodePublicEphemeralKey(curve, Q) {
-  const nodeCrypto = util.getNodeCrypto();
+  const nodeCrypto = util.cryptoProviders.getNodeCrypto();
   const sender = nodeCrypto.createECDH(curve.node);
   sender.generateKeys();
   // `computeSecret()` always pads to size, unlike `getPrivateKey()`

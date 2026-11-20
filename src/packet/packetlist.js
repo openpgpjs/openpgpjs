@@ -9,7 +9,7 @@ import {
   UnknownPacketError,
   MalformedPacketError
 } from './packet.js';
-import util from '../util.js';
+import * as util from '../util.ts';
 import enums from '../enums.ts';
 import defaultConfig from '../config.ts';
 

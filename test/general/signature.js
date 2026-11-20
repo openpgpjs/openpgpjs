@@ -7,7 +7,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 
-import util from '../../src/util.js';
+import * as util from '../../src/util.ts';
 
 export default () => describe('Signature', function() {
   const priv_key_arm1 =

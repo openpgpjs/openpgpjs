@@ -21,15 +21,15 @@
  * @access private
  */
 import enums from '../../../enums.ts';
-import util from '../../../util.js';
+import * as util from '../../../util.ts';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64.js';
 import OID from '../../../type/oid.js';
 import { UnsupportedError } from '../../../packet/packet.js';
 import { generate as eddsaGenerate } from './eddsa.js';
 import { generate as ecdhXGenerate, validateParams as ecdhXValidateParams } from './ecdh_x.js';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = util.cryptoProviders.getWebCrypto();
+const nodeCrypto = util.cryptoProviders.getNodeCrypto();
 
 const webCurves = {
   [enums.curve.nistP256]: 'P-256',
@@ -159,9 +159,9 @@ class CurveWithOID {
     this.payloadSize = params.payloadSize;
     this.sharedSize = params.sharedSize;
     this.wireFormatLeadingByte = params.wireFormatLeadingByte;
-    if (this.web && util.getWebCrypto()) {
+    if (this.web && util.cryptoProviders.getWebCrypto()) {
       this.type = 'web';
-    } else if (this.node && util.getNodeCrypto()) {
+    } else if (this.node && util.cryptoProviders.getNodeCrypto()) {
       this.type = 'node';
     } else if (this.name === enums.curve.curve25519Legacy) {
       this.type = 'curve25519Legacy';

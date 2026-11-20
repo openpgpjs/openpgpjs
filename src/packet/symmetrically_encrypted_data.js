@@ -20,7 +20,7 @@
 import { readToEnd as streamReadToEnd, clone as streamClone } from '@openpgp/web-stream-tools';
 import { cipherMode, getCipherParams } from '../crypto/index.js';
 import enums from '../enums.ts';
-import util from '../util.js';
+import { concat as streamConcat, constructAllowedPackets } from '../util.ts';
 import defaultConfig from '../config.ts';
 
 import LiteralDataPacket from './literal_data.js';
@@ -30,7 +30,7 @@ import SignaturePacket from './signature.js';
 import PacketList from './packetlist.js';
 
 // A SE packet can contain the following packet types
-const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
+const allowedPackets = /*#__PURE__*/ constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
@@ -118,7 +118,7 @@ class SymmetricallyEncryptedDataPacket {
     const prefix = await cipherMode.cfb.getPrefixRandom(sessionKeyAlgorithm);
     const FRE = await cipherMode.cfb.encrypt(sessionKeyAlgorithm, key, prefix, new Uint8Array(blockSize), config);
     const ciphertext = await cipherMode.cfb.encrypt(sessionKeyAlgorithm, key, data, FRE.subarray(2), config);
-    this.encrypted = util.concat([FRE, ciphertext]);
+    this.encrypted = streamConcat([FRE, ciphertext]);
   }
 }
 

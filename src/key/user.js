@@ -3,8 +3,8 @@
  * @access private
  */
 
-import enums from '../enums.ts';
-import util from '../util.js';
+import enums, { assertEnum } from '../enums.ts';
+import { wrapError } from '../util.ts';
 import { PacketList } from '../packet/index.js';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper.js';
 import defaultConfig from '../config.ts';
@@ -135,7 +135,7 @@ class User {
       try {
         await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, date, undefined, config);
       } catch (e) {
-        throw util.wrapError('User certificate is invalid', e);
+        throw wrapError('User certificate is invalid', e);
       }
     }));
     return true;
@@ -193,7 +193,7 @@ class User {
         try {
           await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, undefined, config);
         } catch (e) {
-          throw util.wrapError('Self-certification is invalid', e);
+          throw wrapError('Self-certification is invalid', e);
         }
         return true;
       } catch (e) {
@@ -263,7 +263,7 @@ class User {
     const user = new User(dataToSign.userID || dataToSign.userAttribute, this.mainKey);
     user.revocationSignatures.push(await createSignaturePacket(dataToSign, [], primaryKey, {
       signatureType: enums.signature.certRevocation,
-      reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
+      reasonForRevocationFlag: assertEnum(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
     }, date, undefined, undefined, false, config));
     await user.update(this);

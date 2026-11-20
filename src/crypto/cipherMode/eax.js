@@ -24,11 +24,11 @@
 
 import { ctr as nobleAesCtr } from '@noble/ciphers/aes.js';
 import CMAC from '../cmac.js';
-import util from '../../util.js';
+import * as util from '../../util.ts';
 import enums from '../../enums.ts';
 
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
+const webCrypto = util.cryptoProviders.getWebCrypto();
+const nodeCrypto = util.cryptoProviders.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
 
@@ -48,7 +48,7 @@ async function OMAC(key) {
 }
 
 async function CTR(key) {
-  if (util.getNodeCrypto()) { // Node crypto library
+  if (util.cryptoProviders.getNodeCrypto()) { // Node crypto library
     // eslint-disable-next-line @typescript-eslint/require-await
     return async function(pt, iv) {
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-ctr', key, iv);
@@ -57,7 +57,7 @@ async function CTR(key) {
     };
   }
 
-  if (util.getWebCrypto()) {
+  if (webCrypto) {
     try {
       const keyRef = await webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
       return async function(pt, iv) {

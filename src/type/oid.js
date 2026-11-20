@@ -33,7 +33,7 @@
  * @access private
  */
 
-import util from '../util.js';
+import * as util from '../util.ts';
 import enums from '../enums.ts';
 
 const knownOIDs = {

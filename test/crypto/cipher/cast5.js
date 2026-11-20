@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import CAST5 from '../../../src/crypto/cipher/cast5.js';
-import util from '../../../src/util.js';
+import * as util from '../../../src/util.ts';
 
 export default () => it('CAST-128 cipher test with test vectors from RFC2144', function (done) {
   function test_cast(input, key, output) {

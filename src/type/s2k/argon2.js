@@ -1,7 +1,7 @@
 /** @access private */
 import defaultConfig from '../../config.ts';
 import enums from '../../enums.ts';
-import util from '../../util.js';
+import { concatUint8Array, encodeUTF8 } from '../../util.ts';
 import { getRandomBytes } from '../../crypto/index.js';
 
 const ARGON2_TYPE = 0x02; // id
@@ -94,7 +94,7 @@ class Argon2S2K {
       new Uint8Array([this.t, this.p, this.encodedM])
     ];
 
-    return util.concatUint8Array(arr);
+    return concatUint8Array(arr);
   }
 
   /**
@@ -126,7 +126,7 @@ class Argon2S2K {
       // important to keep local ref to argon2 in case the module is reloaded by another instance
       const argon2 = await argon2Promise;
 
-      const passwordBytes = util.encodeUTF8(passphrase);
+      const passwordBytes = encodeUTF8(passphrase);
       const hash = argon2({
         version: ARGON2_VERSION,
         type: ARGON2_TYPE,
