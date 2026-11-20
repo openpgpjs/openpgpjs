@@ -9,7 +9,6 @@ import { cbc as nobleAesCbc } from '@noble/ciphers/aes.js';
 import util from '../util.js';
 
 const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
 
 
 /**
@@ -73,34 +72,22 @@ export default async function CMAC(key) {
 }
 
 async function CBC(key) {
-  if (util.getNodeCrypto()) { // Node crypto library
+  try {
+    const keyRef = await webCrypto.importKey('raw', key, { name: 'AES-CBC', length: key.length * 8 }, false, ['encrypt']);
+    return async function(pt) {
+      const ct = await webCrypto.encrypt({ name: 'AES-CBC', iv: zeroBlock, length: blockLength * 8 }, keyRef, pt);
+      return new Uint8Array(ct).subarray(0, ct.byteLength - blockLength);
+    };
+  } catch (err) {
+    // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    if (err.name !== 'NotSupportedError' &&
+      !(key.length === 24 && err.name === 'OperationError')) {
+      throw err;
+    }
+    util.printDebugError('Browser did not support operation: ' + err.message);
     // eslint-disable-next-line @typescript-eslint/require-await
     return async function(pt) {
-      const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
-      const ct = en.update(pt);
-      return new Uint8Array(ct);
+      return nobleAesCbc(key, zeroBlock, { disablePadding: true }).encrypt(pt);
     };
   }
-
-  if (util.getWebCrypto()) {
-    try {
-      key = await webCrypto.importKey('raw', key, { name: 'AES-CBC', length: key.length * 8 }, false, ['encrypt']);
-      return async function(pt) {
-        const ct = await webCrypto.encrypt({ name: 'AES-CBC', iv: zeroBlock, length: blockLength * 8 }, key, pt);
-        return new Uint8Array(ct).subarray(0, ct.byteLength - blockLength);
-      };
-    } catch (err) {
-      // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-      if (err.name !== 'NotSupportedError' &&
-        !(key.length === 24 && err.name === 'OperationError')) {
-        throw err;
-      }
-      util.printDebugError('Browser did not support operation: ' + err.message);
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  return async function(pt) {
-    return nobleAesCbc(key, zeroBlock, { disablePadding: true }).encrypt(pt);
-  };
 }

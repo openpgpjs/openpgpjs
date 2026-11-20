@@ -12,7 +12,6 @@ import util from '../../src/util.js';
 export default () => describe('basic RSA cryptography', function () {
   let sinonSandbox;
   let getWebCryptoStub;
-  let getNodeCryptoStub;
 
   beforeEach(function () {
     sinonSandbox = sinon.createSandbox();
@@ -27,11 +26,9 @@ export default () => describe('basic RSA cryptography', function () {
     enableNative();
     // stubbed functions return undefined
     getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
-    getNodeCryptoStub && getNodeCryptoStub.restore();
   };
 
   it('generate rsa key', async function() {
@@ -67,25 +64,6 @@ export default () => describe('basic RSA cryptography', function () {
     const encrypted = await crypto.publicKey.rsa.encrypt(message, n, e);
     const decrypted = await crypto.publicKey.rsa.decrypt(encrypted, n, e, d, p, q, u);
     expect(decrypted).to.deep.equal(message);
-  });
-
-  it('decrypt nodeCrypto by bnCrypto and vice versa', async function() {
-    if (!util.getNodeCrypto()) {
-      this.skip(); // webcrypto does not implement RSA PKCS#1 v.15 decryption
-    }
-    const bits = 1024;
-    const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
-    const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
-    disableNative();
-    const encryptedBn = await crypto.publicKey.rsa.encrypt(message, n, e);
-    enableNative();
-    const decrypted1 = await crypto.publicKey.rsa.decrypt(encryptedBn, n, e, d, p, q, u);
-    expect(decrypted1).to.deep.equal(message);
-    const encryptedNode = await crypto.publicKey.rsa.encrypt(message, n, e);
-    disableNative();
-    const decrypted2 = await crypto.publicKey.rsa.decrypt(encryptedNode, n, e, d, p, q, u);
-    expect(decrypted2).to.deep.equal(message);
   });
 
   it('compare native crypto and bnSign', async function() {
