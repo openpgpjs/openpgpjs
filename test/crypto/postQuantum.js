@@ -855,7 +855,7 @@ Fy70NCeqH2b6JeETZ1xFQEiEInk6B9WE558S9Mi6yjeSXdV65yNK2km5
 
     // `getSigningKey()` internally verifies the ML-DSA binding sigs
     const signingKey1 = await privateKey.getSigningKey();
-    const signingKey2 = await publicKey.getSigningKey();
+    const signingKey2 = await publicKey.getVerificationKey();
 
     expect(signingKey1.getKeyID().equals(signingKey2.getKeyID())).to.be.true;
   });
